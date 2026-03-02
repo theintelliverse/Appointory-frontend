@@ -32,7 +32,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'firebase': ['firebase'],
           'ui-vendor': ['lucide-react', 'sweetalert2'],
         },
         // Files under 4kb will be inlined as base64
