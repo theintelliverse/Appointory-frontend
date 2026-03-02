@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* Theme tokens */
+@theme {
+  --color-parchment: #EEF6FA;
+  --color-teak: #0F766E;
+  --color-khaki: #3FA28C;
+  --color-marigold: #1F6FB2;
+  --color-saffron: #1A4F8A;
+  --color-sandstone: #AFC4D8;
+
+  --font-heading: "Asimovian", sans-serif;
+  --font-body: "Montserrat", sans-serif;
+}
+
+/* Custom fonts */
+@font-face {
+  font-family: "Asimovian";
+  src: url("/fonts/asimovian.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
