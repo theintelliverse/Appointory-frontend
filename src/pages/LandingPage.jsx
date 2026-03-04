@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -96,7 +96,7 @@ const LandingPage = () => {
             <div className="h-px w-8 bg-sandstone"></div>
             <span className="font-heading text-sm">Twilio</span>
             <span className="font-heading text-sm">MERN Stack</span>
-            <span className="font-heading text-sm">Appointory</span>
+            <span className="font-heading text-sm">Swasthya-Mitra</span>
           </div>
         </div>
 
@@ -208,15 +208,15 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-marigold rounded flex items-center justify-center text-white font-heading text-xs">A</div>
+          <div className="w-6 h-6 bg-marigold rounded flex items-center justify-center text-white font-heading text-xs">S</div>
           <p className="text-[10px] font-black text-khaki uppercase tracking-widest">
             © 2026 Appointory — Built for Bharat
           </p>
         </div>
         <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-teak">
-          <Link to="/privacy" className="hover:text-marigold transition-colors">Privacy</Link>
-          <Link to="/terms" className="hover:text-marigold transition-colors">Terms</Link>
-          <Link to="/contact" className="hover:text-marigold transition-colors">Contact</Link>
+          <a href="/privacy" className="hover:text-marigold transition-colors">Privacy</a>
+          <a href="/terms" className="hover:text-marigold transition-colors">Terms</a>
+          <a href="/contact" className="hover:text-marigold transition-colors">Support</a>
         </div>
       </footer>
     </div>
