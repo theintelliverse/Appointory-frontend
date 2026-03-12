@@ -181,7 +181,7 @@ const ClinicAnalytics = () => {
               <ClinicQR clinicCode={clinicInfo.code} clinicName={clinicInfo.name} />
 
               <div className="bg-teak p-8 rounded-[3rem] text-parchment shadow-2xl relative overflow-hidden group">
-                <h3 className="font-heading text-xl mb-6 text-marigold">System Shortcuts</h3>
+                <h3 className="font-heading text-xl mb-6 white ">System Shortcuts</h3>
                 <div className="space-y-3 relative z-10">
                   <button onClick={() => navigate('/admin/staff-management')} className="w-full py-4 bg-white/5 hover:bg-marigold hover:text-teak border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Staff Roster <ArrowRight size={12} className="inline ml-1" /></button>
                   <button onClick={() => navigate('/admin/settings')} className="w-full py-4 bg-white/5 hover:bg-marigold hover:text-teak border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">General Settings <ArrowRight size={12} className="inline ml-1" /></button>
