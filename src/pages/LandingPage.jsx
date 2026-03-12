@@ -96,7 +96,7 @@ const LandingPage = () => {
             <div className="h-px w-8 bg-sandstone"></div>
             <span className="font-heading text-sm">Twilio</span>
             <span className="font-heading text-sm">MERN Stack</span>
-            <span className="font-heading text-sm">Swasthya-Mitra</span>
+            <span className="font-heading text-sm">Appointory</span>
           </div>
         </div>
 
