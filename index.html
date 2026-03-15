@@ -4,11 +4,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <link rel="icon" type="image/svg+xml" href="/react.svg" />
-  <link rel="alternate icon" type="image/svg+xml" href="/vite.svg" />
-  <link rel="shortcut icon" href="/vite.svg" />
-  <link rel="apple-touch-icon" href="/og-image.svg" />
-  <link rel="mask-icon" href="/react.svg" color="#2C6FB3" />
+  <!-- ═══════════════════════════════════════════════════════
+       FAVICON & APP ICONS — all browsers, all platforms
+       ═══════════════════════════════════════════════════════ -->
+  <!-- Chrome 80+, Firefox 41+, Edge 80+, Opera 67+, Samsung Internet 12+ -->
+  <link rel="icon" type="image/svg+xml" href="/og-image.svg" />
+  <!-- Android Chrome / PWA launcher icon via manifest -->
+  <!-- IE11 / legacy browser ICO fallback (add /favicon.ico to public/ for these) -->
+  <link rel="shortcut icon" href="/og-image.svg" />
+
+  <!-- Apple devices: iOS Safari home-screen icon, macOS Safari bookmark -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="167x167" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="144x144" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="114x114" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="72x72" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="60x60" href="/og-image.svg" />
+  <link rel="apple-touch-icon" sizes="57x57" href="/og-image.svg" />
+
+  <!-- Safari Pinned Tab (macOS) -->
+  <link rel="mask-icon" href="/og-image.svg" color="#2C6FB3" />
+
+  <!-- Microsoft Windows Tiles (IE11, Edge legacy, Windows 10 Start Menu) -->
+  <meta name="msapplication-TileColor" content="#2C6FB3" />
+  <meta name="msapplication-TileImage" content="/og-image.svg" />
+  <meta name="msapplication-square70x70logo" content="/og-image.svg" />
+  <meta name="msapplication-square150x150logo" content="/og-image.svg" />
+  <meta name="msapplication-wide310x150logo" content="/og-image.svg" />
+  <meta name="msapplication-square310x310logo" content="/og-image.svg" />
+  <meta name="msapplication-config" content="/browserconfig.xml" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <!-- Mobile App Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes" />
@@ -123,8 +150,13 @@
       "@type": "Organization",
       "name": "Appointory",
       "url": "https://appointory.in/",
-      "logo": "https://appointory.in/vite.svg",
-      "image": "https://appointory.in/vite.svg",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://appointory.in/og-image.svg",
+        "width": 800,
+        "height": 800
+      },
+      "image": "https://appointory.in/og-image.svg",
       "description": "Real-time clinical management and digital health locker platform for seamless healthcare operations.",
       "email": "theintelliverse@gmail.com",
       "sameAs": [
@@ -168,7 +200,7 @@
       "description": "Digital healthcare platform for clinic management",
       "url": "https://appointory.in/",
       "serverAreas": ["IN"],
-      "image": "https://appointory.in/vite.svg",
+      "image": "https://appointory.in/og-image.svg",
       "priceRange": "$0-$$$",
       "serviceArea": "IN",
       "areaServed": "India",
