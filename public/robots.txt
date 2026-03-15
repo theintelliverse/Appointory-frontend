@@ -53,8 +53,8 @@ Crawl-delay: 1
 Request-rate: 30/60
 
 # Sitemap locations
-Sitemap: https://appointory.in/sitemap.xml
-Sitemap: https://appointory.in/sitemap-pages.xml
+Sitemap: https://www.appointory.in/sitemap.xml
+Sitemap: https://www.appointory.in/sitemap-index.xml
 
 # Allow crawling of common static assets
 Allow: /*.css$
@@ -71,6 +71,5 @@ Disallow: /config/
 Disallow: /.git/
 Disallow: /.env
 Disallow: /node_modules/
-Disallow: /.*\.(xml|json)$
 Disallow: /*?*utm_
 Disallow: /*?*gclid=

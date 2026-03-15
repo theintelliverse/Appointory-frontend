@@ -6,7 +6,7 @@
   
   <!-- Primary Pages -->
   <url>
-    <loc>https://appointory.in/</loc>
+    <loc>https://www.appointory.in/</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -15,14 +15,14 @@
   
   <!-- Authentication Pages -->
   <url>
-    <loc>https://appointory.in/login</loc>
+    <loc>https://www.appointory.in/login</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/register-clinic</loc>
+    <loc>https://www.appointory.in/register-clinic</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -31,42 +31,42 @@
   
   <!-- Patient Pages -->
   <url>
-    <loc>https://appointory.in/patient/login</loc>
+    <loc>https://www.appointory.in/patient/login</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/patient/dashboard</loc>
+    <loc>https://www.appointory.in/patient/dashboard</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/patient/health-locker</loc>
+    <loc>https://www.appointory.in/patient/health-locker</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/patient/checkin</loc>
+    <loc>https://www.appointory.in/patient/checkin</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/patient/status</loc>
+    <loc>https://www.appointory.in/patient/status</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/patient/quick-view</loc>
+    <loc>https://www.appointory.in/patient/quick-view</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -75,14 +75,14 @@
   
   <!-- Doctor Pages -->
   <url>
-    <loc>https://appointory.in/doctor/dashboard</loc>
+    <loc>https://www.appointory.in/doctor/dashboard</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/doctor/locker-search</loc>
+    <loc>https://www.appointory.in/doctor/locker-search</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -91,14 +91,14 @@
   
   <!-- Staff Pages -->
   <url>
-    <loc>https://appointory.in/receptionist/dashboard</loc>
+    <loc>https://www.appointory.in/receptionist/dashboard</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/lab/dashboard</loc>
+    <loc>https://www.appointory.in/lab/dashboard</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -107,35 +107,35 @@
   
   <!-- Admin Pages -->
   <url>
-    <loc>https://appointory.in/admin/dashboard</loc>
+    <loc>https://www.appointory.in/admin/dashboard</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/admin/staff-management</loc>
+    <loc>https://www.appointory.in/admin/staff-management</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/admin/analytics</loc>
+    <loc>https://www.appointory.in/admin/analytics</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/admin/reports</loc>
+    <loc>https://www.appointory.in/admin/reports</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/admin/settings</loc>
+    <loc>https://www.appointory.in/admin/settings</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -144,28 +144,28 @@
   
   <!-- Shared Pages -->
   <url>
-    <loc>https://appointory.in/contact</loc>
+    <loc>https://www.appointory.in/contact</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/profile</loc>
+    <loc>https://www.appointory.in/profile</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/clinic-tv-display</loc>
+    <loc>https://www.appointory.in/clinic-tv-display</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/medical-history</loc>
+    <loc>https://www.appointory.in/medical-history</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -174,21 +174,21 @@
   
   <!-- Legal Pages -->
   <url>
-    <loc>https://appointory.in/privacy</loc>
+    <loc>https://www.appointory.in/privacy</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/terms</loc>
+    <loc>https://www.appointory.in/terms</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
     <mobile:mobile/>
   </url>
   <url>
-    <loc>https://appointory.in/unauthorized</loc>
+    <loc>https://www.appointory.in/unauthorized</loc>
     <lastmod>2026-03-02</lastmod>
     <changefreq>never</changefreq>
     <priority>0.3</priority>
