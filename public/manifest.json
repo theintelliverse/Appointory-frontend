@@ -11,19 +11,19 @@
   "categories": ["healthcare", "medical", "clinic", "health", "appointments"],
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/react.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "maskable"
     },
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -64,7 +64,7 @@
       "url": "/patient/login",
       "icons": [
         {
-          "src": "/vite.svg",
+          "src": "/react.svg",
           "sizes": "192x192",
           "type": "image/svg+xml"
         }
@@ -90,7 +90,7 @@
       "url": "/patient/status",
       "icons": [
         {
-          "src": "/vite.svg",
+          "src": "/og-image.svg",
           "sizes": "192x192",
           "type": "image/svg+xml"
         }
@@ -103,7 +103,7 @@
       "url": "/patient/health-locker",
       "icons": [
         {
-          "src": "/vite.svg",
+          "src": "/react.svg",
           "sizes": "192x192",
           "type": "image/svg+xml"
         }
@@ -112,27 +112,27 @@
   ],
   "screenshots": [
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "800x800",
       "type": "image/svg+xml",
       "form_factor": "wide",
       "purpose": "any"
     },
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "800x800",
       "type": "image/svg+xml",
       "form_factor": "narrow",
       "purpose": "any"
     },
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "540x720",
       "type": "image/svg+xml",
       "form_factor": "narrow"
     },
     {
-      "src": "/vite.svg",
+      "src": "/og-image.svg",
       "sizes": "1280x720",
       "type": "image/svg+xml",
       "form_factor": "wide"
