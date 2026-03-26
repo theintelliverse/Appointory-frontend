@@ -18,11 +18,13 @@ const ReceptionDashboard = () => {
   const navigate = useNavigate();
   const [queue, setQueue] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [scheduledAppointments, setScheduledAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('live');
   const [searchTerm, setSearchTerm] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastQueueUpdate, setLastQueueUpdate] = useState(Date.now());
 
   const [formData, setFormData] = useState({
     patientName: '',
@@ -38,14 +40,17 @@ const ReceptionDashboard = () => {
   const fetchDashboardData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [queueRes, staffRes, pendingRes] = await Promise.all([
+      const [queueRes, staffRes, pendingRes, scheduledRes] = await Promise.all([
         axios.get(`${API_URL}/api/queue/live`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${API_URL}/api/staff/all`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_URL}/api/queue/pending`, { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${API_URL}/api/queue/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/api/queue/scheduled/next-7-days`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setQueue(queueRes.data.data);
       setDoctors(staffRes.data.staff.filter(s => s.role === 'doctor'));
       setPendingRequests(pendingRes.data.data);
+      setScheduledAppointments(scheduledRes.data.data);
+      setLastQueueUpdate(Date.now()); // 🔴 Update timestamp for live indicator
       setLoading(false);
     } catch (err) {
       console.error("Dashboard Sync Error:", err);
@@ -91,11 +96,17 @@ const ReceptionDashboard = () => {
       console.warn("⚠️ clinicId missing from LocalStorage. Socket Room not joined.");
     }
 
+    // 🔄 Live Queue Polling - Refresh every 5 seconds to ensure real-time updates
+    const pollInterval = setInterval(() => {
+      fetchDashboardData(true);
+    }, 5000);
+
     return () => {
       socket.off('queueUpdate');
       socket.off('doctorStatusChanged');
       socket.off('newCheckInRequest');
       socket.off('connect');
+      clearInterval(pollInterval);
     };
   }, [token, clinicId]);
 
@@ -251,6 +262,10 @@ const ReceptionDashboard = () => {
               Requests
               {pendingRequests.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] border-2 border-white animate-bounce">{pendingRequests.length}</span>}
             </button>
+            <button onClick={() => setActiveTab('scheduled')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative ${activeTab === 'scheduled' ? 'bg-marigold text-white shadow-md' : 'text-khaki'}`}>
+              📅 Scheduled
+              {scheduledAppointments.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[9px] border-2 border-white">{scheduledAppointments.length}</span>}
+            </button>
           </div>
         </nav>
 
@@ -297,7 +312,20 @@ const ReceptionDashboard = () => {
           <div className="lg:col-span-3 space-y-6">
             <div className="bg-white border border-sandstone rounded-[3.5rem] overflow-hidden shadow-sm flex flex-col h-full">
               <div className="px-10 py-8 border-b border-sandstone flex flex-col md:flex-row justify-between md:items-center gap-4 bg-parchment/30">
-                <h3 className="font-heading text-2xl text-teak">{activeTab === 'live' ? 'Live Flow' : 'External Requests'}</h3>
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="font-heading text-2xl text-teak">{activeTab === 'live' ? 'Live Flow' : activeTab === 'pending' ? 'External Requests' : 'Next 7 Days Appointments'}</h3>
+                  {activeTab === 'live' && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-200">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">LIVE</span>
+                    </div>
+                  )}
+                  {activeTab === 'scheduled' && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
+                      <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">📅 Upcoming</span>
+                    </div>
+                  )}
+                </div>
                 <div className="relative">
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-khaki" />
                   <input type="text" placeholder="Search patients..." className="pl-11 pr-4 py-3 bg-white border border-sandstone rounded-2xl text-xs outline-none focus:border-marigold w-full md:w-64" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -316,7 +344,7 @@ const ReceptionDashboard = () => {
                   <tbody className="divide-y divide-[#AFC4D8]/30">
                     {activeTab === 'live' ? (
                       queue.filter(p => p.patientName.toLowerCase().includes(searchTerm.toLowerCase())).sort((a, b) => a.isEmergency === b.isEmergency ? 0 : a.isEmergency ? -1 : 1).map((p) => (
-                        <tr key={p._id} className={`${p.isEmergency ? 'bg-red-50/50' : ''} hover:bg-parchment/50 transition-colors`}>
+                        <tr key={p._id} className={`${p.isEmergency ? 'bg-red-50/50' : ''} hover:bg-parchment/50 transition-colors animate-in duration-300`}>
                           <td className="px-10 py-6">
                             <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border shadow-sm ${p.isEmergency ? 'border-red-600 bg-red-600 text-white' : 'border-sandstone bg-white'}`}><span className={`text-[8px] font-black uppercase ${p.isEmergency ? 'text-white' : 'text-khaki'}`}>TK</span><span className="font-heading text-xl">{p.tokenNumber}</span></div>
                           </td>
@@ -334,22 +362,78 @@ const ReceptionDashboard = () => {
                           </td>
                         </tr>
                       ))
-                    ) : (
+                    ) : activeTab === 'pending' ? (
                       pendingRequests.map((req) => (
                         <tr key={req._id} className="hover:bg-parchment/50 animate-in fade-in">
-                          <td className="px-10 py-8"><p className="font-bold text-lg text-teak">{req.patientName}</p><span className="text-[8px] font-black uppercase bg-teak text-white px-2 py-0.5 rounded">Pending Approval</span></td>
-                          <td className="px-10 py-8 text-xs text-khaki font-bold">{req.patientPhone}</td>
-                          <td className="px-10 py-8 text-center"><span className="text-[10px] font-black text-marigold uppercase tracking-widest">Awaiting Verification</span></td>
+                          <td className="px-10 py-8">
+                            <div>
+                              <p className="font-bold text-lg text-teak">{req.patientName}</p>
+                              <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${req.visitType === 'Appointment' ? 'bg-blue-100 text-blue-700' : 'bg-teak text-white'}`}>
+                                {req.visitType === 'Appointment' ? '📅 Appointment Request' : 'Walk-in Request'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-10 py-8 text-xs text-khaki font-bold">
+                            <div>
+                              <p>{req.patientPhone}</p>
+                              {req.visitType === 'Appointment' && req.appointmentDate && (
+                                <p className="text-[10px] text-marigold font-black mt-1">
+                                  📅 {new Date(req.appointmentDate).toLocaleDateString('en-IN')}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-10 py-8 text-center">
+                            <div>
+                              <span className="text-[10px] font-black text-marigold uppercase tracking-widest">Awaiting Verification</span>
+                              {req.doctorId?.name && (
+                                <p className="text-[9px] text-khaki mt-2">Dr. {req.doctorId.name}</p>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-10 py-8 text-right flex justify-end gap-3">
-                            <button disabled={isProcessing} onClick={() => handleApprove(req._id)} className="flex items-center gap-2 px-6 py-3 bg-marigold text-white rounded-2xl text-[9px] font-black uppercase shadow-lg hover:scale-105 transition-all disabled:opacity-50">{isProcessing ? <RefreshCw size={14} className="animate-spin" /> : <UserCheck size={14} />} Approve</button>
+                            <button disabled={isProcessing} onClick={() => handleApprove(req._id)} className="flex items-center gap-2 px-6 py-3 bg-marigold text-white rounded-2xl text-[9px] font-black uppercase shadow-lg hover:scale-105 transition-all disabled:opacity-50">{isProcessing ? <RefreshCw size={14} className="animate-spin" /> : <UserCheck size={14} />} Approve & Notify</button>
                             <button className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 transition-all"><XCircle size={18} /></button>
                           </td>
+                        </tr>
+                      ))
+                    ) : (
+                      scheduledAppointments.filter(apt => apt.patientName.toLowerCase().includes(searchTerm.toLowerCase())).map((apt) => (
+                        <tr key={apt._id} className="hover:bg-blue-50/30 transition-colors animate-in">
+                          <td className="px-10 py-6">
+                            <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center border border-blue-200 shadow-sm bg-blue-50">
+                              <span className="text-[8px] font-black uppercase text-blue-600">📅</span>
+                              <span className="font-heading text-sm text-blue-600">{apt.appointmentDate ? new Date(apt.appointmentDate).getDate() : '-'}</span>
+                            </div>
+                          </td>
+                          <td className="px-10 py-6">
+                            <p className="font-bold text-teak">{apt.patientName}</p>
+                            <p className="text-[10px] text-khaki font-bold">{apt.patientPhone}</p>
+                          </td>
+                          <td className="px-10 py-6">
+                            <div>
+                              <p className="text-sm font-bold text-teak">Dr. {apt.doctorId?.name}</p>
+                              <p className="text-[10px] text-khaki">{apt.doctorId?.specialization}</p>
+                              <p className="text-[9px] text-blue-600 font-black mt-2 uppercase">📅 {apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+                            </div>
+                          </td>
+                          <td className="px-10 py-6 text-center">
+                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter border ${apt.status === 'Waiting' ? 'bg-blue-100 text-blue-700 border-blue-200' : apt.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
+                              {apt.status.replace('-', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-10 py-6 text-right">-</td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
+              {activeTab === 'live' && (
+                <div className="px-10 py-4 border-t border-sandstone bg-parchment/20 text-center">
+                  <p className="text-[8px] text-khaki opacity-60">Last updated: {new Date(lastQueueUpdate).toLocaleTimeString()}</p>
+                </div>
+              )}
             </div>
           </div>
         </main>

@@ -12,6 +12,8 @@ const socket = SOCKET_URL ? io(SOCKET_URL) : { on: () => { }, off: () => { }, em
 
 const DoctorDashboard = () => {
   const [myQueue, setMyQueue] = useState([]);
+  const [scheduledAppointments, setScheduledAppointments] = useState([]);
+  const [activeTab, setActiveTab] = useState('consultation');
   const [notes, setNotes] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
   const [medicines, setMedicines] = useState([{ name: '', time: '', amount: '', total: '' }]);
@@ -20,6 +22,7 @@ const DoctorDashboard = () => {
   const [patientData, setPatientData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEditingVitals, setIsEditingVitals] = useState(false);
+  const [lastQueueUpdate, setLastQueueUpdate] = useState(Date.now());
   const [editableVitals, setEditableVitals] = useState({
     bloodPressure: '',
     pulseRate: '',
@@ -56,34 +59,70 @@ const DoctorDashboard = () => {
       });
 
       setMyQueue(sortedQueue);
+      setLastQueueUpdate(Date.now()); // 🔴 Update timestamp for live indicator
     } catch (err) {
       if (err.response?.status === 401) navigate('/login');
     }
   }, [token, navigate]);
 
+  const fetchScheduledAppointments = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/queue/my-scheduled`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('📅 Scheduled Appointments Fetched:', res.data.data);
+      setScheduledAppointments(res.data.data);
+    } catch (err) {
+      console.error('Failed to fetch scheduled appointments', err);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchMyStatus();
     fetchMyQueue();
+    fetchScheduledAppointments();
 
     if (clinicId) {
       socket.emit('joinClinic', clinicId);
       socket.on('queueUpdate', () => {
         console.log("♻️ [SOCKET] Queue update detected. Syncing...");
         fetchMyQueue();
+        fetchScheduledAppointments();
       });
       socket.on('doctorStatusChanged', () => { fetchMyStatus(); });
     }
 
+    // 🔄 Live Queue Polling - Refresh every 5 seconds to ensure real-time updates
+    const pollInterval = setInterval(() => {
+      fetchMyQueue();
+      fetchScheduledAppointments();
+    }, 5000);
+
     return () => {
       socket.off('queueUpdate');
       socket.off('doctorStatusChanged');
+      clearInterval(pollInterval);
     };
-  }, [token, clinicId, fetchMyQueue, fetchMyStatus]);
+  }, [token, clinicId, fetchMyQueue, fetchMyStatus, fetchScheduledAppointments]);
 
   const activePatient = myQueue.find(p => p.status === 'In-Consultation');
 
+  // Helper function to check if appointment date is today
+  const isToday = (date) => {
+    if (!date) return false;
+    const appointmentDate = new Date(date);
+    const today = new Date();
+    return appointmentDate.toDateString() === today.toDateString();
+  };
+
   // Separating patients who are in the "Primary Waiting" vs "Lab Monitoring"
-  const primaryWaitingList = myQueue.filter(p => p.status === 'Waiting' && p.currentStage !== 'Lab-Pending' && p.currentStage !== 'Lab-Completed');
+  // Only show patients with today's appointment date or walk-ins
+  const primaryWaitingList = myQueue.filter(p => 
+    p.status === 'Waiting' && 
+    p.currentStage !== 'Lab-Pending' && 
+    p.currentStage !== 'Lab-Completed' &&
+    (isToday(p.appointmentDate) || p.visitType === 'Walk-in')
+  );
   const labMonitoringList = myQueue.filter(p => p.currentStage === 'Lab-Pending' || p.currentStage === 'Lab-Completed');
 
   useEffect(() => {
@@ -283,8 +322,16 @@ const DoctorDashboard = () => {
       <Sidebar role="doctor" />
       <div className="flex-grow flex flex-col h-screen overflow-y-auto">
         <nav className="bg-white border-b border-sandstone px-8 py-4 flex justify-between items-center shadow-sm sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <h1 className="font-heading text-xl text-teak">Consultation Hub</h1>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 border-r border-sandstone pr-6">
+              <button onClick={() => setActiveTab('consultation')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'consultation' ? 'bg-teak text-white shadow-lg' : 'text-khaki hover:bg-parchment'}`}>
+                💊 Consultation
+              </button>
+              <button onClick={() => setActiveTab('scheduled')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-khaki hover:bg-parchment'}`}>
+                📅 Scheduled
+                {scheduledAppointments.length > 0 && <span className="bg-white text-blue-600 px-2 py-0.5 rounded-full text-[8px] font-black">{scheduledAppointments.length}</span>}
+              </button>
+            </div>
             <button onClick={handleToggleBreak} className={`flex items-center gap-2 px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${isOnBreak ? 'bg-red-500 text-white shadow-lg' : 'bg-parchment text-khaki border border-sandstone hover:border-marigold'}`}>
               {isOnBreak ? <Play size={12} fill="currentColor" /> : <Coffee size={12} />} {isOnBreak ? 'Resume Duty' : 'Take Break'}
             </button>
@@ -292,6 +339,7 @@ const DoctorDashboard = () => {
           <p className="text-[10px] font-black uppercase text-marigold tracking-widest underline decoration-2">Dr. {localStorage.getItem('userName') || 'Physician'}</p>
         </nav>
 
+        {activeTab === 'consultation' ? (
         <main className="p-6 lg:p-10 max-w-7xl mx-auto w-full grid lg:grid-cols-4 gap-10">
           <div className="lg:col-span-3 space-y-8">
             <section>
@@ -485,10 +533,16 @@ const DoctorDashboard = () => {
 
             {/* --- NEW SECTION: LAB MONITORING --- */}
             <section className="mt-12">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-khaki mb-6">Lab Monitoring Area</h2>
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-khaki">Lab Monitoring Area</h2>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">LIVE</span>
+                </div>
+              </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {labMonitoringList.map(p => (
-                  <div key={p._id} className={`p-6 rounded-[2.5rem] border bg-white transition-all ${p.currentStage === 'Lab-Completed' ? 'border-green-200 ring-2 ring-green-50' : 'border-sandstone opacity-60'}`}>
+                  <div key={p._id} className={`p-6 rounded-[2.5rem] border bg-white transition-all animate-in duration-300 ${p.currentStage === 'Lab-Completed' ? 'border-green-200 ring-2 ring-green-50' : 'border-sandstone opacity-60'}`}>
                     <div className="flex justify-between items-start mb-3">
                       <span className={`text-[9px] font-black px-2 py-1 rounded-lg ${p.currentStage === 'Lab-Completed' ? 'bg-green-500 text-white animate-pulse' : 'bg-parchment text-khaki'}`}>
                         {p.currentStage === 'Lab-Completed' ? 'REPORT READY' : 'IN LAB'}
@@ -508,15 +562,24 @@ const DoctorDashboard = () => {
                   </div>
                 )}
               </div>
+              <div className="mt-4 pt-4 border-t border-sandstone text-center">
+                <p className="text-[8px] text-khaki opacity-60">Last updated: {new Date(lastQueueUpdate).toLocaleTimeString()}</p>
+              </div>
             </section>
           </div>
 
           {/* --- RIGHT SIDE: PRIMARY LIVE QUEUE --- */}
           <div className="lg:col-span-1 space-y-6">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-khaki">Waiting Lounge</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-khaki">Waiting Lounge</h2>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">LIVE</span>
+              </div>
+            </div>
             <div className="space-y-4">
               {primaryWaitingList.map((patient, index) => (
-                <div key={patient._id} className={`p-6 rounded-[2.5rem] border transition-all ${patient.isEmergency ? 'bg-red-50 border-red-600 ring-2 ring-red-200 animate-pulse' : 'bg-white border-sandstone'}`}>
+                <div key={patient._id} className={`p-6 rounded-[2.5rem] border transition-all animate-in duration-300 ${patient.isEmergency ? 'bg-red-50 border-red-600 ring-2 ring-red-200 animate-pulse' : 'bg-white border-sandstone'}`}>
                   <div className="flex justify-between items-start">
                     <div className="space-y-1"><div className="flex items-center gap-2"><span className={`text-[10px] font-black px-2 py-0.5 rounded ${patient.isEmergency ? 'bg-red-600 text-white' : 'bg-marigold/10 text-marigold'}`}>#{patient.tokenNumber}</span> {patient.isEmergency && <Siren size={12} className="text-red-600" />}</div><p className="font-bold text-sm">{patient.patientName}</p></div>
                     {!activePatient && !isOnBreak && index === 0 && (
@@ -531,9 +594,81 @@ const DoctorDashboard = () => {
                   <p className="text-[10px] font-black uppercase">Lounge Empty</p>
                 </div>
               )}
+              <div className="pt-4 border-t border-sandstone text-center">
+                <p className="text-[8px] text-khaki opacity-60">Last updated: {new Date(lastQueueUpdate).toLocaleTimeString()}</p>
+              </div>
             </div>
           </div>
         </main>
+        ) : (
+        <main className="p-6 lg:p-10 max-w-7xl mx-auto w-full">
+          {/* --- SCHEDULED APPOINTMENTS VIEW --- */}
+          <section>
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-khaki">📅 Scheduled Appointments</h2>
+                <span className="bg-blue-500 text-white text-[8px] font-black px-3 py-1 rounded-full">{scheduledAppointments.length}</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">NEXT 7 DAYS</span>
+              </div>
+            </div>
+            
+            <div className="bg-white border border-sandstone rounded-[2.5rem] overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-blue-50 border-b border-blue-200">
+                      <th className="px-6 py-4 text-left text-[9px] font-black text-blue-700 uppercase tracking-widest">Patient Name</th>
+                      <th className="px-6 py-4 text-left text-[9px] font-black text-blue-700 uppercase tracking-widest">Appointment Date</th>
+                      <th className="px-6 py-4 text-left text-[9px] font-black text-blue-700 uppercase tracking-widest">Reason</th>
+                      <th className="px-6 py-4 text-left text-[9px] font-black text-blue-700 uppercase tracking-widest">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scheduledAppointments.length > 0 ? (
+                      scheduledAppointments.map((apt, idx) => (
+                        <tr key={apt._id} className={`border-b border-sandstone/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-parchment/20'} hover:bg-blue-50/50`}>
+                          <td className="px-6 py-4 font-bold text-teak text-sm">{apt.patientName}</td>
+                          <td className="px-6 py-4 text-[9px] text-khaki font-medium">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg font-black">
+                                {new Date(apt.appointmentDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: '2-digit' })}
+                              </span>
+                              {new Date(apt.appointmentDate).toDateString() === new Date().toDateString() && (
+                                <span className="bg-green-100 text-green-700 px-2 py-1 text-[8px] font-black rounded uppercase">TODAY</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-khaki">
+                            <span className="italic">{apt.reason || apt.consultationReason || '--'}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest ${
+                              apt.isApproved 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {apt.isApproved ? '✓ Confirmed' : '⏱ Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-8 text-center">
+                          <p className="text-[10px] font-black text-khaki uppercase tracking-widest opacity-60">No scheduled appointments in next 7 days</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </main>
+        )}
       </div>
       {showProfile && activePatient && <PatientQuickView phone={activePatient.patientPhone} onClose={() => setShowProfile(false)} />}
     </div>
