@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 import {
   Beaker, Upload, Smartphone, Hash, FileCheck,
   RefreshCw, Activity, Search, ChevronDown, Download,
-  Plus, TestTubes, BarChart3, Filter, Eye, TrendingUp, Clock
+  Plus, TestTubes, BarChart3, Filter, Eye, TrendingUp, Clock, X
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -17,7 +17,59 @@ import MobileNav from '../../components/MobileNav';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-const socket = SOCKET_URL ? io(SOCKET_URL) : { on: () => { }, off: () => { }, emit: () => { } };
+const socket = io(SOCKET_URL || API_URL || 'http://localhost:5000');
+
+// Quick Action Tile Component
+const QuickActionTile = ({ icon, label, color, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center gap-2 p-3 md:p-4 rounded-xl md:rounded-2xl border border-transparent hover:border-gray-100 transition-all ${color} active:scale-95 shadow-sm hover:shadow-md w-full`}
+  >
+    <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg md:rounded-xl flex items-center justify-center shadow-sm">
+      {icon}
+    </div>
+    <span className="text-[9px] md:text-xs font-bold text-center leading-tight uppercase tracking-widest">{label}</span>
+  </button>
+);
+
+// Lab Metric Card Component
+const LabMetricCard = ({ title, value, change, icon, color }) => {
+  const colorMap = {
+    teal: 'bg-teal-50 text-teal-600',
+    blue: 'bg-blue-50 text-blue-600',
+    purple: 'bg-purple-50 text-purple-600',
+    orange: 'bg-orange-50 text-orange-600',
+    green: 'bg-green-50 text-green-600',
+    red: 'bg-red-50 text-red-600'
+  };
+
+  const shortTitle = title
+    .replace('Total Requests', 'Total')
+    .replace('Samples Collected', 'Samples')
+    .replace('In Process', 'Process')
+    .replace('Completed', 'Done')
+    .replace('Pending Reports', 'Pending');
+
+  return (
+    <div className="bg-white p-2 md:p-6 rounded-xl md:rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center md:items-start text-center md:text-left h-24 md:h-auto justify-center min-w-[70px]">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-start w-full mb-1 md:mb-4 gap-1 md:gap-0">
+        <h3 className="hidden md:block text-xs font-bold text-gray-400 uppercase tracking-widest flex-1 text-left leading-tight pr-2">{title}</h3>
+        <div className={`p-1.5 md:p-3 rounded-lg md:rounded-2xl shrink-0 ${colorMap[color]} group-hover:scale-110 transition-transform`}>
+          {icon}
+        </div>
+      </div>
+      <h3 className="md:hidden text-[8px] font-black text-gray-400 uppercase tracking-widest w-full mb-0.5 leading-tight">{shortTitle}</h3>
+      <p className="text-sm md:text-3xl font-black text-gray-900 mb-0 md:mb-1">{value}</p>
+      {change && (
+        <div className="hidden md:flex items-center gap-1 mt-1">
+          <TrendingUp size={12} className={change.startsWith('+') ? 'text-green-500' : 'text-red-500'} />
+          <span className={`text-[10px] font-bold ${change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{change}</span>
+          <span className="text-[10px] text-gray-400 hidden sm:inline">from yesterday</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const LabDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +79,7 @@ const LabDashboard = () => {
   const [error, setError] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('All');
   const [recentReports, setRecentReports] = useState([]);
@@ -144,6 +197,13 @@ const LabDashboard = () => {
 
     // Socket connection handlers
     const setupSocketListeners = () => {
+      // Check if already connected (e.g. from a previous fast connection)
+      if (socket.connected) {
+        setSocketConnected(true);
+        socket.emit('joinClinic', clinicId);
+        console.log("🧪 Lab Dashboard joined Clinic Room (instant):", clinicId);
+      }
+
       // Connection events
       socket.on('connect', () => {
         console.log("✅ Socket.io connected:", socket.id);
@@ -199,7 +259,7 @@ const LabDashboard = () => {
     if (!newTestForm.patientName || !newTestForm.patientPhone) {
       return Swal.fire('Invalid Input', 'Please enter patient name and phone', 'warning');
     }
-    
+
     try {
       const res = await axios.post(`${API_URL}/api/queue/create`, {
         patientName: newTestForm.patientName,
@@ -211,7 +271,7 @@ const LabDashboard = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.data.success) {
         Swal.fire('Success', 'New test request created', 'success');
         setNewTestForm({ patientName: '', patientPhone: '', testType: '' });
@@ -227,14 +287,14 @@ const LabDashboard = () => {
     if (!addSampleForm.patientId || !addSampleForm.sampleType) {
       return Swal.fire('Invalid Input', 'Please select patient and sample type', 'warning');
     }
-    
+
     try {
       const res = await axios.put(`${API_URL}/api/queue/${addSampleForm.patientId}`, {
         currentStage: 'Lab-Processing'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (res.data.success) {
         Swal.fire('Success', `${addSampleForm.sampleType} sample added`, 'success');
         setAddSampleForm({ patientId: '', sampleType: '', collectionTime: '' });
@@ -250,23 +310,23 @@ const LabDashboard = () => {
     const doc = new jsPDF();
     const stats = getStats();
     const { labName, primaryColor, headerFontSize, bodyFontSize, reportType } = reportConfig;
-    
+
     // Header
     doc.setFillColor(primaryColor);
     doc.rect(0, 0, 210, 40, 'F');
-    
+
     doc.setTextColor('#FFFFFF');
     doc.setFontSize(headerFontSize);
     doc.text(labName, 20, 25);
-    
+
     doc.setFontSize(10);
     doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 35);
-    
+
     // Content
     doc.setTextColor('#333333');
     doc.setFontSize(headerFontSize - 4);
     doc.text(`Lab Summary Report - ${reportType}`, 20, 60);
-    
+
     doc.setFontSize(bodyFontSize);
     const tableData = [
       ['Metric', 'Value'],
@@ -277,7 +337,7 @@ const LabDashboard = () => {
       ['Pending', stats.pending.toString()],
       ['Completion Rate', `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`]
     ];
-    
+
     autoTable(doc, {
       startY: 70,
       head: [tableData[0]],
@@ -286,7 +346,7 @@ const LabDashboard = () => {
       headStyles: { fillColor: primaryColor, fontSize: bodyFontSize + 2 },
       bodyStyles: { fontSize: bodyFontSize }
     });
-    
+
     doc.save(`lab-report-${reportType}-${new Date().getTime()}.pdf`);
     setShowReportConfigModal(false);
     Swal.fire('Success', `${reportType} PDF report generated`, 'success');
@@ -295,32 +355,32 @@ const LabDashboard = () => {
   const handleDownloadReport = (report) => {
     const doc = new jsPDF();
     const primaryColor = reportConfig.primaryColor;
-    
+
     // Header
     doc.setFillColor(primaryColor);
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.text(reportConfig.labName, 20, 25);
-    
+
     // Patient Info
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(12);
     doc.text('PATIENT REPORT', 20, 55);
     doc.line(20, 58, 190, 58);
-    
+
     doc.setFontSize(10);
     doc.text(`Patient Name: ${report.patientName}`, 20, 70);
     doc.text(`Phone: ${report.patientPhone}`, 20, 75);
     doc.text(`Date: ${new Date(report.createdAt).toLocaleDateString()}`, 140, 70);
     doc.text(`Report ID: ${report._id.slice(-8).toUpperCase()}`, 140, 75);
-    
+
     // Results Table
     const tableData = [
       ['Test Description', 'Result / Notes'],
       [report.requiredTest || 'Diagnostic Test', report.diagnosis || report.notes || 'Results pending review']
     ];
-    
+
     autoTable(doc, {
       startY: 90,
       head: [tableData[0]],
@@ -328,12 +388,12 @@ const LabDashboard = () => {
       theme: 'striped',
       headStyles: { fillColor: primaryColor }
     });
-    
+
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text('This is a computer-generated report and does not require a physical signature.', 20, 280);
-    
+
     doc.save(`report-${report.patientName.replace(/\s+/g, '-')}-${report._id.slice(-4)}.pdf`);
     Swal.fire('Success', 'Report downloaded successfully', 'success');
   };
@@ -527,50 +587,21 @@ const LabDashboard = () => {
               </div>
 
               {/* Key Metrics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-xs font-bold uppercase text-gray-600 tracking-wider">Total Requests</p>
-                    <span className="text-xs text-green-600 font-semibold">+12%</span>
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{stats.total}</p>
-                  <p className="text-xs text-gray-500">from yesterday</p>
+              <div className="flex md:grid overflow-x-auto hide-scrollbar gap-2 md:gap-4 mb-6 md:mb-8 pb-2 md:pb-0 snap-x snap-mandatory md:grid-cols-2 lg:grid-cols-5">
+                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
+                  <LabMetricCard title="Total Requests" value={stats.total} change="+12%" icon={<Activity size={16} className="md:w-5 md:h-5" />} color="teal" />
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-xs font-bold uppercase text-gray-600 tracking-wider">Samples Collected</p>
-                    <span className="text-xs text-green-600 font-semibold">+8%</span>
-                  </div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{stats.samplesCollected}</p>
-                  <p className="text-xs text-gray-500">from yesterday</p>
+                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
+                  <LabMetricCard title="Samples Collected" value={stats.samplesCollected} change="+8%" icon={<TestTubes size={16} className="md:w-5 md:h-5" />} color="blue" />
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-xs font-bold uppercase text-gray-600 tracking-wider">In Process</p>
-                    <span className="text-xs text-blue-600 font-semibold">-5%</span>
-                  </div>
-                  <p className="text-3xl font-bold text-blue-500 mb-1">{stats.inProcess}</p>
-                  <p className="text-xs text-gray-500">from yesterday</p>
+                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
+                  <LabMetricCard title="In Process" value={stats.inProcess} change="-5%" icon={<Clock size={16} className="md:w-5 md:h-5" />} color="orange" />
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-xs font-bold uppercase text-gray-600 tracking-wider">Completed</p>
-                    <span className="text-xs text-green-600 font-semibold">+15%</span>
-                  </div>
-                  <p className="text-3xl font-bold text-green-500 mb-1">{stats.completed}</p>
-                  <p className="text-xs text-gray-500">from yesterday</p>
+                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
+                  <LabMetricCard title="Completed" value={stats.completed} change="+15%" icon={<FileCheck size={16} className="md:w-5 md:h-5" />} color="green" />
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <p className="text-xs font-bold uppercase text-gray-600 tracking-wider">Pending Reports</p>
-                    <span className="text-xs text-red-600 font-semibold">-30%</span>
-                  </div>
-                  <p className="text-3xl font-bold text-red-500 mb-1">{stats.pending}</p>
-                  <p className="text-xs text-gray-500">from yesterday</p>
+                <div className="snap-start shrink-0 min-w-[21%] md:w-auto pr-4 md:pr-0">
+                  <LabMetricCard title="Pending Reports" value={stats.pending} change="-30%" icon={<Beaker size={16} className="md:w-5 md:h-5" />} color="red" />
                 </div>
               </div>
 
@@ -578,8 +609,8 @@ const LabDashboard = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                 {/* --- LEFT COLUMN --- */}
                 <div className="lg:col-span-2 space-y-8">
-                  {/* Quick Actions */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  {/* Quick Actions Desktop */}
+                  <div className="hidden lg:block bg-white p-6 rounded-xl border border-gray-200">
                     <h2 className="text-lg font-bold text-gray-900 mb-6">Quick Actions</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                       <button
@@ -601,7 +632,7 @@ const LabDashboard = () => {
                         <span className="text-xs text-center leading-tight">Add New Sample</span>
                       </button>
                       <button
-                        onClick={() => { setReportConfig({...reportConfig, reportType: 'Daily'}); setShowReportConfigModal(true); }}
+                        onClick={() => { setReportConfig({ ...reportConfig, reportType: 'Daily' }); setShowReportConfigModal(true); }}
                         className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg hover:bg-gray-50 border border-transparent hover:border-teal-100 transition-all text-gray-700 hover:text-teal-600 font-semibold text-sm group"
                       >
                         <div className="w-12 h-12 bg-white border border-gray-200 group-hover:border-teal-200 rounded-lg flex items-center justify-center text-teal-600 shadow-sm transition-all group-hover:shadow text-teal-600">
@@ -657,12 +688,12 @@ const LabDashboard = () => {
 
                     {/* Tabs */}
                     <div className="flex items-center justify-between border-b border-gray-200 px-6">
-                      <div className="flex">
+                      <div className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory -mb-px">
                         {['All', 'In Process', 'Pending', 'Completed', 'Cancelled'].map((tab) => (
                           <button
                             key={tab}
                             onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-                            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${activeTab === tab
+                            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors shrink-0 snap-start ${activeTab === tab
                               ? 'text-teal-600 border-teal-600'
                               : 'text-gray-600 border-transparent hover:text-gray-900'
                               }`}
@@ -671,13 +702,13 @@ const LabDashboard = () => {
                           </button>
                         ))}
                       </div>
-                      <button className="flex items-center gap-2 text-gray-600 text-sm font-semibold hover:text-teal-600 transition-colors">
+                      <button className="hidden sm:flex items-center gap-2 text-gray-600 text-sm font-semibold hover:text-teal-600 transition-colors">
                         <Filter size={16} /> Filters
                       </button>
                     </div>
 
-                    {/* Table */}
-                    <div className="overflow-x-auto">
+                    {/* Table (Desktop View Only) */}
+                    <div className="hidden md:block overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-200 bg-white">
@@ -748,6 +779,67 @@ const LabDashboard = () => {
                       </table>
                     </div>
 
+                    {/* Mobile Card List View */}
+                    <div className="md:hidden divide-y divide-gray-100">
+                      {loading ? (
+                        <div className="px-4 py-8 text-center text-gray-500">
+                          <Beaker className="mx-auto mb-2 text-gray-400 animate-pulse" size={28} />
+                          <p className="text-sm">Loading requests...</p>
+                        </div>
+                      ) : paginatedQueue.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-gray-500">
+                          <FileCheck className="mx-auto mb-2 text-gray-400" size={28} />
+                          <p className="text-sm">No test requests found</p>
+                        </div>
+                      ) : (
+                        paginatedQueue.map((request) => (
+                          <div key={request._id} className="p-4 space-y-3 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-teal-600 font-bold text-xs uppercase tracking-wider">TRF-2025-{request.tokenNumber}</span>
+                                <h4 className="text-sm font-bold text-gray-900 mt-0.5">{request.patientName}</h4>
+                                <span className="text-[10px] text-gray-400 font-mono">#{request._id.slice(-6).toUpperCase()}</span>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${request.currentStage === 'Lab-Completed' ? 'bg-green-50 text-green-600' :
+                                request.currentStage === 'Lab-Processing' ? 'bg-blue-50 text-blue-600' :
+                                  'bg-orange-50 text-orange-600'
+                                }`}>
+                                {request.currentStage === 'Lab-Completed' ? 'Completed' :
+                                  request.currentStage === 'Lab-Processing' ? 'In Process' : 'Pending'}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center text-xs text-gray-600">
+                              <div>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Tests</span>
+                                <span className="font-semibold text-gray-800">{request.requiredTest || 'CBC, RBS, Lipid Profile'}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Priority</span>
+                                <span className={`inline-flex items-center gap-1 font-bold ${request.isEmergency ? 'text-red-500' : 'text-green-500'}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${request.isEmergency ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                                  {request.isEmergency ? 'High' : 'Low'}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2 border-t border-gray-50">
+                              <span className="text-[10px] text-gray-400">
+                                {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <button
+                                onClick={() => handleFileUpload(request.patientPhone, request._id)}
+                                className="flex items-center gap-1 px-3 py-1 bg-teal-50 hover:bg-teal-100 text-teal-600 rounded-lg text-xs font-bold transition-all active:scale-95"
+                              >
+                                <Eye size={12} />
+                                Actions
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
                     {/* Pagination */}
                     {totalPages > 0 && (
                       <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 bg-white">
@@ -792,10 +884,10 @@ const LabDashboard = () => {
                       <h2 className="text-lg font-bold text-gray-900">Recent Samples</h2>
                       <button onClick={() => navigate('/lab/samples')} className="text-teal-600 text-sm font-semibold hover:text-teal-700">View All</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="flex md:grid overflow-x-auto hide-scrollbar gap-4 pb-2 md:pb-0 snap-x snap-mandatory md:grid-cols-4">
                       {/* Sample Cards */}
                       {labQueue.slice(0, 4).map((patient, idx) => (
-                        <div key={patient._id || idx} className="bg-white border border-gray-200 rounded-lg p-4 hover:border-teal-300 transition-colors">
+                        <div key={patient._id || idx} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-teal-300 transition-colors shrink-0 snap-start w-[240px] md:w-auto">
                           <div className="flex items-start gap-3 mb-3">
                             <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
                               {patient.currentStage === 'Lab-Pending' ? <Beaker size={16} /> : patient.currentStage === 'Lab-Processing' ? <TestTubes size={16} /> : <FileCheck size={16} />}
@@ -817,7 +909,7 @@ const LabDashboard = () => {
                         </div>
                       ))}
                       {labQueue.length === 0 && (
-                        <div className="col-span-full py-6 text-center text-gray-500 text-sm">No recent samples available</div>
+                        <div className="col-span-full py-6 text-center text-gray-500 text-sm w-full">No recent samples available</div>
                       )}
                     </div>
                   </div>
@@ -872,7 +964,7 @@ const LabDashboard = () => {
                             <span className="text-gray-700 font-medium">{item.name}</span>
                           </div>
                           <span className="font-bold text-gray-900">
-                            {item.value} 
+                            {item.value}
                             <span className="text-gray-400 font-normal ml-1">
                               ({stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0}%)
                             </span>
@@ -941,50 +1033,6 @@ const LabDashboard = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Recent Reports */}
-                  <div className="bg-white rounded-xl border border-gray-200">
-                    <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                      <h2 className="text-lg font-bold text-gray-900">Recent Reports</h2>
-                      <button onClick={() => navigate('/lab/reports')} className="text-teal-600 text-sm font-semibold hover:text-teal-700">View All</button>
-                    </div>
-                    <div className="p-2">
-                      {recentReports.length > 0 ? (
-                        recentReports.map((report) => (
-                          <div key={report._id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors rounded-lg group border-b border-gray-50 last:border-0">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="w-8 h-8 bg-red-50 text-red-500 rounded flex items-center justify-center flex-shrink-0">
-                                <FileCheck size={16} />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-gray-900">{report.patientName}</p>
-                                <p className="text-xs text-gray-500 font-medium">{report.requiredTest || 'Lipid Profile'}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <p className="text-xs text-gray-500 font-medium hidden md:block">
-                                {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              <button 
-                                onClick={() => handleDownloadReport(report)}
-                                className="text-gray-400 group-hover:text-teal-600 transition-colors"
-                              >
-                                <Download size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-12 text-center text-gray-400">
-                           <FileCheck className="mx-auto mb-2 opacity-20" size={32} />
-                           <p className="text-xs font-bold uppercase tracking-widest">No recent reports found</p>
-                        </div>
-                      )}
-                      <div className="p-4 text-center border-t border-gray-100">
-                        <button onClick={() => navigate('/lab/reports')} className="text-teal-600 text-xs font-semibold hover:text-teal-700">+ 15 more reports</button>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </>
@@ -1002,7 +1050,7 @@ const LabDashboard = () => {
                   <input
                     type="text"
                     value={newTestForm.patientName}
-                    onChange={(e) => setNewTestForm({...newTestForm, patientName: e.target.value})}
+                    onChange={(e) => setNewTestForm({ ...newTestForm, patientName: e.target.value })}
                     placeholder="Enter patient name"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
@@ -1012,7 +1060,7 @@ const LabDashboard = () => {
                   <input
                     type="tel"
                     value={newTestForm.patientPhone}
-                    onChange={(e) => setNewTestForm({...newTestForm, patientPhone: e.target.value})}
+                    onChange={(e) => setNewTestForm({ ...newTestForm, patientPhone: e.target.value })}
                     placeholder="Enter phone number"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   />
@@ -1021,7 +1069,7 @@ const LabDashboard = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Test Type</label>
                   <select
                     value={newTestForm.testType}
-                    onChange={(e) => setNewTestForm({...newTestForm, testType: e.target.value})}
+                    onChange={(e) => setNewTestForm({ ...newTestForm, testType: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   >
                     <option value="">Select Test Type</option>
@@ -1034,7 +1082,7 @@ const LabDashboard = () => {
               </div>
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => {setShowNewTestModal(false); setNewTestForm({ patientName: '', patientPhone: '', testType: '' });}}
+                  onClick={() => { setShowNewTestModal(false); setNewTestForm({ patientName: '', patientPhone: '', testType: '' }); }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -1060,7 +1108,7 @@ const LabDashboard = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Select Patient</label>
                   <select
                     value={addSampleForm.patientId}
-                    onChange={(e) => setAddSampleForm({...addSampleForm, patientId: e.target.value})}
+                    onChange={(e) => setAddSampleForm({ ...addSampleForm, patientId: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   >
                     <option value="">-- Select Patient --</option>
@@ -1075,7 +1123,7 @@ const LabDashboard = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Sample Type</label>
                   <select
                     value={addSampleForm.sampleType}
-                    onChange={(e) => setAddSampleForm({...addSampleForm, sampleType: e.target.value})}
+                    onChange={(e) => setAddSampleForm({ ...addSampleForm, sampleType: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   >
                     <option value="">Select Sample Type</option>
@@ -1088,7 +1136,7 @@ const LabDashboard = () => {
               </div>
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => {setShowAddSampleModal(false); setAddSampleForm({ patientId: '', sampleType: '', collectionTime: '' });}}
+                  onClick={() => { setShowAddSampleModal(false); setAddSampleForm({ patientId: '', sampleType: '', collectionTime: '' }); }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -1157,7 +1205,7 @@ const LabDashboard = () => {
                   <input
                     type="text"
                     value={reportConfig.labName}
-                    onChange={(e) => setReportConfig({...reportConfig, labName: e.target.value})}
+                    onChange={(e) => setReportConfig({ ...reportConfig, labName: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500"
                   />
                 </div>
@@ -1167,13 +1215,13 @@ const LabDashboard = () => {
                     <input
                       type="color"
                       value={reportConfig.primaryColor}
-                      onChange={(e) => setReportConfig({...reportConfig, primaryColor: e.target.value})}
+                      onChange={(e) => setReportConfig({ ...reportConfig, primaryColor: e.target.value })}
                       className="h-10 w-20 border border-gray-300 rounded-lg cursor-pointer"
                     />
                     <input
                       type="text"
                       value={reportConfig.primaryColor}
-                      onChange={(e) => setReportConfig({...reportConfig, primaryColor: e.target.value})}
+                      onChange={(e) => setReportConfig({ ...reportConfig, primaryColor: e.target.value })}
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500"
                     />
                   </div>
@@ -1184,7 +1232,7 @@ const LabDashboard = () => {
                     <input
                       type="number"
                       value={reportConfig.headerFontSize}
-                      onChange={(e) => setReportConfig({...reportConfig, headerFontSize: parseInt(e.target.value)})}
+                      onChange={(e) => setReportConfig({ ...reportConfig, headerFontSize: parseInt(e.target.value) })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500"
                     />
                   </div>
@@ -1193,7 +1241,7 @@ const LabDashboard = () => {
                     <input
                       type="number"
                       value={reportConfig.bodyFontSize}
-                      onChange={(e) => setReportConfig({...reportConfig, bodyFontSize: parseInt(e.target.value)})}
+                      onChange={(e) => setReportConfig({ ...reportConfig, bodyFontSize: parseInt(e.target.value) })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:border-teal-500"
                     />
                   </div>
@@ -1216,6 +1264,24 @@ const LabDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Floating Action Button (Mobile Only) */}
+        <div className="lg:hidden fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3">
+          <div className={`transition-all duration-300 transform origin-bottom-right ${showQuickActions ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+            <div className="bg-white/90 backdrop-blur-xl p-4 rounded-[2rem] shadow-2xl border border-gray-100 grid grid-cols-2 gap-3 mb-2 w-[calc(100vw-2rem)] max-w-sm">
+              <QuickActionTile icon={<Plus size={20} />} label="New Test" color="bg-teal-50 text-teal-600" onClick={() => { setShowNewTestModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<TestTubes size={20} />} label="Add Sample" color="bg-blue-50 text-blue-600" onClick={() => { setShowAddSampleModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<BarChart3 size={20} />} label="Reports" color="bg-orange-50 text-orange-600" onClick={() => { setReportConfig({ ...reportConfig, reportType: 'Daily' }); setShowReportConfigModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<Upload size={20} />} label="Upload" color="bg-purple-50 text-purple-600" onClick={() => { setShowSampleCollectionModal(true); setShowQuickActions(false); }} />
+            </div>
+          </div>
+          <button
+            onClick={() => setShowQuickActions(!showQuickActions)}
+            className="w-16 h-16 bg-teal-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-teal-600/30 hover:bg-teal-700 hover:scale-105 active:scale-95 transition-all z-50 border-4 border-white"
+          >
+            {showQuickActions ? <X size={28} /> : <Plus size={28} />}
+          </button>
+        </div>
 
         <Footer />
       </div>
