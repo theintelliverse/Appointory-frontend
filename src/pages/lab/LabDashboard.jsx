@@ -9,7 +9,8 @@ import autoTable from 'jspdf-autotable';
 import {
   Beaker, Upload, Smartphone, Hash, FileCheck,
   RefreshCw, Activity, Search, ChevronDown, Download,
-  Plus, TestTubes, BarChart3, Filter, Eye, TrendingUp, Clock, X
+  Plus, TestTubes, BarChart3, Filter, Eye, TrendingUp, Clock, X,
+  Type, AlignLeft, FileText, User, Save
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -23,12 +24,12 @@ const socket = io(SOCKET_URL || API_URL || 'http://localhost:5000');
 const QuickActionTile = ({ icon, label, color, onClick }) => (
   <button
     onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-2 p-3 md:p-4 rounded-xl md:rounded-2xl border border-transparent hover:border-gray-100 transition-all ${color} active:scale-95 shadow-sm hover:shadow-md w-full`}
+    className={`flex flex-col items-center justify-center gap-1 p-2 md:p-2.5 rounded-lg md:rounded-xl border border-transparent hover:border-gray-100 transition-all ${color} active:scale-95 shadow-sm hover:shadow-md w-full`}
   >
-    <div className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-lg md:rounded-xl flex items-center justify-center shadow-sm">
+    <div className="w-7 h-7 md:w-8 md:h-8 bg-white rounded-md md:rounded-lg flex items-center justify-center shadow-sm">
       {icon}
     </div>
-    <span className="text-[9px] md:text-xs font-bold text-center leading-tight uppercase tracking-widest">{label}</span>
+    <span className="text-[8px] md:text-[9px] font-bold text-center leading-tight uppercase tracking-widest">{label}</span>
   </button>
 );
 
@@ -51,22 +52,23 @@ const LabMetricCard = ({ title, value, change, icon, color }) => {
     .replace('Pending Reports', 'Pending');
 
   return (
-    <div className="bg-white p-2 md:p-3 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group flex flex-col items-center md:items-start text-center md:text-left h-24 justify-center min-w-[70px]">
-      <div className="flex flex-col md:flex-row justify-between items-center md:items-start w-full mb-1 md:mb-1.5 gap-1 md:gap-0">
-        <h3 className="hidden md:block text-[10px] font-black text-gray-400 uppercase tracking-widest flex-1 text-left leading-tight pr-2">{title}</h3>
-        <div className={`p-1.5 rounded-lg shrink-0 ${colorMap[color]} group-hover:scale-110 transition-transform`}>
+    <div className="bg-white px-3 py-2 rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-teal-200 cursor-pointer transition-all flex items-center justify-between gap-2 w-full group">
+      <div className="flex items-center gap-2.5">
+        <div className={`p-1.5 rounded-lg ${colorMap[color]} group-hover:scale-110 transition-transform`}>
           {icon}
         </div>
-      </div>
-      <h3 className="md:hidden text-[8px] font-black text-gray-400 uppercase tracking-widest w-full mb-0.5 leading-tight">{shortTitle}</h3>
-      <p className="text-sm md:text-2xl font-black text-gray-900 mb-0">{value}</p>
-      {change && (
-        <div className="hidden md:flex items-center gap-1 mt-0.5">
-          <TrendingUp size={10} className={change.startsWith('+') ? 'text-green-500' : 'text-red-500'} />
-          <span className={`text-[9px] font-bold ${change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{change}</span>
-          <span className="text-[10px] text-gray-400 hidden sm:inline">from yesterday</span>
+        <div className="flex flex-col text-left">
+          <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{shortTitle}</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm md:text-lg font-black text-gray-900 leading-none">{value}</span>
+            {change && (
+              <span className={`text-[9px] font-bold ${change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                {change}
+              </span>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -110,7 +112,7 @@ const LabDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadModalPatient, setUploadModalPatient] = useState(null);
   const [selectedUploadFiles, setSelectedUploadFiles] = useState([]);
-  const itemsPerPage = 8;
+  const itemsPerPage = 3;
 
   const token = localStorage.getItem('token');
   const clinicId = localStorage.getItem('clinicId');
@@ -765,9 +767,9 @@ const LabDashboard = () => {
     <div className="flex min-h-screen bg-gray-50 font-body text-gray-900 flex-col md:flex-row">
       <Sidebar role="lab" />
 
-      <div className="flex-grow flex flex-col min-h-screen overflow-y-auto pb-20 md:pb-0">
+      <div className="flex-grow flex flex-col min-h-screen overflow-y-auto">
         {/* Top Navigation */}
-        <nav className="bg-white border-b border-gray-200 px-4 md:px-8 py-4 flex justify-between items-center gap-4 shadow-sm sticky top-0 z-30">
+        <nav className="bg-white border-b border-gray-200 px-3 md:px-5 py-3 flex justify-between items-center gap-4 shadow-sm sticky top-0 z-30">
           <div className="flex items-center gap-4 flex-1">
             <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center text-white shadow-lg">
               <Beaker size={20} />
@@ -806,7 +808,7 @@ const LabDashboard = () => {
         </nav>
 
         {/* Main Content */}
-        <main className="px-4 md:px-8 py-6 flex-grow max-w-7xl mx-auto w-full">
+        <main className="p-3 md:p-5 flex-grow max-w-7xl mx-auto w-full overflow-y-auto">
           {/* Loading State - Show on first load only */}
           {loading && labQueue.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
@@ -842,17 +844,17 @@ const LabDashboard = () => {
           {!error && (
             <>
               {/* Header */}
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-1">LabDashboard</h1>
-                  <p className="text-gray-600 flex items-center gap-2">
-                    <Activity size={16} className="text-teal-500" />
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-lg font-bold text-gray-900">LabDashboard</h1>
+                  <p className="hidden md:flex text-xs text-gray-400 items-center gap-2">
+                    <Activity size={14} className="text-teal-500" />
                     Diagnostic Laboratory Management
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Last update: {lastUpdate.toLocaleTimeString()}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="text-right flex items-center gap-3">
+                  <p className="text-[10px] text-gray-400">Last update: {lastUpdate.toLocaleTimeString()}</p>
+                  <div className="flex items-center gap-1">
                     <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-yellow-500 animate-pulse' : socketConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                     <span className="text-xs text-gray-600">
                       {isSyncing ? 'Syncing...' : socketConnected ? 'Live' : 'Offline'}
@@ -861,36 +863,36 @@ const LabDashboard = () => {
                 </div>
               </div>
 
-              {/* Key Metrics Cards */}
-              <div className="flex md:grid overflow-x-auto hide-scrollbar gap-2 md:gap-4 mb-6 md:mb-8 pb-2 md:pb-0 snap-x snap-mandatory md:grid-cols-2 lg:grid-cols-5">
-                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
-                  <LabMetricCard title="Total Requests" value={stats.total} change="+12%" icon={<Activity size={16} className="md:w-5 md:h-5" />} color="teal" />
-                </div>
-                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
-                  <LabMetricCard title="Samples Collected" value={stats.samplesCollected} change="+8%" icon={<TestTubes size={16} className="md:w-5 md:h-5" />} color="blue" />
-                </div>
-                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
-                  <LabMetricCard title="In Process" value={stats.inProcess} change="-5%" icon={<Clock size={16} className="md:w-5 md:h-5" />} color="orange" />
-                </div>
-                <div className="snap-start shrink-0 min-w-[21%] md:w-auto">
-                  <LabMetricCard title="Completed" value={stats.completed} change="+15%" icon={<FileCheck size={16} className="md:w-5 md:h-5" />} color="green" />
-                </div>
-                <div className="snap-start shrink-0 min-w-[21%] md:w-auto pr-4 md:pr-0">
-                  <LabMetricCard title="Pending Reports" value={stats.pending} change="-30%" icon={<Beaker size={16} className="md:w-5 md:h-5" />} color="red" />
-                </div>
-              </div>
-
               {/* Main Two-Column Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
                 {/* --- LEFT COLUMN --- */}
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-4">
+
+                  {/* Key Metrics Cards (Moved inline with the pie chart) */}
+                  <div className="flex overflow-x-auto hide-scrollbar gap-3 md:gap-4 pb-2 snap-x snap-mandatory">
+                    <div className="snap-start shrink-0 w-[130px] md:w-[140px]">
+                      <LabMetricCard title="Total Requests" value={stats.total} change="+12%" icon={<Activity size={16} className="md:w-5 md:h-5" />} color="teal" />
+                    </div>
+                    <div className="snap-start shrink-0 w-[130px] md:w-[140px]">
+                      <LabMetricCard title="Samples Collected" value={stats.samplesCollected} change="+8%" icon={<TestTubes size={16} className="md:w-5 md:h-5" />} color="blue" />
+                    </div>
+                    <div className="snap-start shrink-0 w-[130px] md:w-[140px]">
+                      <LabMetricCard title="In Process" value={stats.inProcess} change="-5%" icon={<Clock size={16} className="md:w-5 md:h-5" />} color="orange" />
+                    </div>
+                    <div className="snap-start shrink-0 w-[130px] md:w-[140px]">
+                      <LabMetricCard title="Completed" value={stats.completed} change="+15%" icon={<FileCheck size={16} className="md:w-5 md:h-5" />} color="green" />
+                    </div>
+                    <div className="snap-start shrink-0 w-[130px] md:w-[140px]">
+                      <LabMetricCard title="Pending Reports" value={stats.pending} change="-30%" icon={<Beaker size={16} className="md:w-5 md:h-5" />} color="red" />
+                    </div>
+                  </div>
 
                   {/* Test Requests Table */}
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-200 bg-white">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b border-gray-100 bg-white">
                       <div>
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                          <Activity size={18} className="text-teal-600 animate-pulse" />
+                        <h2 className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                          <Activity size={14} className="text-teal-600" />
                           Test Requests Queue
                         </h2>
                         <p className="text-xs text-gray-400 mt-0.5 font-medium">Manage patient diagnostics, collections and digital reports</p>
@@ -924,7 +926,7 @@ const LabDashboard = () => {
                           <button
                             key={tab}
                             onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-                            className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors shrink-0 snap-start ${activeTab === tab
+                            className={`px-3 py-2 text-[10px] font-bold border-b-2 transition-colors shrink-0 snap-start ${activeTab === tab
                               ? 'text-teal-600 border-teal-600'
                               : 'text-gray-600 border-transparent hover:text-gray-900'
                               }`}
@@ -933,8 +935,8 @@ const LabDashboard = () => {
                           </button>
                         ))}
                       </div>
-                      <button className="hidden sm:flex items-center gap-2 text-gray-600 text-sm font-semibold hover:text-teal-600 transition-colors">
-                        <Filter size={16} /> Filters
+                      <button className="hidden sm:flex items-center gap-1.5 text-gray-600 text-[10px] font-bold hover:text-teal-600 transition-colors">
+                        <Filter size={14} /> Filters
                       </button>
                     </div>
 
@@ -943,13 +945,13 @@ const LabDashboard = () => {
                       <table className="w-full text-sm border-collapse min-w-[720px]">
                         <thead>
                           <tr className="border-b border-gray-200 bg-gray-50/75 backdrop-blur-sm">
-                            <th className="w-[8%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Request ID</th>
-                            <th className="w-[24%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Patient Details</th>
-                            <th className="w-[15%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Referred Tests</th>
-                            <th className="w-[12%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="w-[12%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Priority</th>
-                            <th className="w-[13%] px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Requested On</th>
-                            <th className="w-[16%] px-3 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th className="w-[8%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Request ID</th>
+                            <th className="w-[24%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Patient Details</th>
+                            <th className="w-[15%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Referred Tests</th>
+                            <th className="w-[12%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Status</th>
+                            <th className="w-[12%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Priority</th>
+                            <th className="w-[13%] px-2 py-3 text-left text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Requested On</th>
+                            <th className="w-[16%] px-2 py-3 text-center text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100/80">
@@ -960,48 +962,62 @@ const LabDashboard = () => {
                                 <p className="font-semibold text-gray-700">Loading requests...</p>
                               </td>
                             </tr>
-                          ) : paginatedQueue.length === 0 ? (
-                            <tr>
-                              <td colSpan="7" className="px-3 py-12 text-center text-gray-500">
-                                <FileCheck className="mx-auto mb-3 text-gray-300" size={36} />
-                                <p className="font-semibold text-gray-700">No test requests found</p>
-                                <p className="text-xs text-gray-400 mt-1">All samples have been processed and published!</p>
-                              </td>
-                            </tr>
                           ) : (
-                            paginatedQueue.map((request) => {
+                            Array.from({ length: itemsPerPage }).map((_, index) => {
+                              const request = paginatedQueue[index];
+                              if (!request) {
+                                if (index === 0 && paginatedQueue.length === 0) {
+                                  return (
+                                    <tr key={`empty-state`}>
+                                      <td colSpan="7" className="px-3 py-12 text-center text-gray-500 h-[64px]">
+                                        <FileCheck className="mx-auto mb-3 text-gray-300" size={36} />
+                                        <p className="font-semibold text-gray-700">No test requests found</p>
+                                        <p className="text-xs text-gray-400 mt-1">All samples have been processed and published!</p>
+                                      </td>
+                                    </tr>
+                                  );
+                                }
+                                return (
+                                  <tr key={`dummy-${index}`} className="opacity-0 pointer-events-none border-b border-transparent">
+                                    <td className="px-3 py-3 align-middle h-[64px]" colSpan="7">
+                                      <span className="invisible">Dummy</span>
+                                    </td>
+                                  </tr>
+                                );
+                              }
+
                               const initials = request.patientName
                                 ? request.patientName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
                                 : 'PT';
                               return (
                                 <tr key={request._id} className="hover:bg-gradient-to-r hover:from-teal-50/[0.04] hover:to-indigo-50/[0.04] transition-all duration-300 group">
-                                  <td className="px-3 py-6.5 align-middle">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100/50">
+                                  <td className="px-3 py-3 align-middle">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-100/50">
                                       TRF-{request.tokenNumber || '00'}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle">
+                                  <td className="px-3 py-3 align-middle">
                                     <div className="flex items-center gap-2.5">
-                                      <div className="w-8.5 h-8.5 rounded-full bg-gradient-to-br from-teal-500 to-emerald-400 flex items-center justify-center text-white font-extrabold text-[11px] shadow-md border-2 border-white ring-2 ring-teal-100 group-hover:scale-105 transition-transform shrink-0">
+                                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-emerald-400 flex items-center justify-center text-white font-extrabold text-[9px] shadow-md border-2 border-white ring-2 ring-teal-100 group-hover:scale-105 transition-transform shrink-0">
                                         {initials}
                                       </div>
                                       <div>
-                                        <p className="text-gray-900 font-extrabold text-[13px] group-hover:text-teal-700 transition-colors leading-tight">{request.patientName}</p>
-                                        <p className="text-[11px] text-gray-400 font-medium flex items-center gap-0.5 mt-0.5">
+                                        <p className="text-gray-900 font-extrabold text-[11px] group-hover:text-teal-700 transition-colors leading-tight">{request.patientName}</p>
+                                        <p className="text-[9px] text-gray-400 font-medium flex items-center gap-0.5 mt-0.5">
                                           <Smartphone size={10} className="text-gray-300 animate-pulse" />
                                           {request.patientPhone}
                                         </p>
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle">
+                                  <td className="px-3 py-3 align-middle">
                                     <div className="flex items-center gap-1 bg-teal-50/30 border border-teal-100/50 text-teal-800 px-2 py-1 rounded-lg w-fit shadow-sm">
                                       <Beaker size={11} className="text-teal-600" />
-                                      <span className="font-bold text-[11px]">{request.requiredTest || 'Routine Diagnosis'}</span>
+                                      <span className="font-bold text-[10px]">{request.requiredTest || 'Routine Diagnosis'}</span>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle">
-                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm ${request.currentStage === 'Lab-Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  <td className="px-3 py-3 align-middle">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold shadow-sm ${request.currentStage === 'Lab-Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                                       request.currentStage === 'Lab-Processing' ? 'bg-sky-50 text-sky-700 border border-sky-200' :
                                         'bg-amber-50 text-amber-700 border border-amber-200'
                                       }`}>
@@ -1019,44 +1035,44 @@ const LabDashboard = () => {
                                         request.currentStage === 'Lab-Processing' ? 'In Process' : 'Pending'}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle">
-                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm ${request.isEmergency ? 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse' : 'bg-slate-50 text-slate-600 border border-gray-200'
+                                  <td className="px-3 py-3 align-middle">
+                                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold shadow-sm ${request.isEmergency ? 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse' : 'bg-slate-50 text-slate-600 border border-gray-200'
                                       }`}>
                                       <span className={`w-1.5 h-1.5 rounded-full ${request.isEmergency ? 'bg-rose-500' : 'bg-slate-400'}`}></span>
                                       {request.isEmergency ? 'Emergency' : 'Standard'}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle">
+                                  <td className="px-3 py-3 align-middle">
                                     <div className="flex flex-col">
-                                      <span className="text-gray-900 font-bold text-xs">{new Date(request.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                      <span className="text-[10px] text-gray-400 font-medium flex items-center gap-0.5 mt-0.5">
+                                      <span className="text-gray-900 font-bold text-[10px]">{new Date(request.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                      <span className="text-[9px] text-gray-400 font-medium flex items-center gap-0.5 mt-0.5">
                                         <Clock size={10} className="text-gray-300" />
                                         {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-6.5 align-middle text-center">
+                                  <td className="px-3 py-3 align-middle text-center">
                                     {request.currentStage === 'Lab-Completed' ? (
                                       <span className="inline-flex items-center gap-1 text-xs font-extrabold text-gray-400 py-1">
                                         <FileCheck size={14} className="text-gray-400" /> Published
                                       </span>
                                     ) : (
-                                      <div className="flex flex-col items-center justify-center gap-1.5 w-full max-w-[125px] mx-auto">
+                                      <div className="flex items-center justify-center gap-1.5 w-full min-w-[110px] mx-auto">
                                         <button
-                                          className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 bg-teal-50 hover:bg-teal-600 hover:text-white text-teal-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 shadow-sm border border-teal-200/50 hover:shadow-md"
+                                          className="flex-1 inline-flex flex-col sm:flex-row items-center justify-center gap-1 p-1.5 bg-teal-50 hover:bg-teal-600 hover:text-white text-teal-600 rounded-lg text-[8px] font-extrabold uppercase tracking-widest transition-all active:scale-95 shadow-sm border border-teal-200/50 hover:shadow-md"
                                           onClick={() => handleFileUpload(request.patientPhone, request._id)}
                                           title="Upload Clinical Files"
                                         >
-                                          <Upload size={12} />
-                                          <span>Upload Report</span>
+                                          <Upload size={14} />
+                                          <span>Upload</span>
                                         </button>
                                         <button
-                                          className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg text-[11px] font-bold transition-all active:scale-95 shadow-sm border border-indigo-200/50 hover:shadow-md"
+                                          className="flex-1 inline-flex flex-col sm:flex-row items-center justify-center gap-1 p-1.5 bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-600 rounded-lg text-[8px] font-extrabold uppercase tracking-widest transition-all active:scale-95 shadow-sm border border-indigo-200/50 hover:shadow-md"
                                           onClick={() => handleOpenDigitalReportModal(request)}
                                           title="Enter report details digitally"
                                         >
-                                          <FileCheck size={12} />
-                                          <span>Fill Digital</span>
+                                          <FileCheck size={10} />
+                                          <span>Digital</span>
                                         </button>
                                       </div>
                                     )}
@@ -1185,61 +1201,60 @@ const LabDashboard = () => {
                   </div>
 
                   {/* Recent Samples */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-lg font-bold text-gray-900">Recent Samples</h2>
-                      <button onClick={() => navigate('/lab/samples')} className="text-teal-600 text-sm font-semibold hover:text-teal-700">View All</button>
+                  <div className="bg-white rounded-xl border border-gray-200 p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="text-sm font-bold text-gray-900">Recent Samples</h2>
+                      <button onClick={() => navigate('/lab/samples')} className="text-teal-600 text-xs font-semibold hover:text-teal-700">View All</button>
                     </div>
-                    <div className="flex md:grid overflow-x-auto hide-scrollbar gap-4 pb-2 md:pb-0 snap-x snap-mandatory md:grid-cols-4">
+                    <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-2 snap-x snap-mandatory">
                       {/* Sample Cards */}
                       {labQueue.slice(0, 4).map((patient, idx) => (
-                        <div key={patient._id || idx} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-teal-300 transition-colors shrink-0 snap-start w-[240px] md:w-auto">
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center flex-shrink-0">
-                              {patient.currentStage === 'Lab-Pending' ? <Beaker size={16} /> : patient.currentStage === 'Lab-Processing' ? <TestTubes size={16} /> : <FileCheck size={16} />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-gray-900 truncate">SMP-2025-{patient.tokenNumber}</p>
-                              <p className="text-[10px] text-gray-500 truncate">{patient.patientName}</p>
-                            </div>
+                        <div key={patient._id || idx} className="bg-white border border-gray-200 rounded-lg p-2.5 hover:border-teal-300 transition-colors shrink-0 snap-start w-[320px] flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            {patient.currentStage === 'Lab-Pending' ? <Beaker size={14} /> : patient.currentStage === 'Lab-Processing' ? <TestTubes size={14} /> : <FileCheck size={14} />}
                           </div>
-                          <p className="text-[10px] font-semibold text-gray-700 mb-4 truncate">{patient.requiredTest || 'CBC, RBS, Lipid Profile'}</p>
-                          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${patient.currentStage === 'Lab-Pending' ? 'bg-orange-50 text-orange-600 border border-orange-100' : patient.currentStage === 'Lab-Processing' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                              {patient.currentStage === 'Lab-Pending' ? 'Testing' : patient.currentStage === 'Lab-Processing' ? 'In Process' : 'Collected'}
-                            </span>
-                            <span className="text-[9px] font-bold text-gray-500">
-                              {new Date(patient.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <div className="flex justify-between items-center mb-0.5">
+                              <p className="text-[11px] font-bold text-gray-900 truncate">SMP-{patient.tokenNumber}</p>
+                              <span className="text-[8px] font-bold text-gray-500">
+                                {new Date(patient.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <p className="text-[9px] text-gray-500 truncate max-w-[120px]">{patient.patientName}</p>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${patient.currentStage === 'Lab-Pending' ? 'bg-orange-50 text-orange-600 border border-orange-100' : patient.currentStage === 'Lab-Processing' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                                {patient.currentStage === 'Lab-Pending' ? 'Testing' : patient.currentStage === 'Lab-Processing' ? 'In Process' : 'Collected'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       ))}
                       {labQueue.length === 0 && (
-                        <div className="col-span-full py-6 text-center text-gray-500 text-sm w-full">No recent samples available</div>
+                        <div className="col-span-full py-4 text-center text-gray-500 text-xs w-full">No recent samples available</div>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {/* --- RIGHT COLUMN --- */}
-                <div className="lg:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-4">
                   {/* Sample Status Pie Chart */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-200">
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-lg font-bold text-gray-900">Sample Status Overview</h2>
-                      <button onClick={() => navigate('/lab/analytics')} className="text-teal-600 text-xs font-semibold hover:text-teal-700">View Details</button>
+                  <div className="bg-white p-3 rounded-xl border border-gray-200">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="text-[11px] font-bold text-gray-900 uppercase tracking-wide">Sample Status</h2>
+                      <button onClick={() => navigate('/lab/analytics')} className="text-teal-600 text-[9px] font-bold hover:text-teal-700">Details</button>
                     </div>
-                    <div className="flex items-center justify-center mb-6 relative min-h-[180px]">
+                    <div className="flex items-center justify-center mb-2 relative min-h-[90px]">
                       {sampleStatusData.length > 0 && stats.total > 0 ? (
                         <>
-                          <ResponsiveContainer width="100%" height={180}>
+                          <ResponsiveContainer width="100%" height={90}>
                             <PieChart>
                               <Pie
                                 data={sampleStatusData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={55}
-                                outerRadius={80}
+                                innerRadius={30}
+                                outerRadius={45}
                                 paddingAngle={2}
                                 dataKey="value"
                               >
@@ -1251,29 +1266,25 @@ const LabDashboard = () => {
                             </PieChart>
                           </ResponsiveContainer>
                           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-2xl font-bold text-gray-900">{stats.total}</span>
-                            <span className="text-xs text-gray-500">Total Samples</span>
+                            <span className="text-sm font-black text-gray-900 leading-none">{stats.total}</span>
                           </div>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-[180px] text-gray-400">
-                          <Activity size={32} className="opacity-20 mb-2" />
-                          <p className="text-xs">No data to visualize</p>
+                        <div className="flex flex-col items-center justify-center h-[90px] text-gray-400">
+                          <Activity size={16} className="opacity-20 mb-1" />
+                          <p className="text-[9px]">No data</p>
                         </div>
                       )}
                     </div>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {sampleStatusData.map((item) => (
-                        <div key={item.name} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                            <span className="text-gray-700 font-medium">{item.name}</span>
+                        <div key={item.name} className="flex items-center justify-between text-[9px] bg-gray-50/80 px-1.5 py-1 rounded">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }}></div>
+                            <span className="text-gray-700 font-bold truncate">{item.name}</span>
                           </div>
-                          <span className="font-bold text-gray-900">
+                          <span className="font-black text-gray-900">
                             {item.value}
-                            <span className="text-gray-400 font-normal ml-1">
-                              ({stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0}%)
-                            </span>
                           </span>
                         </div>
                       ))}
@@ -1282,61 +1293,61 @@ const LabDashboard = () => {
 
                   {/* Dashboard Summary */}
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                      <h2 className="text-lg font-bold text-gray-900">Dashboard Summary</h2>
-                      <div className="flex items-center gap-1 text-sm font-semibold text-gray-600 cursor-pointer">
-                        This Month <ChevronDown size={14} />
+                    <div className="flex justify-between items-center p-2.5 px-3 border-b border-gray-200">
+                      <h2 className="text-xs font-bold text-gray-900">Dashboard Summary</h2>
+                      <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-600 cursor-pointer">
+                        This Month <ChevronDown size={12} />
                       </div>
                     </div>
-                    <div className="p-6 space-y-5">
+                    <div className="p-3 space-y-1.5">
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded flex items-center justify-center">
-                            <FileCheck size={16} />
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 bg-purple-50 text-purple-600 rounded flex items-center justify-center">
+                            <FileCheck size={10} />
                           </div>
-                          <p className="text-sm font-semibold text-gray-700">Reports Generated</p>
+                          <p className="text-[10px] font-semibold text-gray-700">Reports Generated</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-bold text-gray-900">{stats.completed}</p>
-                          <span className="text-xs font-bold text-green-600 w-10 text-right">
-                            {stats.completed > 0 ? `↑ ${Math.min(100, Math.round((stats.completed / (stats.total || 1)) * 100))}%` : '0%'}
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-gray-900 text-[11px]">{stats.completed}</p>
+                          <span className="text-[10px] font-bold text-green-600 w-8 text-right">
+                            {stats.completed > 0 ? `+${Math.min(100, Math.round((stats.completed / (stats.total || 1)) * 100))}%` : '0%'}
                           </span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-teal-50 text-teal-600 rounded flex items-center justify-center">
-                            <Clock size={16} />
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 bg-teal-50 text-teal-600 rounded flex items-center justify-center">
+                            <Clock size={10} />
                           </div>
-                          <p className="text-sm font-semibold text-gray-700">Average Turnaround Time</p>
+                          <p className="text-[10px] font-semibold text-gray-700">Turnaround Time</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-bold text-gray-900">{getAvgTurnaroundTime()}</p>
-                          <span className="text-xs font-bold text-green-600 w-10 text-right">↓ 8%</span>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-gray-900 text-[11px]">{getAvgTurnaroundTime()}</p>
+                          <span className="text-[10px] font-bold text-green-600 w-8 text-right">- 8%</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-50 text-green-600 rounded flex items-center justify-center">
-                            <Activity size={16} />
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 bg-green-50 text-green-600 rounded flex items-center justify-center">
+                            <Activity size={10} />
                           </div>
-                          <p className="text-sm font-semibold text-gray-700">Test Accuracy</p>
+                          <p className="text-[10px] font-semibold text-gray-700">Test Accuracy</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-bold text-gray-900">{getDynamicAccuracy()}</p>
-                          <span className="text-xs font-bold text-green-600 w-10 text-right">↑ 2%</span>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-gray-900 text-[11px]">{getDynamicAccuracy()}</p>
+                          <span className="text-[10px] font-bold text-green-600 w-8 text-right">+ 2%</span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-red-50 text-red-600 rounded flex items-center justify-center">
-                            <RefreshCw size={16} />
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 bg-red-50 text-red-600 rounded flex items-center justify-center">
+                            <RefreshCw size={10} />
                           </div>
-                          <p className="text-sm font-semibold text-gray-700">Repeat Tests</p>
+                          <p className="text-[10px] font-semibold text-gray-700">Repeat Tests</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-bold text-gray-900">{getDynamicRepeatTests()}</p>
-                          <span className="text-xs font-bold text-red-600 w-10 text-right">0%</span>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-gray-900 text-[11px]">{getDynamicRepeatTests()}</p>
+                          <span className="text-[10px] font-bold text-red-600 w-8 text-right">0%</span>
                         </div>
                       </div>
                     </div>
@@ -1613,109 +1624,120 @@ const LabDashboard = () => {
 
         {/* Digital Report Builder Modal */}
         {showDigitalReportModal && activeDigitalPatient && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-            <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 bg-teak/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+            <div className="bg-parchment rounded-[2rem] max-w-2xl w-full shadow-[0_32px_64px_-12px_rgba(26,60,52,0.3)] overflow-hidden border border-white/50 flex flex-col max-h-[90vh] relative">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-marigold/40 via-marigold to-marigold/40"></div>
+
               {/* Header */}
-              <div className="px-6 py-4 bg-teal-600 text-white flex justify-between items-center">
+              <div className="px-8 py-6 flex justify-between items-center border-b border-sandstone/30 bg-white/40">
                 <div>
-                  <h3 className="text-xl font-bold flex items-center gap-2">
-                    <FileCheck size={22} />
+                  <h3 className="text-2xl font-heading font-bold text-teak flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-marigold to-saffron flex items-center justify-center text-white shadow-lg shadow-marigold/20">
+                      <FileText size={20} strokeWidth={2.5} />
+                    </div>
                     Fill Digital Lab Report
                   </h3>
-                  <p className="text-xs text-teal-100 mt-0.5">Digitally type test values and observations</p>
+                  <p className="text-sm text-khaki font-medium mt-1 ml-13">Digitally type test values and observations</p>
                 </div>
                 <button
                   onClick={() => setShowDigitalReportModal(false)}
-                  className="p-1 rounded-full hover:bg-teal-700 transition-colors text-white"
+                  className="p-2 rounded-xl hover:bg-black/5 transition-colors text-khaki hover:text-teak"
                 >
-                  <X size={20} />
+                  <X size={20} strokeWidth={2.5} />
                 </button>
               </div>
 
               {/* Form Content */}
-              <div className="p-6 overflow-y-auto space-y-6 flex-grow">
+              <div className="p-8 overflow-y-auto space-y-8 flex-grow custom-scrollbar">
                 {/* Patient Summary Card */}
-                <div className="bg-teal-50/50 rounded-xl p-4 border border-teal-100/50 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-white rounded-2xl p-5 border border-sandstone/30 grid grid-cols-2 md:grid-cols-3 gap-5 shadow-sm">
                   <div>
-                    <span className="text-xs text-gray-500 font-semibold block">PATIENT NAME</span>
-                    <span className="font-bold text-gray-800">{activeDigitalPatient.patientName}</span>
+                    <span className="text-[10px] text-khaki font-bold uppercase tracking-[0.15em] block mb-1">Patient Name</span>
+                    <span className="font-bold text-teak text-sm">{activeDigitalPatient.patientName}</span>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 font-semibold block">PHONE NUMBER</span>
-                    <span className="font-bold text-gray-800">{activeDigitalPatient.patientPhone}</span>
+                    <span className="text-[10px] text-khaki font-bold uppercase tracking-[0.15em] block mb-1">Phone Number</span>
+                    <span className="font-bold text-teak text-sm">{activeDigitalPatient.patientPhone}</span>
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <span className="text-xs text-gray-500 font-semibold block">REFERRED TESTS</span>
-                    <span className="font-bold text-teal-700">{activeDigitalPatient.requiredTest || 'CBC, RBS, Urinalysis'}</span>
+                    <span className="text-[10px] text-khaki font-bold uppercase tracking-[0.15em] block mb-1">Referred Tests</span>
+                    <span className="font-bold text-marigold text-sm bg-marigold/10 px-2 py-0.5 rounded-md">{activeDigitalPatient.requiredTest || 'CBC, RBS'}</span>
                   </div>
                 </div>
 
                 {/* Form Inputs */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1">Report Title / Heading</label>
-                    <input
-                      type="text"
-                      value={digitalReportForm.title}
-                      onChange={(e) => setDigitalReportForm({ ...digitalReportForm, title: e.target.value })}
-                      placeholder="e.g. Complete Blood Count (CBC) Report"
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-teal-500 focus:bg-white transition-all text-sm font-semibold"
-                    />
+                <div className="space-y-6">
+                  <div className="space-y-2 group/field">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-khaki ml-4">Report Title / Heading</label>
+                    <div className="relative">
+                      <Type className="absolute left-5 top-1/2 -translate-y-1/2 text-khaki/50" size={16} />
+                      <input
+                        type="text"
+                        value={digitalReportForm.title}
+                        onChange={(e) => setDigitalReportForm({ ...digitalReportForm, title: e.target.value })}
+                        placeholder="e.g. Complete Blood Count (CBC) Report"
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-sandstone rounded-2xl focus:outline-none focus:ring-4 focus:ring-marigold/10 focus:border-marigold transition-all text-sm font-bold text-teak placeholder:text-khaki/40"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1">
-                      Test Results & Observations (Findings)
-                    </label>
-                    <textarea
-                      value={digitalReportForm.findings}
-                      onChange={(e) => setDigitalReportForm({ ...digitalReportForm, findings: e.target.value })}
-                      rows={6}
-                      placeholder={`Type detailed observations, values or parameters. Example:
-- Hemoglobin (Hb): 14.5 g/dL (Ref: 13.0 - 17.0)
-- Total WBC Count: 7,500 /cumm (Ref: 4,000 - 11,000)
-- Platelet Count: 2.8 Lakhs /cumm (Ref: 1.5 - 4.5)`}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-teal-500 focus:bg-white transition-all text-sm font-mono"
-                    />
+                  <div className="space-y-2 group/field">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-khaki ml-4">Test Results & Observations</label>
+                    <div className="relative">
+                      <AlignLeft className="absolute left-5 top-5 text-khaki/50" size={16} />
+                      <textarea
+                        value={digitalReportForm.findings}
+                        onChange={(e) => setDigitalReportForm({ ...digitalReportForm, findings: e.target.value })}
+                        rows={6}
+                        placeholder="Type detailed observations..."
+                        className="w-full pl-12 pr-6 py-4 bg-white border border-sandstone rounded-2xl focus:outline-none focus:ring-4 focus:ring-marigold/10 focus:border-marigold transition-all text-sm font-medium text-teak placeholder:text-khaki/40 custom-scrollbar resize-y min-h-[120px]"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1">Clinical Notes / Pathologist Interpretation</label>
-                    <input
-                      type="text"
-                      value={digitalReportForm.notes}
-                      onChange={(e) => setDigitalReportForm({ ...digitalReportForm, notes: e.target.value })}
-                      placeholder="e.g. Parameters are within healthy limits."
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-teal-500 focus:bg-white transition-all text-sm"
-                    />
+                  <div className="space-y-2 group/field">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-khaki ml-4">Pathologist Interpretation</label>
+                    <div className="relative">
+                      <FileText className="absolute left-5 top-1/2 -translate-y-1/2 text-khaki/50" size={16} />
+                      <input
+                        type="text"
+                        value={digitalReportForm.notes}
+                        onChange={(e) => setDigitalReportForm({ ...digitalReportForm, notes: e.target.value })}
+                        placeholder="e.g. Parameters are within healthy limits."
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-sandstone rounded-2xl focus:outline-none focus:ring-4 focus:ring-marigold/10 focus:border-marigold transition-all text-sm font-medium text-teak placeholder:text-khaki/40"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-gray-500 uppercase tracking-wider mb-1">Authorized Pathologist / Signatory</label>
-                    <input
-                      type="text"
-                      value={digitalReportForm.doctorName}
-                      onChange={(e) => setDigitalReportForm({ ...digitalReportForm, doctorName: e.target.value })}
-                      placeholder="Name and Qualifications"
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-teal-500 focus:bg-white transition-all text-sm"
-                    />
+                  <div className="space-y-2 group/field">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-khaki ml-4">Authorized Signatory</label>
+                    <div className="relative">
+                      <User className="absolute left-5 top-1/2 -translate-y-1/2 text-khaki/50" size={16} />
+                      <input
+                        type="text"
+                        value={digitalReportForm.doctorName}
+                        onChange={(e) => setDigitalReportForm({ ...digitalReportForm, doctorName: e.target.value })}
+                        placeholder="Name and Qualifications"
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-sandstone rounded-2xl focus:outline-none focus:ring-4 focus:ring-marigold/10 focus:border-marigold transition-all text-sm font-bold text-teak placeholder:text-khaki/40"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Actions Footer */}
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-4">
+              <div className="px-8 py-5 bg-white/60 backdrop-blur-sm border-t border-sandstone/30 flex gap-4">
                 <button
                   onClick={() => setShowDigitalReportModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors text-sm"
+                  className="flex-1 py-4 bg-white border-2 border-sandstone text-khaki hover:text-teak hover:border-khaki/30 rounded-xl font-bold transition-colors text-xs uppercase tracking-widest"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handlePublishDigitalReport}
-                  className="flex-1 py-2.5 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-colors shadow-lg shadow-teal-600/20 text-sm flex items-center justify-center gap-2"
+                  className="flex-1 py-4 bg-gradient-to-r from-marigold to-saffron text-white rounded-xl font-bold hover:shadow-lg hover:shadow-marigold/30 transition-all active:scale-[0.98] text-xs uppercase tracking-widest flex items-center justify-center gap-2 group"
                 >
-                  <FileCheck size={16} />
+                  <Save size={16} className="group-hover:scale-110 transition-transform" />
                   <span>Publish & Sync Locker</span>
                 </button>
               </div>
@@ -1879,17 +1901,17 @@ const LabDashboard = () => {
         {/* Floating Action Button (PC & Mobile) */}
         <div className="fixed bottom-24 lg:bottom-8 right-4 lg:right-8 z-50 flex flex-col items-end gap-3">
           <div className={`transition-all duration-300 transform origin-bottom-right ${showQuickActions ? 'scale-100 opacity-100 animate-fade-in' : 'scale-0 opacity-0 pointer-events-none'}`}>
-            <div className="bg-white/95 backdrop-blur-xl p-5 rounded-[2rem] shadow-2xl border border-gray-150 grid grid-cols-2 gap-4 mb-2 w-[calc(100vw-2rem)] max-w-sm">
+            <div className="bg-white/95 backdrop-blur-xl p-3 rounded-2xl shadow-2xl border border-gray-150 grid grid-cols-2 gap-2 mb-2 w-[calc(100vw-2rem)] max-w-xs">
               <div className="col-span-2 border-b pb-2 mb-1 flex items-center justify-between">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Quick Actions</span>
                 <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded-full">Interactive Panel</span>
               </div>
-              <QuickActionTile icon={<Plus size={20} />} label="New Test" color="bg-teal-50 text-teal-600 hover:bg-teal-100" onClick={() => { setShowNewTestModal(true); setShowQuickActions(false); }} />
-              <QuickActionTile icon={<TestTubes size={20} />} label="Add Sample" color="bg-blue-50 text-blue-600 hover:bg-blue-100" onClick={() => { setShowAddSampleModal(true); setShowQuickActions(false); }} />
-              <QuickActionTile icon={<BarChart3 size={20} />} label="PDF Customizer" color="bg-orange-50 text-orange-600 hover:bg-orange-100" onClick={() => { setReportConfig({ ...reportConfig, reportType: 'Daily' }); setShowReportConfigModal(true); setShowQuickActions(false); }} />
-              <QuickActionTile icon={<Upload size={20} />} label="Upload File" color="bg-purple-50 text-purple-600 hover:bg-purple-100" onClick={() => { setShowSampleCollectionModal(true); setShowQuickActions(false); }} />
-              <QuickActionTile icon={<TrendingUp size={20} />} label="Daily Summary" color="bg-emerald-50 text-emerald-600 hover:bg-emerald-100" onClick={() => { handleDailySummary(); setShowQuickActions(false); }} />
-              <QuickActionTile icon={<RefreshCw size={20} />} label="Sync Stats" color="bg-indigo-50 text-indigo-600 hover:bg-indigo-100" onClick={() => { fetchLabDashboardStats(false); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<Plus size={14} />} label="New Test" color="bg-teal-50 text-teal-600 hover:bg-teal-100" onClick={() => { setShowNewTestModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<TestTubes size={14} />} label="Add Sample" color="bg-blue-50 text-blue-600 hover:bg-blue-100" onClick={() => { setShowAddSampleModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<BarChart3 size={14} />} label="PDF Customizer" color="bg-orange-50 text-orange-600 hover:bg-orange-100" onClick={() => { setReportConfig({ ...reportConfig, reportType: 'Daily' }); setShowReportConfigModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<Upload size={14} />} label="Upload File" color="bg-purple-50 text-purple-600 hover:bg-purple-100" onClick={() => { setShowSampleCollectionModal(true); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<TrendingUp size={14} />} label="Daily Summary" color="bg-emerald-50 text-emerald-600 hover:bg-emerald-100" onClick={() => { handleDailySummary(); setShowQuickActions(false); }} />
+              <QuickActionTile icon={<RefreshCw size={14} />} label="Sync Stats" color="bg-indigo-50 text-indigo-600 hover:bg-indigo-100" onClick={() => { fetchLabDashboardStats(false); setShowQuickActions(false); }} />
             </div>
           </div>
           <button
