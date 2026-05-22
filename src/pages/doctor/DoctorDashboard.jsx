@@ -1141,8 +1141,16 @@ const DoctorDashboard = () => {
                                 {(patient.patientName || 'UP').substring(0, 2).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <p className="text-[11px] font-semibold text-gray-900 leading-tight truncate">{patient.patientName}</p>
-                                <p className="text-[9px] text-gray-400 truncate">{patient.reason || 'General'} - {patient.tokenNumber}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-[11px] font-semibold text-gray-900 leading-tight truncate">{patient.patientName}</p>
+                                  {(patient.currentStage === 'Lab-Pending' || patient.currentStage === 'Lab-Processing') && (
+                                    <FlaskConical size={11} className="text-blue-500 animate-pulse shrink-0" title="Patient in Lab" />
+                                  )}
+                                </div>
+                                <p className="text-[9px] text-gray-400 truncate">
+                                  {patient.reason || 'General'} - {patient.tokenNumber}
+                                  {patient.estimatedWait !== undefined && ` · Est: ${patient.estimatedWait}m`}
+                                </p>
                               </div>
                             </div>
                             <span className={`shrink-0 px-2 py-0.5 rounded text-[7px] font-bold uppercase tracking-wider hidden md:block ${
@@ -1285,8 +1293,8 @@ const DoctorDashboard = () => {
                       <button onClick={() => navigate('/doctor/appointments')} className="text-[9px] font-bold text-teal-600">View All</button>
                     </div>
                     <div className="space-y-1.5 flex-grow overflow-y-auto">
-                      {reminders.map((rem) => (
-                        <div key={rem._id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-all cursor-pointer">
+                      {reminders.map((rem, idx) => (
+                        <div key={rem._id || `rem-${idx}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-all cursor-pointer">
                           <div className={`p-1.5 rounded-md shrink-0 ${rem.type === 'lab' ? 'bg-red-50 text-red-500' : rem.type === 'followup' ? 'bg-orange-50 text-orange-500' : rem.type === 'prescription' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
                             {rem.type === 'lab' ? <FlaskConical size={12} /> : rem.type === 'followup' ? <Calendar size={12} /> : rem.type === 'prescription' ? <FileText size={12} /> : <Bell size={12} />}
                           </div>

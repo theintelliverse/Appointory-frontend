@@ -280,6 +280,14 @@ const ReceptionDashboard = () => {
   const fromAdmin = new URLSearchParams(location.search).get('fromAdmin') === 'true';
   const showBackButton = fromAdmin || userRole === 'admin';
 
+  // Compute future appointments (excluding today) for the "Next" tab and badge
+  const futureAppointments = scheduledAppointments.filter(apt => {
+    if (!apt.appointmentDate) return true;
+    const aptDate = new Date(apt.appointmentDate);
+    const today = new Date();
+    return aptDate.toDateString() !== today.toDateString();
+  });
+
   return (
     <div className="flex min-h-screen bg-parchment font-body text-teak flex-col md:flex-row">
       <Sidebar role="receptionist" />
@@ -305,7 +313,7 @@ const ReceptionDashboard = () => {
             </button>
             <button onClick={() => setActiveTab('scheduled')} className={`px-3 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap flex-shrink-0 ${activeTab === 'scheduled' ? 'bg-marigold text-white shadow-md' : 'text-khaki'}`}>
               📅 Next
-              {scheduledAppointments.length > 0 && <span className="absolute -top-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[7px] md:text-[9px] border-2 border-white">{scheduledAppointments.length}</span>}
+              {futureAppointments.length > 0 && <span className="absolute -top-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[7px] md:text-[9px] border-2 border-white">{futureAppointments.length}</span>}
             </button>
           </div>
         </nav>
@@ -380,18 +388,36 @@ const ReceptionDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-[#AFC4D8]/30">
                     {activeTab === 'live' ? (
-                      queue.filter(p => p.patientName.toLowerCase().includes(searchTerm.toLowerCase())).sort((a, b) => a.isEmergency === b.isEmergency ? 0 : a.isEmergency ? -1 : 1).map((p) => (
+                      queue.filter(p => 
+                        p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                        p.status !== 'In-Consultation' && p.status !== 'Completed'
+                      ).sort((a, b) => a.isEmergency === b.isEmergency ? 0 : a.isEmergency ? -1 : 1).map((p) => (
                         <tr key={p._id} className={`${p.isEmergency ? 'bg-red-50/50' : ''} hover:bg-parchment/50 transition-colors animate-in duration-300`}>
                           <td className="px-3 md:px-10 py-3 md:py-6">
                             <div className={`w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex flex-col items-center justify-center border shadow-sm text-[7px] md:text-[8px] ${p.isEmergency ? 'border-red-600 bg-red-600 text-white' : 'border-sandstone bg-white'}`}><span className={`font-black uppercase ${p.isEmergency ? 'text-white' : 'text-khaki'}`}>TK</span><span className="font-heading text-lg md:text-xl">{p.tokenNumber}</span></div>
                           </td>
                           <td className="px-3 md:px-10 py-3 md:py-6 hidden md:table-cell">
                             <div>
-                              <p className={`font-bold text-xs md:text-sm truncate ${p.isEmergency ? 'text-red-700' : 'text-teak'}`}>{p.patientName}</p>
-                              <p className="text-[8px] md:text-[10px] text-khaki font-bold truncate">Dr. {p.doctorId?.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className={`font-bold text-xs md:text-sm truncate ${p.isEmergency ? 'text-red-700' : 'text-teak'}`}>{p.patientName}</p>
+                                {(p.currentStage === 'Lab-Pending' || p.currentStage === 'Lab-Processing') && (
+                                  <Beaker size={14} className="text-blue-500 animate-pulse flex-shrink-0" title="Patient in Lab" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[8px] md:text-[10px] text-khaki font-bold truncate">Dr. {p.doctorId?.name}</span>
+                                {p.estimatedWait !== undefined && (
+                                  <span className="px-1.5 py-0.5 bg-marigold/10 text-marigold rounded text-[7px] md:text-[8px] font-black uppercase whitespace-nowrap">Est. Wait: {p.estimatedWait}m</span>
+                                )}
+                              </div>
                             </div>
                           </td>
-                          <td className="px-3 md:px-10 py-3 md:py-6 text-center hidden lg:table-cell"><span className={`px-2 md:px-4 py-1 md:py-1.5 rounded-full text-[7px] md:text-[9px] font-black uppercase tracking-tighter border inline-block ${p.status === 'In-Consultation' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-parchment text-khaki border-sandstone'}`}>{p.status === 'In-Consultation' ? 'Active' : p.status}</span></td>
+                          <td className="px-3 md:px-10 py-3 md:py-6 text-center hidden lg:table-cell">
+                            <span className={`px-2 md:px-4 py-1 md:py-1.5 rounded-full text-[7px] md:text-[9px] font-black uppercase tracking-tighter border inline-flex items-center gap-1 ${p.status === 'In-Consultation' ? 'bg-green-100 text-green-700 border-green-200' : (p.currentStage === 'Lab-Pending' || p.currentStage === 'Lab-Processing') ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-parchment text-khaki border-sandstone'}`}>
+                              {(p.currentStage === 'Lab-Pending' || p.currentStage === 'Lab-Processing') && <Beaker size={10} className="animate-pulse" />}
+                              {(p.currentStage === 'Lab-Pending' || p.currentStage === 'Lab-Processing') ? 'Go for Lab' : p.status}
+                            </span>
+                          </td>
                           <td className="px-3 md:px-10 py-3 md:py-6 text-right">
                             <div className="flex justify-end gap-1 md:gap-2">
                               {p.status === 'Waiting' && (
@@ -435,7 +461,9 @@ const ReceptionDashboard = () => {
                         </tr>
                       ))
                     ) : (
-                      scheduledAppointments.filter(apt => apt.patientName.toLowerCase().includes(searchTerm.toLowerCase())).map((apt) => (
+                      futureAppointments
+                        .filter(apt => apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((apt) => (
                         <tr key={apt._id} className="hover:bg-blue-50/30 transition-colors animate-in">
                           <td className="px-3 md:px-10 py-3 md:py-6">
                             <div className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex flex-col items-center justify-center border border-blue-200 shadow-sm bg-blue-50 text-[8px] md:text-base">
