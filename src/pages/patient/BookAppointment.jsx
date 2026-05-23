@@ -264,7 +264,7 @@ const BookAppointment = () => {
             if (res.data.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: formData.rescheduleAppointmentId ? 'Reschedule Submitted! ðŸ—“ï¸' : 'Booking Confirmed! ðŸŽ‰',
+                    title: formData.rescheduleAppointmentId ? 'Reschedule Submitted!' : 'Booking Confirmed!',
                     text: formData.rescheduleAppointmentId 
                         ? 'Your reschedule request has been submitted to the receptionist for confirmation.' 
                         : 'Your request is being processed by the clinical team.',
@@ -587,9 +587,9 @@ const BookAppointment = () => {
                                                     : 'border-slate-100 bg-slate-50/50 text-slate-700 hover:border-teal-200 hover:bg-white'
                                             }`}
                                         >
-                                            <h4 className="text-sm font-black mb-1">ðŸŒ… Morning Shift</h4>
+                                            <h4 className="text-sm font-black mb-1">Morning Shift</h4>
                                             <p className={`text-[10px] font-bold ${formData.appointmentDate.endsWith(getClinicTimingConfig().openingTime) ? 'text-teal-100' : 'text-slate-400'}`}>
-                                                {getClinicTimingConfig().openingTime} â€“ {getClinicTimingConfig().breakStartTime}
+                                                {getClinicTimingConfig().openingTime} - {getClinicTimingConfig().breakStartTime}
                                             </p>
                                         </button>
 
@@ -614,9 +614,9 @@ const BookAppointment = () => {
                                                     : 'border-slate-100 bg-slate-50/50 text-slate-700 hover:border-teal-200 hover:bg-white'
                                             }`}
                                         >
-                                            <h4 className="text-sm font-black mb-1">ðŸŒ‡ Afternoon Shift</h4>
+                                            <h4 className="text-sm font-black mb-1">Afternoon Shift</h4>
                                             <p className={`text-[10px] font-bold ${formData.appointmentDate.endsWith(getClinicTimingConfig().breakEndTime) ? 'text-teal-100' : 'text-slate-400'}`}>
-                                                {getClinicTimingConfig().breakEndTime} â€“ {getClinicTimingConfig().closingTime}
+                                                {getClinicTimingConfig().breakEndTime} - {getClinicTimingConfig().closingTime}
                                             </p>
                                         </button>
                                     </div>
@@ -688,17 +688,50 @@ const BookAppointment = () => {
                                 </div>
 
                                 {/* Verify Booking Button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setStep(4);
-                                    }}
-                                    disabled={!formData.appointmentDate}
-                                    className="w-full py-4 bg-teal-500 hover:bg-teal-400 disabled:opacity-30 disabled:grayscale text-white font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 active:scale-95"
-                                >
-                                    {formData.appointmentDate ? <><CheckCircle size={16} /> Verify Booking</> : <><Clock size={16} /> Select a Slot First</>}
-                                    {formData.appointmentDate && <ArrowRight size={16} />}
-                                </button>
+                                {(() => {
+                                    let isValid = false;
+                                    let errorMsg = '';
+                                    if (formData.appointmentDate) {
+                                        const parts = formData.appointmentDate.split('T');
+                                        if (parts.length === 2) {
+                                            const [year, month, day] = parts[0].split('-').map(Number);
+                                            const [hour, min] = parts[1].split(':').map(Number);
+                                            const selectedDateTime = new Date(year, month - 1, day, hour, min);
+                                            
+                                            if (selectedDateTime < new Date()) {
+                                                errorMsg = 'Time has passed';
+                                            } else {
+                                                const { closingTime, openingTime } = getClinicTimingConfig();
+                                                const [ch, cm] = closingTime.split(':').map(Number);
+                                                const [oh, om] = openingTime.split(':').map(Number);
+                                                const closeDateTime = new Date(year, month - 1, day, ch, cm);
+                                                const openDateTime = new Date(year, month - 1, day, oh, om);
+                                                
+                                                if (selectedDateTime > closeDateTime) {
+                                                    errorMsg = 'Clinic Closed';
+                                                } else if (selectedDateTime < openDateTime) {
+                                                    errorMsg = 'Before Clinic Opens';
+                                                } else {
+                                                    isValid = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setStep(4);
+                                            }}
+                                            disabled={!isValid}
+                                            className="w-full py-4 bg-teal-500 hover:bg-teal-400 disabled:opacity-30 disabled:grayscale text-white font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-3 active:scale-95"
+                                        >
+                                            {!formData.appointmentDate ? <><Clock size={16} /> Select a Slot First</> : !isValid ? <><Clock size={16} /> {errorMsg}</> : <><CheckCircle size={16} /> Verify Booking</>}
+                                            {isValid && <ArrowRight size={16} />}
+                                        </button>
+                                    );
+                                })()}
                             </div>
 
                         </div>

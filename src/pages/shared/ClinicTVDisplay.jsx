@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
-const socket = SOCKET_URL ? io(SOCKET_URL) : { on: () => { }, off: () => { }, emit: () => { } };
 
 const ClinicTVDisplay = () => {
   const [doctors, setDoctors] = useState([]);
@@ -19,8 +18,8 @@ const ClinicTVDisplay = () => {
   const [clinicName, setClinicName] = useState("Swasthya-Mitra Clinic");
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [clinicId, setClinicId] = useState(null);
 
-  const joinedRoomRef = useRef(null);
   const clinicCode = window.location.pathname.split('/').pop() || 'CITY01';
 
   // Live Clock
@@ -35,12 +34,12 @@ const ClinicTVDisplay = () => {
       setDoctors(res.data.doctors);
       setClinicName(res.data.clinicName);
 
-      if (res.data.doctors && res.data.doctors.length > 0) {
-        const actualClinicId = res.data.doctors[0].clinicId;
-        if (actualClinicId && joinedRoomRef.current !== actualClinicId) {
-          socket.emit('joinClinic', actualClinicId);
-          joinedRoomRef.current = actualClinicId;
+      if (res.data.clinicId) {
+        let actualClinicId = res.data.clinicId;
+        if (typeof actualClinicId === 'object' && actualClinicId._id) {
+          actualClinicId = actualClinicId._id;
         }
+        setClinicId(actualClinicId.toString());
       }
       setLoading(false);
     } catch (err) {
@@ -56,21 +55,54 @@ const ClinicTVDisplay = () => {
     } catch (err) { }
   };
 
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    if (!SOCKET_URL) return;
+    const newSocket = io(SOCKET_URL, { reconnection: true });
+    socketRef.current = newSocket;
+    return () => newSocket.disconnect();
+  }, []);
+
   useEffect(() => {
     fetchDoctors();
-    socket.on('queueUpdate', () => fetchDoctors());
-    socket.on('doctorStatusChanged', () => fetchDoctors());
-    return () => {
-      socket.off('queueUpdate');
-      socket.off('doctorStatusChanged');
-    };
   }, []);
+
+  useEffect(() => {
+    if (!socketRef.current || !clinicId) return;
+
+    // Join room
+    socketRef.current.emit('joinClinic', clinicId);
+
+    const handleReconnect = () => {
+      console.log("🔄 Socket reconnected, re-joining clinic room:", clinicId);
+      socketRef.current.emit('joinClinic', clinicId);
+    };
+
+    const handleUpdate = () => {
+      console.log("⚡ Received live update from server!");
+      fetchDoctors();
+      if (selectedDoc) {
+        fetchQueue(selectedDoc._id);
+      }
+    };
+
+    socketRef.current.on('connect', handleReconnect);
+    socketRef.current.on('queueUpdate', handleUpdate);
+    socketRef.current.on('doctorStatusChanged', handleUpdate);
+
+    return () => {
+      socketRef.current.off('connect', handleReconnect);
+      socketRef.current.off('queueUpdate', handleUpdate);
+      socketRef.current.off('doctorStatusChanged', handleUpdate);
+    };
+  }, [clinicId, selectedDoc]);
 
   useEffect(() => {
     if (selectedDoc) {
       fetchQueue(selectedDoc._id);
     }
-  }, [selectedDoc, doctors]);
+  }, [selectedDoc]);
 
   if (loading && !error) return (
     <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-6 text-center overflow-hidden relative">
@@ -183,32 +215,32 @@ const ClinicTVDisplay = () => {
       <div className={`absolute top-0 left-0 w-full h-full bg-gradient-to-br from-teal-600/10 via-transparent to-indigo-600/10 pointer-events-none transition-opacity duration-1000 ${activePatient?.isEmergency ? 'opacity-0' : 'opacity-100'}`} />
 
       {/* TV Header */}
-      <nav className="relative z-10 bg-black/40 backdrop-blur-2xl p-10 border-b border-white/10 flex justify-between items-center">
-        <div className="flex items-center gap-10">
+      <nav className="relative z-10 bg-black/40 backdrop-blur-2xl p-6 border-b border-white/10 flex justify-between items-center">
+        <div className="flex items-center gap-6">
           <button
             onClick={() => setSelectedDoc(null)}
-            className="w-14 h-14 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/20 hover:text-white transition-all shadow-xl"
+            className="w-12 h-12 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center text-white/20 hover:text-white transition-all shadow-xl"
           >
-            <ArrowLeft size={28} />
+            <ArrowLeft size={24} />
           </button>
-          <div className="flex items-center gap-6 border-l border-white/10 pl-10">
-            <div className="w-16 h-16 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-500">
-              <Stethoscope size={32} />
+          <div className="flex items-center gap-4 border-l border-white/10 pl-6">
+            <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-500">
+              <Stethoscope size={24} />
             </div>
             <div>
-              <h1 className="text-5xl font-black tracking-tighter leading-none mb-1">Dr. {selectedDoc.name}</h1>
-              <p className="text-teal-500 font-black uppercase tracking-[0.4em] text-xs">Clinical Specialist • {selectedDoc.specialization}</p>
+              <h1 className="text-3xl font-black tracking-tighter leading-none mb-1">Dr. {selectedDoc.name}</h1>
+              <p className="text-teal-500 font-black uppercase tracking-[0.2em] text-[10px]">Clinical Specialist • {selectedDoc.specialization}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-6">
           <div className="text-right">
-            <p className="text-5xl font-black tracking-tighter tabular-nums leading-none mb-1">
+            <p className="text-3xl font-black tracking-tighter tabular-nums leading-none mb-1">
               {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
-            <div className="flex items-center justify-end gap-2 text-teal-500/40 font-black uppercase text-[10px] tracking-widest">
-              <Signal size={12} className="text-green-500" />
+            <div className="flex items-center justify-end gap-2 text-teal-500/40 font-black uppercase text-[9px] tracking-widest">
+              <Signal size={10} className="text-green-500" />
               Live Transmission
             </div>
           </div>
@@ -227,12 +259,12 @@ const ClinicTVDisplay = () => {
 
           {activePatient ? (
             <div className="text-center w-full max-w-2xl animate-in zoom-in-95 duration-1000">
-              <div className={`mx-auto w-80 h-80 lg:w-[480px] lg:h-[480px] rounded-[6rem] lg:rounded-[8rem] flex flex-col items-center justify-center border-[20px] shadow-[0_0_100px_rgba(20,184,166,0.2)] mb-12 relative group transition-all duration-1000 ${activePatient.isEmergency ? 'border-red-600 bg-red-950/60 shadow-red-600/50 pulse-ring' : 'border-teal-500 bg-teal-500/10 shadow-teal-500/30'}`}>
+              <div className={`mx-auto w-56 h-56 lg:w-[320px] lg:h-[320px] rounded-[3rem] lg:rounded-[4rem] flex flex-col items-center justify-center border-[12px] shadow-[0_0_80px_rgba(20,184,166,0.15)] mb-8 relative group transition-all duration-1000 ${activePatient.isEmergency ? 'border-red-600 bg-red-950/60 shadow-red-600/40 pulse-ring' : 'border-teal-500 bg-teal-500/10 shadow-teal-500/20'}`}>
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent rounded-[inherit] opacity-30" />
-                <span className="text-xl lg:text-3xl font-black uppercase tracking-[0.3em] text-white/40 mb-2">Token Number</span>
-                <span className="text-[12rem] lg:text-[18rem] font-black leading-none tabular-nums tracking-tighter">{activePatient.tokenNumber}</span>
+                <span className="text-sm lg:text-xl font-black uppercase tracking-[0.3em] text-white/40 mb-2">Token Number</span>
+                <span className="text-7xl lg:text-[7rem] font-black leading-none tabular-nums tracking-tighter">{activePatient.tokenNumber}</span>
               </div>
-              <h2 className="text-6xl lg:text-8xl font-black tracking-tighter truncate max-w-full px-10">{activePatient.patientName}</h2>
+              <h2 className="text-4xl lg:text-6xl font-black tracking-tighter truncate max-w-full px-8">{activePatient.patientName}</h2>
               {activePatient.isEmergency && (
                 <div className="mt-8 inline-flex items-center gap-4 px-8 py-3 bg-red-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] animate-pulse shadow-2xl shadow-red-600/50">
                   <Siren size={24} />
@@ -255,46 +287,71 @@ const ClinicTVDisplay = () => {
 
         {/* Right Side: Waiting List */}
         <div className="w-full lg:w-2/5 flex flex-col bg-black/30 backdrop-blur-3xl overflow-hidden shadow-2xl">
-          <div className="p-10 border-b border-white/10 bg-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-teal-500/10 text-teal-500 rounded-xl">
-                <Users size={28} />
+          <div className="p-6 border-b border-white/10 bg-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-teal-500/10 text-teal-500 rounded-xl">
+                <Users size={20} />
               </div>
-              <h3 className="text-3xl font-black tracking-tighter">Queue Dashboard</h3>
+              <h3 className="text-xl font-black tracking-tighter">Queue Dashboard</h3>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-2xl font-black text-teal-500 tabular-nums leading-none">{waitingPatients.length}</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Lounge Queue</span>
+              <span className="text-xl font-black text-teal-500 tabular-nums leading-none">{waitingPatients.length}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-white/30 mt-1">Lounge Queue</span>
             </div>
           </div>
 
-          <div className="flex-grow overflow-y-auto p-10 space-y-8 custom-scrollbar">
-            {waitingPatients.length > 0 ? (
-              waitingPatients.map((p, idx) => (
-                <div key={p._id} className={`group p-8 rounded-[3rem] flex justify-between items-center border transition-all duration-500 animate-in slide-in-from-right-10 ${p.isEmergency ? 'bg-red-600/20 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/[0.08] hover:translate-x-2'}`}>
-                  <div className="flex items-center gap-8">
-                    <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center font-black text-4xl shadow-2xl ${p.isEmergency ? 'bg-red-600 shadow-red-600/20' : 'bg-teal-500/20 text-teal-400 shadow-teal-500/10'}`}>
-                      {p.tokenNumber}
-                    </div>
-                    <div>
-                      <p className="text-3xl font-black tracking-tighter truncate max-w-[280px] group-hover:text-teal-400 transition-colors">{p.patientName}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${p.isEmergency ? 'text-red-400' : 'text-white/20'}`}>
-                          {p.isEmergency ? 'High Priority' : 'Regular Consultation'}
-                        </span>
-                        <div className="w-1 h-1 bg-white/10 rounded-full" />
-                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Token Auth Verified</span>
+          <div className="flex-grow overflow-y-auto p-8 space-y-3 custom-scrollbar">
+            {[...Array(5)].map((_, idx) => {
+              const p = waitingPatients[idx];
+              if (p) {
+                return (
+                  <div key={p._id} className={`group px-6 py-4 rounded-[1.5rem] flex justify-between items-center border transition-all duration-500 animate-in slide-in-from-right-10 ${p.isEmergency ? 'bg-red-600/20 border-red-500/30' : 'bg-white/5 border-white/5 hover:bg-white/[0.08] hover:translate-x-2'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-xl ${p.isEmergency ? 'bg-red-600 shadow-red-600/20' : 'bg-teal-500/20 text-teal-400 shadow-teal-500/10'}`}>
+                        {p.tokenNumber}
+                      </div>
+                      <div>
+                        <p className="text-lg font-black tracking-tighter truncate max-w-[280px] group-hover:text-teal-400 transition-colors leading-tight">{p.patientName}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${
+                            p.currentStage === 'Lab-Completed' ? 'text-green-400' : 
+                            (p.currentStage && p.currentStage.includes('Lab') ? 'text-yellow-400' : 
+                            (p.isEmergency ? 'text-red-400' : 'text-white/30'))
+                          }`}>
+                            {p.currentStage === 'Lab-Completed' ? 'Reports Ready' : 
+                            (p.currentStage && p.currentStage.includes('Lab') ? 'Go for Lab' : 
+                            (p.isEmergency ? 'High Priority' : 'Regular'))}
+                          </span>
+                          <div className="w-1 h-1 bg-white/10 rounded-full" />
+                          <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Verified</span>
+                          {p.estimatedWait != null && (
+                            <>
+                              <div className="w-1 h-1 bg-white/10 rounded-full" />
+                              <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest">Est. Wait: {p.estimatedWait}m</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center opacity-10 space-y-6">
-                <Info size={80} strokeWidth={1} />
-                <p className="text-3xl font-black tracking-tighter uppercase">Lounge is vacant</p>
-              </div>
-            )}
+                );
+              } else {
+                return (
+                  <div key={`empty-${idx}`} className="group px-6 py-4 rounded-[1.5rem] flex items-center gap-4 border border-white/5 bg-white/[0.02] opacity-50">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-xl shadow-xl bg-white/5 text-white/10 border border-white/10 border-dashed">
+                      -
+                    </div>
+                    <div className="flex-grow flex flex-col gap-2">
+                      <div className="h-4 w-32 bg-white/10 rounded-full"></div>
+                      <div className="h-2 w-24 bg-white/5 rounded-full"></div>
+                    </div>
+                    <div className="text-[9px] font-black text-white/10 uppercase tracking-widest border border-white/10 px-2 py-1 rounded-md border-dashed">
+                      Empty Slot
+                    </div>
+                  </div>
+                );
+              }
+            })}
           </div>
 
           {/* Ticker Tape */}
