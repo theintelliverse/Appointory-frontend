@@ -12,7 +12,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Top Grid Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-12 border-b border-teal-800/40">
-
+          
           {/* Column 1: Branding & Philosophy */}
           <div className="space-y-5">
             <div className="flex items-center gap-3">
@@ -27,7 +27,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-xs text-[#D4E4DF]/70 font-medium leading-relaxed max-w-sm">
-              Revolutionizing healthcare access with intelligent queue management, secure cloud prescriptions,
+              Revolutionizing healthcare access with intelligent queue management, secure cloud prescriptions, 
               and a unified digital health vault. Experience seamless, wait-free clinical care.
             </p>
           </div>
