@@ -340,6 +340,12 @@ const PatientStatus = () => {
                             <p className={`text-[14px] font-bold uppercase tracking-widest mt-1 ${isInConsultation || isEmergency ? 'text-white/60' : 'text-slate-400'}`}>
                                 Visit ID: {queueId?.slice(-8).toUpperCase()}
                             </p>
+                            {status.predictedTurnTime && (
+                                <div className={`mt-3 px-4 py-2 rounded-2xl inline-block ${isInConsultation || isEmergency ? 'bg-white/20 text-white' : 'bg-teal-50 border border-teal-100 text-teal-700'}`}>
+                                    <p className="text-[12px] font-black uppercase tracking-widest leading-none">Estimated Turn Time</p>
+                                    <p className="text-base font-black mt-1">{status.predictedTurnTime}</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Stats row */}
@@ -356,7 +362,7 @@ const PatientStatus = () => {
                             <div className={`rounded-2xl p-4 text-center ${isInConsultation || isEmergency ? 'bg-white/15' : 'bg-slate-50 border border-slate-100'}`}>
                                 <div className={`flex items-center justify-center gap-1.5 mb-1 ${isInConsultation || isEmergency ? 'text-white/70' : 'text-slate-400'}`}>
                                     <Clock size={12} />
-                                    <span className="text-[14px] font-black uppercase tracking-widest">Est. Wait</span>
+                                    <span className="text-[14px] font-black uppercase tracking-widest">Waiting Period</span>
                                 </div>
                                 <p className={`text-3xl font-black ${isInConsultation || isEmergency ? 'text-white' : 'text-slate-900'}`}>
                                     {isInConsultation ? '0' : status.estimatedWait ?? '—'}
