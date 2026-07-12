@@ -143,7 +143,7 @@ const Login = () => {
             <div className="text-center mb-6">
               <h2 className="text-3xl font-heading font-bold mb-2 text-teak">Clinic Portal</h2>
               <p className="text-sm text-khaki font-medium mb-3">Authenticate to access your facility dashboard</p>
-
+              
               {/* Visual Role Badges */}
               <div className="flex justify-center gap-1.5 mt-2">
                 <span className="px-2.5 py-0.5 bg-teal-50 text-teal-600 border border-teal-100 rounded-full text-[10px] font-black uppercase tracking-wider">Admin</span>
