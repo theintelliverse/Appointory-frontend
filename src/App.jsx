@@ -57,6 +57,8 @@ const SubscriptionDetails = lazy(() => import('./pages/shared/SubscriptionDetail
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
 import { API_URL } from './config/runtime';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 
 // Import Security Guard
 import ProtectedRoute from './components/ProtectedRoute';
@@ -499,6 +501,8 @@ const App = () => {
             </Routes>
           </Suspense>
         </PlatformGuard>
+        <SpeedInsights />
+        <Analytics />
       </div>
     </Router>
   );
