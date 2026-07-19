@@ -44,6 +44,8 @@ const Contact = lazy(() => import('./pages/shared/Contact'));
 // Independent Lab Portal
 const LabLogin = lazy(() => import('./pages/auth/LabLogin'));
 const LabRegister = lazy(() => import('./pages/auth/LabRegister'));
+const LabForgotPassword = lazy(() => import('./pages/auth/LabForgotPassword'));
+const LabResetPassword = lazy(() => import('./pages/auth/LabResetPassword'));
 const LabPortalDashboard = lazy(() => import('./pages/lab-portal/LabPortalDashboard'));
 const LabPortalConnections = lazy(() => import('./pages/lab-portal/LabPortalConnections'));
 const LabPortalAnalytics = lazy(() => import('./pages/lab-portal/LabPortalAnalytics'));
@@ -57,8 +59,6 @@ const SubscriptionDetails = lazy(() => import('./pages/shared/SubscriptionDetail
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
 import { API_URL } from './config/runtime';
-import { SpeedInsights } from '@vercel/speed-insights/react';
-import { Analytics } from '@vercel/analytics/react';
 
 // Import Security Guard
 import ProtectedRoute from './components/ProtectedRoute';
@@ -202,6 +202,8 @@ const App = () => {
               {/* --- 🔬 Independent Lab Portal Routes --- */}
               <Route path="/lab/login" element={<LabLogin />} />
               <Route path="/lab/register" element={<LabRegister />} />
+              <Route path="/lab/forgot-password" element={<LabForgotPassword />} />
+              <Route path="/lab/reset-password" element={<LabResetPassword />} />
               <Route
                 path="/lab/portal/dashboard"
                 element={
@@ -501,8 +503,6 @@ const App = () => {
             </Routes>
           </Suspense>
         </PlatformGuard>
-        <SpeedInsights />
-        <Analytics />
       </div>
     </Router>
   );
