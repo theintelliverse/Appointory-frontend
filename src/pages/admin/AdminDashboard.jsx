@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -52,7 +53,7 @@ const AdminDashboard = () => {
   const [allPatientsList, setAllPatientsList] = useState([]);
   const [trafficTimeframe, setTrafficTimeframe] = useState('today');
   const socketRef = useRef(null);
-  
+
   const [config, setConfig] = useState({
     avgWaitFactor: Number(localStorage.getItem('SM_avgWaitFactor') || 8),
     feeConsult: Number(localStorage.getItem('SM_feeConsult') || 500),
@@ -169,7 +170,7 @@ const AdminDashboard = () => {
         feeMedicine: config.feeMedicine,
         avgWaitFactor: config.avgWaitFactor
       }, { headers: { Authorization: `Bearer ${token}` } });
-      
+
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -179,7 +180,7 @@ const AdminDashboard = () => {
         timer: 2000,
         background: '#EEF6FA'
       });
-      
+
       setIsRevenueModalOpen(false);
       fetchLiveStats(true);
     } catch (err) {
@@ -280,14 +281,14 @@ const AdminDashboard = () => {
         if (testReqsRes.data.success) {
           const testReqs = testReqsRes.data.data || [];
           const completedReqs = testReqs.filter(r => r.status === 'Completed');
-          
+
           const now = Date.now();
           const oneDay = 24 * 60 * 60 * 1000;
-          
+
           const daily = completedReqs.filter(r => (now - new Date(r.completedAt || r.updatedAt).getTime()) <= oneDay);
           const weekly = completedReqs.filter(r => (now - new Date(r.completedAt || r.updatedAt).getTime()) <= 7 * oneDay);
           const monthly = completedReqs.filter(r => (now - new Date(r.completedAt || r.updatedAt).getTime()) <= 30 * oneDay);
-          
+
           labMetricsData = {
             dailyCount: daily.length,
             dailyCharges: daily.length * feeLab,
@@ -301,7 +302,7 @@ const AdminDashboard = () => {
         console.error("Failed to fetch lab requests for admin metrics:", err);
       }
       setLabMetrics(labMetricsData);
-      
+
       setConfig({
         avgWaitFactor,
         feeConsult,
@@ -387,7 +388,7 @@ const AdminDashboard = () => {
         todayWalkins: todayWalkins,
         todayAppointments: todayAppointments
       }));
-      
+
       setQueueList(queueData);
       setTodayPatientsList(todayPatients);
       setAllPatientsList([...queueData, ...historyData]);
@@ -499,15 +500,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] font-body text-slate-900 flex-col md:flex-row">
-      <Sidebar 
-        role="admin" 
-        revenueStats={{ ...stats, ...revenueStats }} 
-        onRevenueClick={() => setIsRevenueModalOpen(true)} 
+      <Sidebar
+        role="admin"
+        revenueStats={{ ...stats, ...revenueStats }}
+        onRevenueClick={() => setIsRevenueModalOpen(true)}
       />
 
       <div className="flex-grow flex flex-col min-h-screen overflow-y-auto pb-32 lg:pb-0">
         <main className="px-4 md:px-8 py-8 flex-grow max-w-7xl mx-auto w-full">
-          
+
           {/* Top Navbar Style Header */}
           <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
             <div>
@@ -528,10 +529,10 @@ const AdminDashboard = () => {
 
             <div className="flex items-center gap-4 flex-wrap md:flex-nowrap w-full md:w-auto">
               {/* Clinical Revenue Nav Widget */}
-              <div 
+              <div
                 className="flex-grow md:flex-grow-0 flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/70 hover:to-teal-100/70 border-2 border-emerald-100/80 rounded-2xl cursor-pointer hover:shadow-md transition-all active:scale-[0.98] group shrink-0"
               >
-                <div 
+                <div
                   onClick={() => setIsRevenueModalOpen(true)}
                   className="p-2 bg-emerald-500 text-white rounded-xl shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform"
                 >
@@ -564,7 +565,7 @@ const AdminDashboard = () => {
                 </select>
               </div>
 
-              <button 
+              <button
                 onClick={() => navigate('/admin/billing')}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-2xl font-black text-[13px] uppercase tracking-wider transition-all active:scale-95 shadow-md shadow-teal-600/20 group"
                 title="Manage Clinic & Lab Billing Invoices, Dues & CSV Reports"
@@ -573,7 +574,7 @@ const AdminDashboard = () => {
                 <span>Billing Hub</span>
               </button>
 
-              <button 
+              <button
                 onClick={handleShare}
                 className="flex-1 md:flex-none flex items-center justify-center gap-3 px-6 py-3.5 bg-white border-2 border-slate-100 rounded-2xl font-black text-[14px] text-slate-700 uppercase tracking-widest hover:border-teal-600 hover:text-teal-600 transition-all active:scale-95 shadow-sm group"
               >
@@ -584,7 +585,7 @@ const AdminDashboard = () => {
                 )}
                 {copied ? 'Copied!' : 'Live Monitor Link'}
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/admin/settings')}
                 className="p-3.5 bg-teal-600 text-white rounded-2xl hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 active:scale-95"
               >
@@ -595,14 +596,14 @@ const AdminDashboard = () => {
 
           {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            
+
             {/* Left Section: Stats & Analytics */}
             <div className="lg:col-span-2 space-y-8">
-              
+
               {/* Primary Stats Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <MetricCard 
+                  <MetricCard
                     title="Total Daily Visits"
                     value={stats.todayVisits}
                     change={stats.todayVisits > 0 ? "Active" : "Idle"}
@@ -612,7 +613,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div>
-                  <MetricCard 
+                  <MetricCard
                     title="Average Wait Time"
                     value={`${stats.avgWait} mins`}
                     change="Dynamic"
@@ -623,7 +624,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <div className="relative">
-                    <MetricCard 
+                    <MetricCard
                       title="Clinical Revenue"
                       value={`₹${revenueStats.revenue.toLocaleString('en-IN')}`}
                       change={revenueStats.revenueChange}
@@ -645,7 +646,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div>
-                  <MetricCard 
+                  <MetricCard
                     title="Active Duty Doctors"
                     value={stats.activeDoctors}
                     change="Live"
@@ -688,45 +689,45 @@ const AdminDashboard = () => {
 
               {/* Patient Traffic Area Chart */}
               <div className="bg-white p-4 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
-                 <div className="flex justify-between items-center mb-6">
-                    <div>
-                       <h3 className="text-lg md:text-xl font-black text-slate-900">Patient Traffic Density</h3>
-                       <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time walk-in frequency</p>
-                    </div>
-                    <div className="flex gap-2">
-                       <button 
-                         onClick={() => setTrafficTimeframe('today')}
-                         className={`px-3 py-1 rounded-lg text-[14px] font-black uppercase transition-colors ${trafficTimeframe === 'today' ? 'bg-teal-50 text-teal-600' : 'text-slate-400 hover:bg-slate-50'}`}
-                       >Today</button>
-                       <button 
-                         onClick={() => setTrafficTimeframe('week')}
-                         className={`px-3 py-1 rounded-lg text-[14px] font-black uppercase transition-colors ${trafficTimeframe === 'week' ? 'bg-teal-50 text-teal-600' : 'text-slate-400 hover:bg-slate-50'}`}
-                       >Week</button>
-                    </div>
-                 </div>
-                 <div className="h-[220px] md:h-[280px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={chartData}>
-                          <defs>
-                             <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.1}/>
-                                <stop offset="95%" stopColor="#14B8A6" stopOpacity={0}/>
-                             </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                          <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 'bold', fill: '#94A3B8'}} dy={10} />
-                          <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 'bold', fill: '#94A3B8'}} />
-                          <Tooltip 
-                             contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold'}}
-                          />
-                          <Area type="monotone" dataKey="visits" stroke="#14B8A6" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
-                       </AreaChart>
-                    </ResponsiveContainer>
-                 </div>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg md:text-xl font-black text-slate-900">Patient Traffic Density</h3>
+                    <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time walk-in frequency</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTrafficTimeframe('today')}
+                      className={`px-3 py-1 rounded-lg text-[14px] font-black uppercase transition-colors ${trafficTimeframe === 'today' ? 'bg-teal-50 text-teal-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                    >Today</button>
+                    <button
+                      onClick={() => setTrafficTimeframe('week')}
+                      className={`px-3 py-1 rounded-lg text-[14px] font-black uppercase transition-colors ${trafficTimeframe === 'week' ? 'bg-teal-50 text-teal-600' : 'text-slate-400 hover:bg-slate-50'}`}
+                    >Week</button>
+                  </div>
+                </div>
+                <div className="h-[220px] md:h-[280px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.1} />
+                          <stop offset="95%" stopColor="#14B8A6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94A3B8' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94A3B8' }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                      />
+                      <Area type="monotone" dataKey="visits" stroke="#14B8A6" strokeWidth={3} fillOpacity={1} fill="url(#colorVisits)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>            {/* Right Section: Quick Actions & Staff Duty */}
             <div className="lg:col-span-1 space-y-4">
-              
+
               {/* Quick Action Grid */}
               <div className="bg-white p-4 md:p-5 rounded-3xl border border-slate-100 shadow-sm">
                 <h3 className="text-base md:text-lg font-black text-slate-900 mb-3 flex items-center justify-between">
@@ -734,80 +735,80 @@ const AdminDashboard = () => {
                   <Layout size={16} className="text-slate-200" />
                 </h3>
                 <div className="grid grid-cols-2 gap-2.5">
-                   <button 
-                     onClick={() => navigate('/admin/staff-management')}
-                     className="p-3 md:p-3.5 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex flex-col items-center justify-center text-center group hover:bg-indigo-600 transition-all duration-300"
-                   >
-                      <UserPlus size={18} className="text-indigo-600 group-hover:text-white transition-colors mb-1.5" />
-                      <p className="text-[14px] font-black text-indigo-900 group-hover:text-white uppercase tracking-widest leading-none">Add Staff</p>
-                   </button>
-                   <button 
-                     onClick={() => navigate('/admin/reports')}
-                     className="p-3 md:p-3.5 bg-teal-50/50 rounded-2xl border border-teal-100/50 flex flex-col items-center justify-center text-center group hover:bg-teal-600 transition-all duration-300"
-                   >
-                      <FileSpreadsheet size={18} className="text-teal-600 group-hover:text-white transition-colors mb-1.5" />
-                      <p className="text-[14px] font-black text-teal-900 group-hover:text-white uppercase tracking-widest leading-none">Reports</p>
-                   </button>
-                   <button 
-                     onClick={() => navigate('/receptionist/dashboard?fromAdmin=true')}
-                     className="p-3 md:p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100/50 flex flex-col items-center justify-center text-center group hover:bg-rose-600 transition-all duration-300"
-                   >
-                      <Layout size={18} className="text-rose-600 group-hover:text-white transition-colors mb-1.5" />
-                      <p className="text-[14px] font-black text-rose-900 group-hover:text-white uppercase tracking-widest leading-none">Front Desk</p>
-                   </button>
-                   <button 
-                     onClick={() => window.open(publicDisplayUrl, '_blank')}
-                     className="p-3 md:p-3.5 bg-sky-50/50 rounded-2xl border border-sky-100/50 flex flex-col items-center justify-center text-center group hover:bg-sky-600 transition-all duration-300"
-                   >
-                      <Tv size={18} className="text-sky-600 group-hover:text-white transition-colors mb-1.5" />
-                      <p className="text-[14px] font-black text-sky-900 group-hover:text-white uppercase tracking-widest leading-none">Live TV</p>
-                   </button>
-                 </div>
+                  <button
+                    onClick={() => navigate('/admin/staff-management')}
+                    className="p-3 md:p-3.5 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex flex-col items-center justify-center text-center group hover:bg-indigo-600 transition-all duration-300"
+                  >
+                    <UserPlus size={18} className="text-indigo-600 group-hover:text-white transition-colors mb-1.5" />
+                    <p className="text-[14px] font-black text-indigo-900 group-hover:text-white uppercase tracking-widest leading-none">Add Staff</p>
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/reports')}
+                    className="p-3 md:p-3.5 bg-teal-50/50 rounded-2xl border border-teal-100/50 flex flex-col items-center justify-center text-center group hover:bg-teal-600 transition-all duration-300"
+                  >
+                    <FileSpreadsheet size={18} className="text-teal-600 group-hover:text-white transition-colors mb-1.5" />
+                    <p className="text-[14px] font-black text-teal-900 group-hover:text-white uppercase tracking-widest leading-none">Reports</p>
+                  </button>
+                  <button
+                    onClick={() => navigate('/receptionist/dashboard?fromAdmin=true')}
+                    className="p-3 md:p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100/50 flex flex-col items-center justify-center text-center group hover:bg-rose-600 transition-all duration-300"
+                  >
+                    <Layout size={18} className="text-rose-600 group-hover:text-white transition-colors mb-1.5" />
+                    <p className="text-[14px] font-black text-rose-900 group-hover:text-white uppercase tracking-widest leading-none">Front Desk</p>
+                  </button>
+                  <button
+                    onClick={() => window.open(publicDisplayUrl, '_blank')}
+                    className="p-3 md:p-3.5 bg-sky-50/50 rounded-2xl border border-sky-100/50 flex flex-col items-center justify-center text-center group hover:bg-sky-600 transition-all duration-300"
+                  >
+                    <Tv size={18} className="text-sky-600 group-hover:text-white transition-colors mb-1.5" />
+                    <p className="text-[14px] font-black text-sky-900 group-hover:text-white uppercase tracking-widest leading-none">Live TV</p>
+                  </button>
+                </div>
               </div>
 
               {/* Staff Status Tracker */}
               <div className="bg-white p-4 md:p-5 rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="flex justify-between items-center mb-3.5">
-                   <h3 className="text-base md:text-lg font-black text-slate-900">Staff Duty Roster</h3>
-                   <button onClick={() => navigate('/admin/staff-management')} className="text-[14px] font-black text-teal-600 uppercase tracking-widest hover:underline">Manage</button>
+                  <h3 className="text-base md:text-lg font-black text-slate-900">Staff Duty Roster</h3>
+                  <button onClick={() => navigate('/admin/staff-management')} className="text-[14px] font-black text-teal-600 uppercase tracking-widest hover:underline">Manage</button>
                 </div>
                 <div className="space-y-2.5 md:space-y-3">
-                   {recentStaffActivity.map((staff, idx) => (
-                     <div key={idx} className="flex items-center justify-between group">
-                        <div className="flex items-center gap-2.5">
-                           <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center font-bold text-[14px] md:text-[14px] uppercase group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
-                              {staff.name.substring(0, 2)}
-                           </div>
-                           <div>
-                              <p className="text-[14px] font-black text-slate-900 leading-none mb-1">{staff.name}</p>
-                              <p className="text-[14px] md:text-[14px] font-bold text-slate-400 uppercase tracking-widest leading-none">{staff.role}</p>
-                           </div>
+                  {recentStaffActivity.map((staff, idx) => (
+                    <div key={idx} className="flex items-center justify-between group">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center font-bold text-[14px] md:text-[14px] uppercase group-hover:bg-teal-50 group-hover:text-teal-600 transition-colors">
+                          {staff.name.substring(0, 2)}
                         </div>
-                        <div className={`w-2 h-2 rounded-full ${staff.isAvailable ? 'bg-green-500 shadow-lg shadow-green-500/20 animate-pulse' : 'bg-slate-200'}`} />
-                     </div>
-                   ))}
-                   {recentStaffActivity.length === 0 && (
-                     <div className="text-center py-4">
-                        <AlertCircle size={22} className="mx-auto text-slate-100 mb-1.5" />
-                        <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest">No staff registered</p>
-                     </div>
-                   )}
+                        <div>
+                          <p className="text-[14px] font-black text-slate-900 leading-none mb-1">{staff.name}</p>
+                          <p className="text-[14px] md:text-[14px] font-bold text-slate-400 uppercase tracking-widest leading-none">{staff.role}</p>
+                        </div>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full ${staff.isAvailable ? 'bg-green-500 shadow-lg shadow-green-500/20 animate-pulse' : 'bg-slate-200'}`} />
+                    </div>
+                  ))}
+                  {recentStaffActivity.length === 0 && (
+                    <div className="text-center py-4">
+                      <AlertCircle size={22} className="mx-auto text-slate-100 mb-1.5" />
+                      <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest">No staff registered</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* System Health Info */}
               <div className="bg-slate-900 p-4 md:p-5 rounded-3xl text-white relative overflow-hidden">
-                 <div className="relative z-10">
-                    <h4 className="text-sm md:text-base font-black mb-0.5">System Health</h4>
-                    <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest mb-3">Global Sync Status</p>
-                    <div className="flex items-center gap-3">
-                       <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-teal-500 rounded-full w-[98.8%]" />
-                       </div>
-                       <span className="text-[14px] font-black text-teal-500">98.8%</span>
+                <div className="relative z-10">
+                  <h4 className="text-sm md:text-base font-black mb-0.5">System Health</h4>
+                  <p className="text-[14px] font-bold text-slate-400 uppercase tracking-widest mb-3">Global Sync Status</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-teal-500 rounded-full w-[98.8%]" />
                     </div>
-                 </div>
-                 <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 blur-2xl rounded-full -mr-12 -mt-12" />
+                    <span className="text-[14px] font-black text-teal-500">98.8%</span>
+                  </div>
+                </div>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 blur-2xl rounded-full -mr-12 -mt-12" />
               </div>
             </div>
           </div>
@@ -833,18 +834,18 @@ const AdminDashboard = () => {
   );
 };
 
-const RevenueModal = ({ 
-  isOpen, 
-  onClose, 
-  config, 
-  handleConfigChange, 
-  saveConfig, 
-  inventory, 
-  setInventory, 
+const RevenueModal = ({
+  isOpen,
+  onClose,
+  config,
+  handleConfigChange,
+  saveConfig,
+  inventory,
+  setInventory,
   syncInventory,
-  restockMed, 
-  resetInventory, 
-  stats 
+  restockMed,
+  resetInventory,
+  stats
 }) => {
   const [activeTab, setActiveTab] = useState('billing'); // 'billing' | 'inventory'
   const [editingIndex, setEditingIndex] = useState(null);
@@ -855,7 +856,7 @@ const RevenueModal = ({
 
   if (!isOpen) return null;
 
-  const filteredInventory = inventory.filter(item => 
+  const filteredInventory = inventory.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -942,12 +943,12 @@ const RevenueModal = ({
   const medPct = Math.round(((stats.medicineFees || 0) / totalBreakdown) * 100);
   const emergencyPct = Math.round(((stats.emergencyFees || 0) / totalBreakdown) * 100);
 
-  return (
-    <div 
+  return ReactDOM.createPortal(
+    <div
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-fade-in"
       onClick={onClose}
     >
-      <div 
+      <div
         className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col transition-all duration-300"
         onClick={(e) => e.stopPropagation()}
       >
@@ -967,27 +968,25 @@ const RevenueModal = ({
             </div>
           </div>
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            <button 
+            <button
               onClick={() => setActiveTab('billing')}
-              className={`h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'billing' 
-                  ? 'bg-teal-600 text-white shadow-sm' 
+              className={`h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'billing'
+                  ? 'bg-teal-600 text-white shadow-sm'
                   : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-700'
-              }`}
+                }`}
             >
               Billing Config
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('inventory')}
-              className={`h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'inventory' 
-                  ? 'bg-teal-600 text-white shadow-sm' 
+              className={`h-9 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'inventory'
+                  ? 'bg-teal-600 text-white shadow-sm'
                   : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200/80 hover:text-slate-700'
-              }`}
+                }`}
             >
               Pharmacy Inventory
             </button>
-            <button 
+            <button
               onClick={onClose}
               className="h-9 w-9 flex items-center justify-center bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all ml-1 cursor-pointer"
               title="Close modal"
@@ -1009,28 +1008,28 @@ const RevenueModal = ({
                     Define Base Rates
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
-                    <ConfigField 
-                      label="Consultation Fee" 
-                      value={config.feeConsult} 
-                      onChange={(val) => handleConfigChange('feeConsult', val)} 
+                    <ConfigField
+                      label="Consultation Fee"
+                      value={config.feeConsult}
+                      onChange={(val) => handleConfigChange('feeConsult', val)}
                       icon="₹"
                     />
-                    <ConfigField 
-                      label="Lab Test Fee" 
-                      value={config.feeLab} 
-                      onChange={(val) => handleConfigChange('feeLab', val)} 
+                    <ConfigField
+                      label="Lab Test Fee"
+                      value={config.feeLab}
+                      onChange={(val) => handleConfigChange('feeLab', val)}
                       icon="₹"
                     />
-                    <ConfigField 
-                      label="Emergency Surcharge" 
-                      value={config.feeEmergency} 
-                      onChange={(val) => handleConfigChange('feeEmergency', val)} 
+                    <ConfigField
+                      label="Emergency Surcharge"
+                      value={config.feeEmergency}
+                      onChange={(val) => handleConfigChange('feeEmergency', val)}
                       icon="₹"
                     />
-                    <ConfigField 
-                      label="Medicine Unit Fee" 
-                      value={config.feeMedicine} 
-                      onChange={(val) => handleConfigChange('feeMedicine', val)} 
+                    <ConfigField
+                      label="Medicine Unit Fee"
+                      value={config.feeMedicine}
+                      onChange={(val) => handleConfigChange('feeMedicine', val)}
                       icon="₹"
                     />
                   </div>
@@ -1045,10 +1044,10 @@ const RevenueModal = ({
                     Adjust how many minutes are allocated per patient in queue to calculate dynamic waiting times.
                   </p>
                   <div className="flex items-center gap-4">
-                    <input 
-                      type="range" 
-                      min="5" 
-                      max="20" 
+                    <input
+                      type="range"
+                      min="5"
+                      max="20"
                       value={config.avgWaitFactor}
                       onChange={(e) => handleConfigChange('avgWaitFactor', Number(e.target.value))}
                       className="flex-1 accent-teal-600 cursor-pointer"
@@ -1060,7 +1059,7 @@ const RevenueModal = ({
                 </div>
 
                 <div className="pt-2">
-                  <button 
+                  <button
                     onClick={saveConfig}
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-600/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
@@ -1084,30 +1083,30 @@ const RevenueModal = ({
 
                 <div className="space-y-3.5 pt-4 border-t border-slate-200/60">
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Revenue Breakdown</h4>
-                  
-                  <BreakdownBar 
-                    label="Consultations" 
-                    amount={stats.consultFees || 0} 
-                    percentage={consultPct} 
-                    color="bg-indigo-500" 
+
+                  <BreakdownBar
+                    label="Consultations"
+                    amount={stats.consultFees || 0}
+                    percentage={consultPct}
+                    color="bg-indigo-500"
                   />
-                  <BreakdownBar 
-                    label="Laboratory Tests" 
-                    amount={stats.labFees || 0} 
-                    percentage={labPct} 
-                    color="bg-teal-500" 
+                  <BreakdownBar
+                    label="Laboratory Tests"
+                    amount={stats.labFees || 0}
+                    percentage={labPct}
+                    color="bg-teal-500"
                   />
-                  <BreakdownBar 
-                    label="Prescribed Medicines" 
-                    amount={stats.medicineFees || 0} 
-                    percentage={medPct} 
-                    color="bg-amber-500" 
+                  <BreakdownBar
+                    label="Prescribed Medicines"
+                    amount={stats.medicineFees || 0}
+                    percentage={medPct}
+                    color="bg-amber-500"
                   />
-                  <BreakdownBar 
-                    label="Emergency Surcharges" 
-                    amount={stats.emergencyFees || 0} 
-                    percentage={emergencyPct} 
-                    color="bg-rose-500" 
+                  <BreakdownBar
+                    label="Emergency Surcharges"
+                    amount={stats.emergencyFees || 0}
+                    percentage={emergencyPct}
+                    color="bg-rose-500"
                   />
                 </div>
 
@@ -1129,23 +1128,23 @@ const RevenueModal = ({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                  <input 
-                    type="text" 
-                    placeholder="Search medicine..." 
+                  <input
+                    type="text"
+                    placeholder="Search medicine..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-800 bg-slate-50/60 focus:bg-white outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     onClick={() => setShowAddForm(!showAddForm)}
                     className="h-9 px-3.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer"
                   >
                     <Plus size={14} />
                     {showAddForm ? 'Cancel' : 'Add Item'}
                   </button>
-                  <button 
+                  <button
                     onClick={resetInventory}
                     className="h-9 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                   >
@@ -1159,39 +1158,39 @@ const RevenueModal = ({
                 <form onSubmit={handleAddMedicine} className="bg-slate-50/70 border border-slate-200/80 p-5 rounded-2xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end animate-fade-in">
                   <div className="sm:col-span-2 md:col-span-2">
                     <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Medicine Name</label>
-                    <input 
-                      type="text" 
-                      required 
+                    <input
+                      type="text"
+                      required
                       placeholder="e.g. Ibuprofen 400mg"
                       value={newMed.name}
-                      onChange={(e) => setNewMed({...newMed, name: e.target.value})}
+                      onChange={(e) => setNewMed({ ...newMed, name: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white outline-none focus:border-teal-500"
                     />
                   </div>
                   <div>
                     <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Initial Stock</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       required
-                      min="1" 
+                      min="1"
                       value={newMed.stock}
-                      onChange={(e) => setNewMed({...newMed, stock: Number(e.target.value)})}
+                      onChange={(e) => setNewMed({ ...newMed, stock: Number(e.target.value) })}
                       className="w-full px-3 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white outline-none focus:border-teal-500"
                     />
                   </div>
                   <div>
                     <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">Unit Price (₹)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       required
-                      min="1" 
+                      min="1"
                       value={newMed.unitPrice}
-                      onChange={(e) => setNewMed({...newMed, unitPrice: Number(e.target.value)})}
+                      onChange={(e) => setNewMed({ ...newMed, unitPrice: Number(e.target.value) })}
                       className="w-full px-3 py-2 border border-slate-200/80 rounded-xl text-xs font-bold bg-white outline-none focus:border-teal-500"
                     />
                   </div>
                   <div className="sm:col-span-2 md:col-span-4 flex justify-end pt-1">
-                    <button 
+                    <button
                       type="submit"
                       className="h-9 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-xs cursor-pointer active:scale-95 transition-all"
                     >
@@ -1220,13 +1219,13 @@ const RevenueModal = ({
                         {editingIndex === idx ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[14px] font-bold text-slate-500">₹</span>
-                            <input 
+                            <input
                               type="number"
                               className="w-16 px-1.5 py-1 border border-slate-300 rounded text-[14px] font-black outline-none focus:border-teal-500"
                               value={tempPrice}
                               onChange={(e) => setTempPrice(e.target.value)}
                             />
-                            <button 
+                            <button
                               onClick={() => savePrice(idx)}
                               className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded transition-colors"
                             >
@@ -1236,7 +1235,7 @@ const RevenueModal = ({
                         ) : (
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-slate-800">₹{item.unitPrice}</span>
-                            <button 
+                            <button
                               onClick={() => startEditing(idx, item.unitPrice)}
                               className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
                             >
@@ -1245,26 +1244,26 @@ const RevenueModal = ({
                           </div>
                         )}
                       </div>
-                      
+
                       <div>
                         <div className="flex items-center justify-between text-[14px] font-bold text-slate-500 mb-1.5">
                           <span>{item.stock} Units</span>
                           <span>Min: {item.minStock}</span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className={`h-full ${stockColor} rounded-full transition-all`} style={{width: `${stockPct}%`}} />
+                          <div className={`h-full ${stockColor} rounded-full transition-all`} style={{ width: `${stockPct}%` }} />
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                        <button 
+                        <button
                           onClick={() => deleteMedicine(idx)}
                           className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1.5"
                         >
-                          <Trash2 size={16} /> 
+                          <Trash2 size={16} />
                           <span className="text-[14px] font-black uppercase tracking-wider">Remove</span>
                         </button>
-                        <button 
+                        <button
                           onClick={() => restockMed(idx)}
                           className="px-4 py-2 bg-teal-50 hover:bg-teal-600 border border-teal-100 text-[14px] font-black text-teal-600 hover:text-white uppercase tracking-wider rounded-xl transition-all active:scale-95"
                         >
@@ -1312,20 +1311,20 @@ const RevenueModal = ({
                               <span className="text-[11px] text-slate-400">Min: {item.minStock}</span>
                             </div>
                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className={`h-full ${stockColor} rounded-full transition-all`} style={{width: `${stockPct}%`}} />
+                              <div className={`h-full ${stockColor} rounded-full transition-all`} style={{ width: `${stockPct}%` }} />
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
                             {editingIndex === idx ? (
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-slate-500">₹</span>
-                                <input 
+                                <input
                                   type="number"
                                   className="w-16 px-2 py-1 border border-slate-300 rounded-lg text-xs font-black outline-none focus:border-teal-500 bg-white"
                                   value={tempPrice}
                                   onChange={(e) => setTempPrice(e.target.value)}
                                 />
-                                <button 
+                                <button
                                   onClick={() => savePrice(idx)}
                                   className="p-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md transition-colors cursor-pointer"
                                 >
@@ -1335,7 +1334,7 @@ const RevenueModal = ({
                             ) : (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-black text-slate-800">₹{item.unitPrice}</span>
-                                <button 
+                                <button
                                   onClick={() => startEditing(idx, item.unitPrice)}
                                   className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-all cursor-pointer"
                                   title="Edit price"
@@ -1347,13 +1346,13 @@ const RevenueModal = ({
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button 
+                              <button
                                 onClick={() => restockMed(idx)}
                                 className="px-2.5 py-1 bg-teal-50 hover:bg-teal-600 border border-teal-100 text-[11px] font-black text-teal-600 hover:text-white uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
                               >
                                 Restock (+50)
                               </button>
-                              <button 
+                              <button
                                 onClick={() => deleteMedicine(idx)}
                                 className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
                                 title="Delete item"
@@ -1380,7 +1379,7 @@ const RevenueModal = ({
         </div>
       </div>
     </div>
-  );
+    , document.body);
 };
 
 const ConfigField = ({ label, value, onChange, icon = '₹' }) => (
@@ -1390,8 +1389,8 @@ const ConfigField = ({ label, value, onChange, icon = '₹' }) => (
       <span className="px-3 py-2 bg-slate-50 text-slate-400 text-xs font-black border-r border-slate-100 select-none">
         {icon}
       </span>
-      <input 
-        type="number" 
+      <input
+        type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value) || 0)}
         className="w-full px-3 py-2 text-sm font-black text-slate-800 outline-none bg-transparent"
@@ -1410,15 +1409,15 @@ const BreakdownBar = ({ label, amount, percentage, color }) => (
       </div>
     </div>
     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-      <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{width: `${percentage}%`}} />
+      <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }} />
     </div>
   </div>
 );
 
 const MetricCard = ({ title, value, change, icon, color, subtitle, onClick }) => {
   const isPositive = change.includes('+') || change === 'Live' || change === 'Active' || change === 'Dynamic';
-  const trendBg = isPositive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' : 
-                  change.includes('-') ? 'bg-teal-50 text-teal-600 border border-teal-100/50' : 'bg-slate-50 text-slate-400';
+  const trendBg = isPositive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100/50' :
+    change.includes('-') ? 'bg-teal-50 text-teal-600 border border-teal-100/50' : 'bg-slate-50 text-slate-400';
 
   const hoverBorderColors = {
     indigo: 'hover:border-indigo-400',
@@ -1429,7 +1428,7 @@ const MetricCard = ({ title, value, change, icon, color, subtitle, onClick }) =>
   const clickableClass = onClick ? `cursor-pointer ${hoverBorderColors[color] || 'hover:border-slate-300'} active:scale-[0.98]` : '';
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-white p-3.5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 w-full min-h-[8rem] flex flex-col justify-between ${clickableClass}`}
     >
@@ -1466,8 +1465,8 @@ const ConfigInput = ({ label, value, onChange }) => (
     <label className="text-[14px] font-black uppercase tracking-widest text-slate-400 block mb-1.5">{label}</label>
     <div className="relative">
       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[14px] font-black text-slate-400">₹</span>
-      <input 
-        type="number" 
+      <input
+        type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full bg-white border border-slate-200/60 pl-6 pr-2 py-1.5 rounded-lg text-[14px] font-black text-slate-900 outline-none focus:border-teal-500 transition-colors"
