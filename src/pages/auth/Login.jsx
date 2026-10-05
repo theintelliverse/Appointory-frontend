@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import { ShieldCheck, Mail, LockKeyhole, Hash, RefreshCw, ArrowRight, Activity, AlertCircle, X, Wifi, WifiOff, Eye, EyeOff } from 'lucide-react';
 import Footer from '../../components/Footer';
 import SEO from '../../components/SEO';
+import { trackEvent, setAnalyticsUser } from '../../utils/analytics';
 
 import { API_URL } from '../../config/runtime';
 
@@ -54,6 +55,10 @@ const Login = () => {
         localStorage.setItem('clinicCode', formData.clinicCode.toUpperCase());
         if (user.clinicLocation) localStorage.setItem('clinicLocation', user.clinicLocation);
         if (user.clinicContact) localStorage.setItem('clinicContact', user.clinicContact);
+
+        // GA4 tracking
+        setAnalyticsUser(user);
+        trackEvent('login', { role: user.role });
 
         Swal.fire({
           icon: 'success',

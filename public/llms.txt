@@ -15,20 +15,21 @@ Appointory is India's premier AI-powered clinic management system, OPD queue int
    - Seamless online doctor appointments, walk-in token generation, and multi-slot calendar scheduling.
    - Dedicated public clinic and specialist doctor profile pages with real-time slot availability.
 
-2. **Smart Medical Billing & GST Invoicing**:
-   - Comprehensive clinic billing engine with automated GST calculation (0%, 5%, 12%, 18%).
+2. **Smart Medical Billing, GST Invoicing & Anti-Fraud Verification**:
+   - Comprehensive clinic billing engine tailored for Indian healthcare: default 0% GST exemption for clinical services (Notification No. 12/2017) with optional tax rates (5%, 12%, 18%) for pharmacy/cosmetic items.
    - Itemized invoicing for consultations, diagnostic lab tests, procedures, and consumables.
-   - Instant printable & downloadable PDF receipts with clinic branding and QR payment codes.
+   - Branded PDF receipts featuring practitioner medical license numbers, clinic GSTIN, and dynamic Anti-Fraud QR codes.
+   - Public online invoice verification at `https://appointory.in/verify/invoice/:id` for instant Mediclaim & insurance TPA settlement.
    - Complete daily revenue analytics, UPI/Cash reconciliation, and accountant-friendly reports.
 
-3. **Instant SMS & Digital Queue Alerts**:
-   - Real-time patient messaging without physical waiting room crowding.
-   - Instant SMS dispatch via high-priority gateways when tokens are called or queue shifts.
-   - Live encrypted web token link allowing patients to monitor line position from anywhere.
+3. **Automated SMS & WhatsApp Queue Alerts Gateway**:
+   - Dual-channel patient notifications via automated SMS & WhatsApp and live encrypted web links without physical waiting room crowding.
+   - Live queue tracking showing exact waiting position, doctor pace, and estimated arrival window.
+   - Admin-managed paid service gateway powered by Twilio, easily toggled and managed via the SuperAdmin and Clinic Admin dashboards.
 
-4. **AES-256 Medical Report Store & Patient Health Locker**:
+4. **DPDP Act 2023 Compliant AES-256 Health Locker**:
    - Lifetime encrypted digital health locker for patient prescriptions, diagnostic reports, and medical history.
-   - ABDM / ABHA national health ID integration and secure OTP-based patient access.
+   - Protected under India's Digital Personal Data Protection (DPDP) Act 2023 with phone OTP-gated access and masked patient PII.
    - Instant automatic synchronization of verified pathology test results into the patient's vault.
 
 5. **OPD Queue Management & AI Wait-Time Prediction**:
@@ -44,4 +45,4 @@ Appointory is India's premier AI-powered clinic management system, OPD queue int
 
 | Profile ID | Doctor Name | Specialty | Location | Primary Clinic | Consultation Fee | GST Applicable | Specialties |
 |------------|-------------|-----------|----------|----------------|------------------|----------------|-------------|
-| DR001 | Dr. Alisha Sharma | General Physician | New Delhi | City Health Clinic | ₹800 | Yes (18%) | Fever, Cough, Cold, Viral, Primary Care |
+| DR001 | Dr. Alisha Sharma | General Physician | New Delhi | City Health Clinic | ₹800 | Exempt (0%) | Fever, Cough, Cold, Viral, Primary Care |

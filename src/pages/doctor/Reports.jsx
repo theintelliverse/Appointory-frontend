@@ -310,7 +310,11 @@ const Reports = () => {
                             onClick={() => {
                               if (r.patientPhone) {
                                 const clean = r.patientPhone.replace(/\D/g, '').slice(-10);
-                                setActivePatient(clean);
+                                setActivePatient({
+                                  phone: clean,
+                                  patientId: r.patientId || null,
+                                  patientName: r.patientName || ''
+                                });
                               } else {
                                 navigate(`/doctor/records`);
                               }
@@ -335,7 +339,9 @@ const Reports = () => {
       {/* Patient Quick View Modal */}
       {activePatient && (
         <PatientQuickView
-          phone={activePatient}
+          phone={typeof activePatient === 'object' ? activePatient.phone : activePatient}
+          patientId={typeof activePatient === 'object' ? activePatient.patientId : null}
+          patientName={typeof activePatient === 'object' ? activePatient.patientName : ''}
           onClose={() => setActivePatient(null)}
         />
       )}

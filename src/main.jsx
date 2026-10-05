@@ -19,6 +19,8 @@ axios.interceptors.request.use((config) => {
 })
 
 
+import { reportWebVitals } from './utils/analytics'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HelmetProvider>
@@ -26,3 +28,6 @@ createRoot(document.getElementById('root')).render(
     </HelmetProvider>
   </StrictMode>,
 )
+
+reportWebVitals()
+

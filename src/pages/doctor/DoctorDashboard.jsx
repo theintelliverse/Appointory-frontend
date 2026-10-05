@@ -519,7 +519,12 @@ const DoctorDashboard = () => {
       const loadConsultationData = async () => {
         let fetchedHistory = [];
         try {
-          const res = await axios.get(`${API_URL}/api/staff/patient-full-profile/${activePatient.patientPhone}`, {
+          const queryParams = new URLSearchParams();
+          if (activePatient.patientId) queryParams.append('patientId', activePatient.patientId);
+          if (activePatient.patientName) queryParams.append('patientName', activePatient.patientName);
+          const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+          const res = await axios.get(`${API_URL}/api/staff/patient-full-profile/${activePatient.patientPhone}${queryString}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setPatientData(res.data.data);
@@ -543,7 +548,12 @@ const DoctorDashboard = () => {
           // Fetch latest private note
           let privateNoteLoaded = false;
           try {
-            const resNotes = await axios.get(`${API_URL}/api/queue/private-notes/${activePatient.patientPhone}`, {
+            const noteParams = new URLSearchParams();
+            if (activePatient.patientId) noteParams.append('patientId', activePatient.patientId);
+            if (activePatient.patientName) noteParams.append('patientName', activePatient.patientName);
+            const noteQuery = noteParams.toString() ? `?${noteParams.toString()}` : '';
+
+            const resNotes = await axios.get(`${API_URL}/api/queue/private-notes/${activePatient.patientPhone}${noteQuery}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             if (resNotes.data.success && resNotes.data.data.length > 0) {
@@ -863,6 +873,8 @@ const DoctorDashboard = () => {
       setIsSyncing(true);
       const res = await axios.post(`${API_URL}/api/queue/private-notes`, {
         patientPhone: activePatient.patientPhone,
+        patientId: activePatient.patientId || null,
+        patientName: activePatient.patientName || '',
         note: notes
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -893,7 +905,12 @@ const DoctorDashboard = () => {
       if (!activePatient?.patientPhone) return;
       try {
         setIsSyncing(true);
-        const res = await axios.get(`${API_URL}/api/queue/private-notes/${activePatient.patientPhone}`, {
+        const noteParams = new URLSearchParams();
+        if (activePatient.patientId) noteParams.append('patientId', activePatient.patientId);
+        if (activePatient.patientName) noteParams.append('patientName', activePatient.patientName);
+        const noteQuery = noteParams.toString() ? `?${noteParams.toString()}` : '';
+
+        const res = await axios.get(`${API_URL}/api/queue/private-notes/${activePatient.patientPhone}${noteQuery}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {
@@ -2175,8 +2192,22 @@ const DoctorDashboard = () => {
 
         </div>
 
-        {showProfile && activePatient && <PatientQuickView phone={activePatient.patientPhone} onClose={() => setShowProfile(false)} />}
-        {showHistoryLocker && activePatient && <PatientQuickView phone={activePatient.patientPhone} onClose={() => setShowHistoryLocker(false)} />}
+        {showProfile && activePatient && (
+          <PatientQuickView 
+            phone={activePatient.patientPhone} 
+            patientId={activePatient.patientId}
+            patientName={activePatient.patientName}
+            onClose={() => setShowProfile(false)} 
+          />
+        )}
+        {showHistoryLocker && activePatient && (
+          <PatientQuickView 
+            phone={activePatient.patientPhone} 
+            patientId={activePatient.patientId}
+            patientName={activePatient.patientName}
+            onClose={() => setShowHistoryLocker(false)} 
+          />
+        )}
       </div>
     );
   }

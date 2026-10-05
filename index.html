@@ -36,9 +36,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Appointory | Real-time Clinical Management & Digital Health Locker</title>
   <meta name="description"
-    content="Appointory is a real-time clinical management, AES-256 digital health locker, and medical report management platform with live queue tracking, connected pathology lab referrals, OTP-secured patient access, and 5 multi-role dashboards." />
+    content="Appointory is a real-time clinical management, smart GST medical billing, AES-256 digital health locker, and medical report management platform with live queue tracking, anti-fraud QR receipts, connected pathology lab referrals, OTP-secured patient access, and 5 multi-role dashboards." />
   <meta name="keywords"
-    content="Appointory, clinic management system, patient queue management, digital health locker, medical report management, lab referral system, healthcare dashboard, AES-256 vault, hospital token system, appointment booking, patient management, medical record storage, lab report sync, clinic software, healthcare IT, EMR system, medical queue, patient portal" />
+    content="Appointory, clinic management system, clinic billing software, medical GST invoicing, doctor billing system, clinic receipt QR code, OPD billing, healthcare invoices, UPI clinical payment, mediclaim bills, patient queue management, digital health locker, medical report management, lab referral system, healthcare dashboard, AES-256 vault, hospital token system, appointment booking, patient management, medical record storage, lab report sync, clinic software, healthcare IT, EMR system, medical queue, patient portal" />
   <meta name="author" content="appointory@gmail.com" />
   <meta name="creator" content="Appointory Team" />
   <meta name="publisher" content="Appointory" />
@@ -51,36 +51,55 @@
   <meta name="theme-color" content="#1A3C34" />
   <meta name="color-scheme" content="light" />
   <meta name="format-detection" content="telephone=no, email=no, address=no" />
-  <meta name="referrer" content="origin-when-cross-origin" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="application-name" content="Appointory" />
   <meta name="apple-mobile-web-app-title" content="Appointory" />
   <meta name="google-site-verification" content="V9ShBblTx27Z4kLyDmhiU4PPANzjWD_j1O76UrDD40I" />
 
-  <!-- Google tag (gtag.js) with Google Consent Mode v2 -->
+  <!-- Google tag (gtag.js) with Google Consent Mode v2 & Headless Bot Defense -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
+    (function () {
+      var ua = navigator.userAgent || '';
+      var botRegex = /(googlebot|bingbot|yandexbot|duckduckbot|slurp|baiduspider|crawler|spider|headlesschrome|lighthouse)/i;
+      if (navigator.webdriver || botRegex.test(ua)) return;
 
-    // Read stored consent if previously granted
-    var storedConsent = null;
-    try {
-      var raw = localStorage.getItem('appointory_cookie_consent');
-      if (raw) storedConsent = JSON.parse(raw);
-    } catch (e) {}
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { dataLayer.push(arguments); };
 
-    // Default: Denied until explicit consent is given (DPDP Act & ePrivacy compliant)
-    gtag('consent', 'default', {
-      'analytics_storage': storedConsent && storedConsent.analytics ? 'granted' : 'denied',
-      'ad_storage': 'denied',
-      'ad_user_data': 'denied',
-      'ad_personalization': 'denied',
-      'wait_for_update': 500
-    });
+      // Prevent tracking script loading & privacy-block errors on local development
+      var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocal) return;
 
-    gtag('js', new Date());
-    gtag('config', 'G-3KZ0BWGB6R');
+      // Read stored consent if previously granted
+      var storedConsent = null;
+      try {
+        var raw = localStorage.getItem('appointory_cookie_consent');
+        if (raw) storedConsent = JSON.parse(raw);
+      } catch (e) {}
+
+      // Default: Denied until explicit consent is given (DPDP Act & ePrivacy compliant)
+      gtag('consent', 'default', {
+        'analytics_storage': storedConsent && storedConsent.analytics ? 'granted' : 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-3KZ0BWGB6R';
+      s.onerror = function () {
+        // Gracefully ignore tracking blocks from privacy extensions/browsers
+      };
+      document.head.appendChild(s);
+
+      gtag('js', new Date());
+      gtag('config', 'G-3KZ0BWGB6R', {
+        send_page_view: false
+      });
+    })();
   </script>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3KZ0BWGB6R"></script>
 
 
   <!-- Open Graph Tags for Social Sharing & WhatsApp -->
@@ -147,11 +166,18 @@
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
   <link rel="preload"
-    href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
     as="style" />
   <link
-    href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-    rel="stylesheet" />
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+    media="print"
+    onload="this.media='all'" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet" />
+  </noscript>
 
   <link rel="manifest" href="/manifest.json" />
   <link rel="sitemap" href="https://appointory.in/sitemap.xml" type="application/xml" />
@@ -222,13 +248,47 @@
       "priceRange": "$0-$$$",
       "serviceArea": "IN",
       "areaServed": "India",
+      "paymentAccepted": "Cash, Credit Card, Debit Card, UPI, Net Banking",
+      "currenciesAccepted": "INR",
       "knowsAbout": [
         "Healthcare",
         "Clinic Management",
         "Patient Records",
         "Medical Queue Management",
         "Digital Health Locker",
-        "Lab Referrals"
+        "Lab Referrals",
+        "Smart Clinical Billing",
+        "GST Medical Invoicing",
+        "Anti-Fraud QR Invoices",
+        "Mediclaim Bill Reconciliation",
+        "OPD Payment Collection"
+      ]
+    }
+  </script>
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Appointory Healthcare OS",
+      "applicationCategory": "HealthApplication",
+      "applicationSubCategory": "Clinic Management, Medical Billing & EMR",
+      "operatingSystem": "Web Browser, Android, iOS, Windows, macOS",
+      "url": "https://appointory.in/",
+      "image": "https://appointory.in/og-image-banner.jpg",
+      "description": "Comprehensive clinic management platform featuring AI-powered wait-time estimation, smart GST clinical billing, connected independent diagnostic lab network, live waiting room TV token displays, and AES-256 encrypted digital health lockers.",
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "INR",
+        "price": "0",
+        "pricingModel": "FreemiumPricing"
+      },
+      "featureList": [
+        "Real-time OPD queue management and WhatsApp live token alerts",
+        "Smart Clinical Billing with automated GST rates (5%, 12%, 18%) and UPI payment reconciliation",
+        "Tamper-evident anti-fraud QR code receipts for Mediclaim and health insurance claims",
+        "Independent pathology lab portal with secure pairing code handshake",
+        "AES-256 encrypted digital health locker for lifelong patient medical records"
       ]
     }
   </script>

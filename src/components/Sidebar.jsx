@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 import { API_URL } from '../config/runtime';
+import { resetAnalyticsUser } from '../utils/analytics';
 
 const Sidebar = ({ role = 'lab' }) => {
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -175,6 +176,7 @@ const Sidebar = ({ role = 'lab' }) => {
     } catch (err) {
       console.error("Logout tracking failed", err);
     } finally {
+      resetAnalyticsUser();
       localStorage.clear();
       navigate('/login');
     }

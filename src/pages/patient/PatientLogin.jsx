@@ -7,6 +7,7 @@ import {
     Eye, EyeOff, Activity, CheckCircle, Zap
 } from 'lucide-react';
 import SEO from '../../components/SEO';
+import { trackEvent, setAnalyticsUser } from '../../utils/analytics';
 import { API_URL } from '../../config/runtime';
 
 const PatientLogin = () => {
@@ -60,6 +61,10 @@ const PatientLogin = () => {
                 localStorage.setItem('role', 'patient');
                 localStorage.setItem('patientName', res.data.patient?.name || 'Valued Patient');
                 localStorage.setItem('userPhone', res.data.patient?.phone || formData.phone);
+
+                // GA4 tracking
+                setAnalyticsUser({ _id: res.data.patient?._id, role: 'patient' });
+                trackEvent('login', { role: 'patient' });
 
                 Swal.fire({
                     icon: 'success',

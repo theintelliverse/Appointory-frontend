@@ -99,14 +99,16 @@ const HealthLocker = () => {
   const [uploadError, setUploadError] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [selectedMemberId, setSelectedMemberId] = useState(null);
 
-  const fetchHealthData = useCallback(async (silent = false) => {
+  const fetchHealthData = useCallback(async (silent = false, memberId = selectedMemberId) => {
     if (!silent) setLoading(true);
     else setIsSyncing(true);
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_URL}/api/auth/patient/profile`, {
+      const query = memberId ? `?memberId=${memberId}` : '';
+      const res = await axios.get(`${API_URL}/api/auth/patient/profile${query}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setData(res.data.data);
@@ -118,7 +120,7 @@ const HealthLocker = () => {
     } finally {
       setTimeout(() => setIsSyncing(false), 800);
     }
-  }, [navigate]);
+  }, [navigate, selectedMemberId]);
 
   useEffect(() => {
     let active = true;
@@ -381,6 +383,9 @@ const HealthLocker = () => {
       formData.append('document', selectedFile);
       formData.append('title', uploadTitle.trim() || selectedFile.name);
       formData.append('fileType', uploadFileType);
+      if (selectedMemberId || data?._id) {
+        formData.append('memberId', selectedMemberId || data._id);
+      }
 
       await axios.post(`${API_URL}/api/auth/patient/upload-document`, formData, {
         headers: {
@@ -505,6 +510,39 @@ const HealthLocker = () => {
             </div>
           </div>
         </div>
+
+        {/* --- Family Member Profiles Switcher --- */}
+        {data.familyMembers && data.familyMembers.length > 1 && (
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-2.5 mb-4 shadow-sm flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 flex items-center gap-1.5 shrink-0">
+              <User size={13} className="text-teal-600" /> Family Records:
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5 flex-1">
+              {data.familyMembers.map((member) => {
+                const isSelected = (selectedMemberId ? selectedMemberId === member._id : data._id === member._id);
+                return (
+                  <button
+                    key={member._id}
+                    onClick={() => {
+                      setSelectedMemberId(member._id);
+                      fetchHealthData(false, member._id);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-teal-600 text-white shadow-sm shadow-teal-600/30'
+                        : 'bg-slate-50 text-slate-600 hover:bg-teal-50 hover:text-teal-700 border border-slate-100'
+                    }`}
+                  >
+                    <span>{member.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-teal-700 text-teal-100' : 'bg-slate-200/80 text-slate-500'}`}>
+                      {member.relationship}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* --- Navigation Tabs --- */}
         <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 p-1.5 rounded-2xl shadow-sm mb-4 md:mb-5">
@@ -1360,20 +1398,29 @@ const HealthLocker = () => {
                                 </span>
 
                                 <div className="flex items-center gap-2">
+                                  <a
+                                    href={`/verify/invoice/${inv.invoiceNumber || inv._id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1 border border-emerald-200"
+                                    title="Verify Anti-Fraud Digital Certificate"
+                                  >
+                                    <ShieldCheck size={13} /> Verify
+                                  </a>
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setSelectedBillInvoice(inv);
                                       setShowBillModal(true);
                                     }}
-                                    className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-teal-100"
+                                    className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-teal-100 cursor-pointer"
                                   >
                                     <Eye size={13} /> View Receipt
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleDownloadInvoicePdf(inv)}
-                                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-slate-200"
+                                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 border border-slate-200 cursor-pointer"
                                     title="Download Digital PDF Receipt"
                                   >
                                     <Download size={13} className="text-teal-700" />
@@ -1704,18 +1751,26 @@ const HealthLocker = () => {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 print:hidden">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-end gap-2 print:hidden">
+              <a
+                href={`/verify/invoice/${selectedBillInvoice.invoiceNumber || selectedBillInvoice._id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              >
+                <ShieldCheck size={14} /> Verify Certificate
+              </a>
               <button
                 type="button"
                 onClick={() => handleDownloadInvoicePdf(selectedBillInvoice)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors"
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download size={14} /> Download PDF
               </button>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+                className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
               >
                 <Printer size={14} /> Print Receipt
               </button>

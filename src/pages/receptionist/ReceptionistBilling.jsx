@@ -16,6 +16,8 @@ import QrScannerModal from '../../components/receptionist/QrScannerModal';
 import { API_URL } from '../../config/runtime';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { QRCodeSVG } from 'qrcode.react';
+import { openWhatsApp, receiptMessage } from '../../utils/whatsapp';
 
 const ReceptionistBilling = () => {
   const navigate = useNavigate();
@@ -69,10 +71,11 @@ const ReceptionistBilling = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showPrintModal, setShowPrintModal] = useState(false);
 
-  // Billing & Tax Settings State
+  // Billing & Tax Settings State (Healthcare in India is GST-exempt by default under Notification No. 12/2017)
   const [billingSettings, setBillingSettings] = useState({
-    taxEnabled: true,
-    taxRate: 18,
+    taxEnabled: false,
+    taxRate: 0,
+    gstin: '',
     feeConsult: 500,
     feeFollowupConsult: 300,
     feeLab: 450,
@@ -864,27 +867,28 @@ const ReceptionistBilling = () => {
     }
   };
 
-  // WhatsApp Share Receipt
+  // WhatsApp Share Receipt using free click-to-chat link
   const handleShareWhatsApp = (inv) => {
-    const cleanPhone = (inv.patientPhone || '').replace(/\D/g, '').slice(-10);
-    const isLab = inv.billingType === 'lab';
-    const clinicTitle = inv.clinicName || localStorage.getItem('clinicName') || 'SANJIVANI HEALTHCARE';
-    const header = isLab 
-      ? `🔬 *${clinicTitle.toUpperCase()} — PATHOLOGY LAB RECEIPT*` 
-      : `🏥 *${clinicTitle.toUpperCase()} — CONSULTATION RECEIPT*`;
-    const itemsText = (inv.items || []).map(i => `• ${i.description}: ₹${i.amount}`).join('\n');
-    const msg = `${header}\n` +
-      `Receipt No: #${inv.invoiceNumber}\n` +
-      `Patient: ${inv.patientName} (${inv.patientPhone})\n` +
-      `Doctor: Dr. ${inv.doctorName || 'Consultant'}\n` +
-      `Date: ${new Date(inv.billingDate || inv.createdAt).toLocaleDateString('en-IN')}\n\n` +
-      `*${isLab ? 'Investigations / Diagnostic Tests' : 'Consultation & Services'}:*\n${itemsText}\n\n` +
-      `Total: ₹${(inv.totalAmount || 0).toLocaleString('en-IN')}\n` +
-      `Paid: ₹${(inv.paidAmount || 0).toLocaleString('en-IN')} (${inv.paymentMode})\n` +
-      (inv.remainingDue > 0 ? `*⚠️ Balance Due: ₹${inv.remainingDue.toLocaleString('en-IN')}*\n` : `Status: FULLY PAID ✅\n`) +
-      (isLab ? `\nLab sample recorded. Reports will be provided upon completion.` : `\nThank you for visiting! Wish you good health.`);
+    if (!inv) return;
+    const verifyUrl = `${window.location.origin}/verify/invoice/${inv.invoiceNumber || inv._id}`;
+    const msg = receiptMessage({
+      patientName: inv.patientName || 'Patient',
+      invoiceNumber: inv.invoiceNumber,
+      totalAmount: inv.totalAmount,
+      paidAmount: inv.paidAmount,
+      remainingDue: inv.remainingDue,
+      paymentMode: inv.paymentMode
+    }) + `\nVerify bill: ${verifyUrl}`;
 
-    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    const opened = openWhatsApp(inv.patientPhone, msg);
+    if (!opened) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Mobile Number',
+        text: 'The patient mobile number is missing or invalid for WhatsApp.',
+        confirmButtonColor: '#0F766E'
+      });
+    }
   };
 
   // Print Invoice Function
@@ -2083,16 +2087,20 @@ const ReceptionistBilling = () => {
                       {selectedInvoice.billingType === 'lab' ? '🔬' : '🏥'}
                     </div>
                     <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
-                      {selectedInvoice.clinicName || localStorage.getItem('clinicName') || 'SANJIVANI HEALTHCARE'}
+                      {selectedInvoice.clinicName || selectedInvoice.clinicId?.name || localStorage.getItem('clinicName') || 'HEALTHCARE ESTABLISHMENT'}
                     </h2>
                   </div>
                   <p className="text-[11px] font-bold text-slate-600">
                     {selectedInvoice.billingType === 'lab'
                       ? 'Clinical Pathology & Diagnostic Testing Center'
-                      : (selectedInvoice.clinicAddress || 'Multi-Specialty Medical & Diagnostic Center')}
+                      : (selectedInvoice.clinicAddress || selectedInvoice.clinicId?.address || 'Medical & Diagnostic Healthcare Facility')}
                   </p>
                   <p className="text-[10px] text-slate-500 font-medium">
-                    Contact: +91 98765 43210 | GSTIN / Reg: 24AAACS9081F1Z8
+                    {selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone ? `Contact: ${selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone}` : ''}
+                    {(selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone) ? ' | ' : ''}
+                    {selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin 
+                      ? `GSTIN: ${selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin}` 
+                      : 'GST-Exempt Healthcare Service (Notification No. 12/2017)'}
                   </p>
                 </div>
 
@@ -2137,7 +2145,12 @@ const ReceptionistBilling = () => {
                   <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     {selectedInvoice.billingType === 'lab' ? 'Referred By / Mode' : 'Consultant / Service Mode'}
                   </span>
-                  <strong className="text-slate-900 block text-sm font-black">Dr. {selectedInvoice.doctorName || 'General Practitioner'}</strong>
+                  <strong className="text-slate-900 block text-sm font-black">Dr. {selectedInvoice.doctorName || selectedInvoice.doctorId?.name || 'General Practitioner'}</strong>
+                  {(selectedInvoice.doctorLicenseNumber || selectedInvoice.doctorId?.medicalLicenseNumber) && (
+                    <p className="text-[10px] font-mono font-bold text-slate-700">
+                      Reg / License: {selectedInvoice.doctorLicenseNumber || selectedInvoice.doctorId?.medicalLicenseNumber}
+                    </p>
+                  )}
                   <p className={`font-bold uppercase tracking-wider text-[11px] ${
                     selectedInvoice.billingType === 'lab' ? 'text-indigo-700' : 'text-teal-700'
                   }`}>
@@ -2178,11 +2191,34 @@ const ReceptionistBilling = () => {
 
               {/* Calculation Summary & Totals */}
               <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-2">
-                <div className="text-[11px] text-slate-500 space-y-1 max-w-xs">
-                  <p className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Payment Information:</p>
-                  <p>• Payment Mode: <strong className="text-slate-900">{selectedInvoice.paymentMode}</strong></p>
-                  <p>• Status: <strong className="text-slate-900">{selectedInvoice.paymentStatus}</strong></p>
-                  <p className="italic text-[10px] text-slate-400 pt-1">Computer generated electronic bill. Valid without physical stamp.</p>
+                <div className="text-[11px] text-slate-500 space-y-2 max-w-xs">
+                  {/* Anti-Fraud Verification QR Code */}
+                  <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                    <div className="p-1 bg-white rounded-lg border border-slate-200 shrink-0">
+                      <QRCodeSVG
+                        value={`${window.location.origin}/verify/invoice/${selectedInvoice.invoiceNumber || selectedInvoice._id}`}
+                        size={56}
+                        level="M"
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300 inline-block">
+                        ✓ Anti-Fraud QR
+                      </span>
+                      <p className="text-[9px] text-slate-600 font-medium leading-tight">
+                        Scan to verify authentic medical bill directly on Appointory registry.
+                      </p>
+                      <p className="text-[8px] text-slate-400 font-mono">
+                        Valid for Mediclaim & Insurance
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Payment Information:</p>
+                    <p>• Payment Mode: <strong className="text-slate-900">{selectedInvoice.paymentMode}</strong></p>
+                    <p>• Status: <strong className="text-slate-900">{selectedInvoice.paymentStatus}</strong></p>
+                    <p className="italic text-[10px] text-slate-400 pt-0.5">Computer generated electronic bill. Valid without physical stamp.</p>
+                  </div>
                 </div>
 
                 <div className="w-full sm:w-64 space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs font-semibold">
@@ -2205,10 +2241,25 @@ const ReceptionistBilling = () => {
                     </div>
                   )}
 
-                  {selectedInvoice.tax > 0 && (
-                    <div className="flex justify-between text-slate-600">
+                  {selectedInvoice.tax > 0 ? (
+                    <div className="space-y-0.5 pt-1 border-t border-slate-200 text-[11px]">
+                      <div className="flex justify-between text-slate-600">
+                        <span>CGST ({(selectedInvoice.taxRate ? selectedInvoice.taxRate / 2 : 0).toFixed(1)}%):</span>
+                        <span className="font-bold">+ ₹{selectedInvoice.cgst || (selectedInvoice.tax / 2).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>SGST ({(selectedInvoice.taxRate ? selectedInvoice.taxRate / 2 : 0).toFixed(1)}%):</span>
+                        <span className="font-bold">+ ₹{selectedInvoice.sgst || (selectedInvoice.tax / 2).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-700 font-bold text-xs pt-0.5">
+                        <span>Total Tax / GST:</span>
+                        <span>+ ₹{selectedInvoice.tax}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-slate-500 text-[11px]">
                       <span>Tax / GST:</span>
-                      <span className="font-bold">+ ₹{selectedInvoice.tax}</span>
+                      <span className="font-medium text-emerald-700">₹0 (GST Exempt)</span>
                     </div>
                   )}
 
@@ -2281,7 +2332,9 @@ const ReceptionistBilling = () => {
               <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
                 <div>
                   <label className="text-xs font-bold text-slate-800 block">Automatic Tax / GST Calculation</label>
-                  <p className="text-[11px] text-slate-500">Enable automatic tax addition on bill subtotal.</p>
+                  <p className="text-[11px] text-slate-500">
+                    Healthcare in India is exempt (Notification 12/2017). Enable only for taxable items/cosmetics.
+                  </p>
                 </div>
                 <input
                   type="checkbox"
@@ -2289,6 +2342,19 @@ const ReceptionistBilling = () => {
                   onChange={(e) => setBillingSettings({ ...billingSettings, taxEnabled: e.target.checked })}
                   className="w-5 h-5 accent-teal-700 rounded cursor-pointer"
                 />
+              </div>
+
+              {/* Clinic GSTIN */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Clinic GSTIN / Reg No. (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 24AAAAA0000A1Z5"
+                  value={billingSettings.gstin || ''}
+                  onChange={(e) => setBillingSettings({ ...billingSettings, gstin: e.target.value.toUpperCase() })}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono uppercase font-bold text-slate-900 focus:outline-none focus:border-teal-600"
+                />
+                <p className="text-[10px] text-slate-400 italic mt-0.5">Printed on official bills for patient Mediclaim claims.</p>
               </div>
 
               {/* Tax Rate % Input */}

@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { trackPageView } from './utils/analytics';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -63,6 +64,7 @@ const LabPortalBilling = lazy(() => import('./pages/lab-portal/LabPortalBilling'
 const ClinicPublicProfile = lazy(() => import('./pages/public/ClinicPublicProfile'));
 const DoctorPublicProfile = lazy(() => import('./pages/public/DoctorPublicProfile'));
 const LabPublicProfile = lazy(() => import('./pages/public/LabPublicProfile'));
+const VerifyInvoice = lazy(() => import('./pages/public/VerifyInvoice'));
 
 // Super Admin & Subscriptions
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
@@ -82,17 +84,64 @@ import PatientLayout from './components/patient/PatientLayout';
 
 const routeFallback = <SkeletonLoader />;
 
+const PageTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView();
+  }, [location.pathname, location.search]);
+  return null;
+};
+
+// Helper: Check if path is public and should render immediately without blocking on API
+const checkIsPublicPath = () => {
+  if (typeof window === 'undefined') return true;
+  const p = window.location.pathname;
+  return p === '/' || p === '/login' || p === '/register-clinic' || p === '/forgot-password' ||
+         p === '/reset-password' || p === '/privacy' || p === '/terms' || p === '/contact' ||
+         p === '/cookie-policy' || p === '/refund-policy' || p === '/book' || p === '/book-appointment' ||
+         p === '/maintenance' || p.startsWith('/c/') || p.startsWith('/d/') || p.startsWith('/l/') ||
+         p.startsWith('/verify/');
+};
+
 const PlatformGuard = ({ children }) => {
-  const [checking, setChecking] = useState(true);
+  const isPublic = checkIsPublicPath();
+  const hasAuthToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('token') || localStorage.getItem('labToken'));
+
+  // ⚡ INSTANT PAINT: Never block public visitors or unauthenticated users with a skeleton loader!
+  const [checking, setChecking] = useState(() => !isPublic && hasAuthToken);
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const checkPlatformState = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/superadmin/config/public`);
-        if (!res.data.success) {
-          setChecking(false);
+        // Fast-path: Check cached public config in sessionStorage (valid for 5 mins)
+        let config = null;
+        try {
+          const cached = sessionStorage.getItem('appointory_public_config');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - (parsed._ts || 0) < 300000) {
+              config = parsed;
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing cached config:", e);
+        }
+
+        if (!config) {
+          const res = await axios.get(`${API_URL}/api/superadmin/config/public`);
+          if (res.data.success) {
+            config = { ...res.data, _ts: Date.now() };
+            try { sessionStorage.setItem('appointory_public_config', JSON.stringify(config)); } catch (e) {
+              console.error("Error setting cached config:", e);
+            }
+          } 
+        }
+
+        if (!config || !isMounted) {
+          if (isMounted) setChecking(false);
           return;
         }
 
@@ -100,9 +149,11 @@ const PlatformGuard = ({ children }) => {
         const token = localStorage.getItem('token') || localStorage.getItem('labToken');
 
         // 1. Maintenance Mode check
-        if (res.data.isMaintenanceMode && role !== 'superadmin' && window.location.pathname !== '/maintenance') {
-          setIsMaintenance(true);
-          setChecking(false);
+        if (config.isMaintenanceMode && role !== 'superadmin' && window.location.pathname !== '/maintenance') {
+          if (isMounted) {
+            setIsMaintenance(true);
+            setChecking(false);
+          }
           return;
         }
 
@@ -112,12 +163,12 @@ const PlatformGuard = ({ children }) => {
             window.location.assign('/patient/dashboard');
             return;
           }
-          setChecking(false);
+          if (isMounted) setChecking(false);
           return;
         }
 
         // 3. Subscription Enforced check (only for clinics and labs)
-        if (res.data.isSubscriptionEnforced && token && role !== 'superadmin' && window.location.pathname !== '/subscription-checkout' && window.location.pathname !== '/maintenance') {
+        if (config.isSubscriptionEnforced && token && role !== 'superadmin' && window.location.pathname !== '/subscription-checkout' && window.location.pathname !== '/maintenance') {
           const isLab = localStorage.getItem('labRole') === 'independent_lab';
           const authToken = isLab ? (localStorage.getItem('labToken') || token) : token;
           const profileUrl = isLab ? `${API_URL}/api/auth/lab/me` : `${API_URL}/api/auth/me`;
@@ -126,7 +177,7 @@ const PlatformGuard = ({ children }) => {
             headers: { Authorization: `Bearer ${authToken}` }
           });
 
-          if (profileRes.data.success) {
+          if (profileRes.data.success && isMounted) {
             let expiresAt;
             if (isLab) {
               expiresAt = profileRes.data.data.subscriptionExpiresAt;
@@ -146,11 +197,12 @@ const PlatformGuard = ({ children }) => {
       } catch (err) {
         console.error('Platform guard state error:', err);
       } finally {
-        setChecking(false);
+        if (isMounted) setChecking(false);
       }
     };
 
     checkPlatformState();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -198,6 +250,8 @@ const App = () => {
 
   return (
     <Router>
+      <PageTracker />
+      <CookieConsent />
       <div className="min-h-screen bg-parchment font-body text-teak selection:bg-marigold selection:text-white">
         <PlatformGuard>
           <Suspense fallback={routeFallback}>
@@ -236,6 +290,11 @@ const App = () => {
               <Route path="/doctor/profile/:identifier" element={<DoctorPublicProfile />} />
               <Route path="/l/:identifier" element={<LabPublicProfile />} />
               <Route path="/lab/profile/:identifier" element={<LabPublicProfile />} />
+
+              {/* --- 🚀 Dedicated Public Conversion & Acquisition Routes --- */}
+              <Route path="/book" element={<BookAppointment />} />
+              <Route path="/book-appointment" element={<BookAppointment />} />
+              <Route path="/verify/invoice/:id" element={<VerifyInvoice />} />
 
               {/* --- 👑 Super Admin Dashboard Route --- */}
               <Route

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import ReportViewer from './ReportViewer';
 import { API_URL } from '../config/runtime';
-const PatientQuickView = ({ phone, onClose }) => {
+const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
   const [patientData, setPatientData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedReportIndex, setSelectedReportIndex] = useState(null);
@@ -22,6 +22,7 @@ const PatientQuickView = ({ phone, onClose }) => {
   const [pulse, setPulse] = useState("");
   const [weight, setWeight] = useState("");
   const [bmi, setBmi] = useState("");
+  const [activeMemberId, setActiveMemberId] = useState(patientId || null);
 
   useEffect(() => {
     let active = true;
@@ -43,6 +44,7 @@ const PatientQuickView = ({ phone, onClose }) => {
   const handleSaveVitals = async (field, value) => {
     try {
       const payload = {
+        patientId: activeMemberId || patientId || patientData?._id,
         vitals: {
           bloodPressure: field === 'bloodPressure' ? value : bp,
           pulseRate: field === 'pulseRate' ? value : pulse,
@@ -58,21 +60,31 @@ const PatientQuickView = ({ phone, onClose }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchFullProfile = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/staff/patient-full-profile/${phone}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setPatientData(res.data.data);
-      } catch (err) {
-        console.error("Locker fetch error:", err);
-      } finally {
-        setLoading(false);
+  const fetchFullProfile = async (targetMemberId) => {
+    try {
+      const queryParams = new URLSearchParams();
+      const idToUse = targetMemberId !== undefined ? targetMemberId : (activeMemberId || patientId);
+      if (idToUse) queryParams.append('patientId', idToUse);
+      if (patientName && !idToUse) queryParams.append('patientName', patientName);
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+      const res = await axios.get(`${API_URL}/api/staff/patient-full-profile/${phone}${queryString}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPatientData(res.data.data);
+      if (res.data.data?._id && !activeMemberId) {
+        setActiveMemberId(res.data.data._id);
       }
-    };
-    if (phone) fetchFullProfile();
-  }, [phone, token]);
+    } catch (err) {
+      console.error("Locker fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (phone || patientId) fetchFullProfile(patientId || null);
+  }, [phone, patientId, patientName, token]);
 
   if (loading) return (
     <div className="fixed inset-0 bg-teak/40 backdrop-blur-md z-50 flex items-center justify-center">
@@ -108,6 +120,41 @@ const PatientQuickView = ({ phone, onClose }) => {
               <X size={28} />
             </button>
           </div>
+
+          {/* --- Family Members Switcher Bar --- */}
+          {patientData?.familyMembers && patientData.familyMembers.length > 1 && (
+            <div className="px-8 md:px-12 py-3 bg-amber-50/80 border-b border-amber-200/60 flex items-center gap-3 overflow-x-auto">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-900 shrink-0">Family Profiles:</span>
+              <div className="flex items-center gap-2">
+                {patientData.familyMembers.map((member) => {
+                  const isCurrent = (activeMemberId && activeMemberId.toString() === member._id?.toString()) ||
+                    (!activeMemberId && member.name === patientData.name);
+                  return (
+                    <button
+                      key={member._id}
+                      type="button"
+                      onClick={() => {
+                        setActiveMemberId(member._id);
+                        fetchFullProfile(member._id);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                        isCurrent
+                          ? 'bg-teal-700 text-white shadow-sm'
+                          : 'bg-white text-slate-700 hover:bg-amber-100 border border-amber-200'
+                      }`}
+                    >
+                      <span>{member.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase ${
+                        isCurrent ? 'bg-teal-900/40 text-teal-100' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {member.relationship || (member.isPrimaryAccount ? 'Self' : 'Member')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="flex-grow p-4 md:p-12 overflow-y-auto space-y-8 md:space-y-12">
 

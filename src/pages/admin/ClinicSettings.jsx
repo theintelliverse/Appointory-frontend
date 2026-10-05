@@ -41,6 +41,7 @@ const ClinicSettings = () => {
     clinicCode: '',
     contactNumber: '',
     address: '',
+    gstin: '',
     openingTime: '09:00',
     closingTime: '17:00',
     breakStartTime: '12:00',
@@ -102,12 +103,13 @@ const ClinicSettings = () => {
         });
 
         if (res.data.success) {
-          const { name, clinicCode, contactNumber, contactPhone, address, openingTime, closingTime, breakStartTime, breakEndTime, slotDurationMinutes, workingDays, slug, bio, specialties, seoTitle, seoDescription } = res.data.data;
+          const { name, clinicCode, contactNumber, contactPhone, address, gstin, openingTime, closingTime, breakStartTime, breakEndTime, slotDurationMinutes, workingDays, slug, bio, specialties, seoTitle, seoDescription } = res.data.data;
           setFormData({
             name: name || '',
             clinicCode: clinicCode || '',
             contactNumber: contactNumber || contactPhone || '',
             address: address || '',
+            gstin: gstin || '',
             openingTime: openingTime || '09:00',
             closingTime: closingTime || '17:00',
             breakStartTime: breakStartTime || '12:00',
@@ -601,6 +603,24 @@ const ClinicSettings = () => {
                           onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         ></textarea>
                       </div>
+                    </div>
+
+                    {/* GSTIN / Establishment Registration */}
+                    <div className="space-y-2">
+                      <label className="text-[14px] font-black uppercase tracking-widest text-khaki ml-2">GSTIN / Clinic Establishment Reg No. (Optional)</label>
+                      <div className="relative">
+                        <Building size={16} className="absolute left-5 top-4.5 text-sandstone" />
+                        <input
+                          type="text"
+                          placeholder="e.g. 24AAAAA0000A1Z5 or State Reg No."
+                          className="w-full pl-12 pr-6 py-3 bg-parchment border border-sandstone rounded-2xl outline-none focus:border-marigold font-mono uppercase text-teak text-sm"
+                          value={formData.gstin}
+                          onChange={(e) => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })}
+                        />
+                      </div>
+                      <p className="text-[12px] text-khaki ml-2 italic">
+                        Official registration printed on patient tax invoices and Mediclaim receipts. Leave blank if GST exempt.
+                      </p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8">

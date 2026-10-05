@@ -7,11 +7,13 @@ import { SOCKET_URL, API_URL } from '../../config/runtime';
 import {
   User, Phone, Stethoscope, AlertCircle, Clipboard,
   Beaker, Activity, UserCheck, XCircle, Coffee,
-  CheckCircle2, Users, LayoutDashboard, Search, Siren, RefreshCw, Copy, Link, ArrowLeft, Receipt, QrCode
+  CheckCircle2, Users, LayoutDashboard, Search, Siren, RefreshCw, Copy, Link, ArrowLeft, Receipt, QrCode,
+  MessageCircle
 } from 'lucide-react';
 import Footer from '../../components/Footer';
 import Sidebar from '../../components/Sidebar';
 import QrScannerModal from '../../components/receptionist/QrScannerModal';
+import { openWhatsApp, tokenMessage } from '../../utils/whatsapp';
 const socket = SOCKET_URL ? io(SOCKET_URL) : { on: () => { }, off: () => { }, emit: () => { } };
 
 const ReceptionDashboard = () => {
@@ -28,6 +30,7 @@ const ReceptionDashboard = () => {
   const [lastQueueUpdate, setLastQueueUpdate] = useState(() => Date.now());
 
   const [formData, setFormData] = useState({
+    patientId: '',
     patientName: '',
     patientPhone: '',
     doctorId: '',
@@ -35,10 +38,40 @@ const ReceptionDashboard = () => {
     isEmergency: false
   });
 
+  const [suggestedProfiles, setSuggestedProfiles] = useState([]);
+  const [isSearchingProfiles, setIsSearchingProfiles] = useState(false);
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+
   const token = localStorage.getItem('token');
   const clinicId = localStorage.getItem('clinicId');
   const userRole = localStorage.getItem('role');
   const clinicCode = localStorage.getItem('clinicCode') || 'CITY01';
+
+  // 🔍 Lookup family profiles by phone
+  const handlePhoneLookup = useCallback(async (phoneVal) => {
+    const clean = (phoneVal || '').replace(/\D/g, '').slice(-10);
+    if (clean.length === 10) {
+      setIsSearchingProfiles(true);
+      try {
+        const res = await axios.get(`${API_URL}/api/staff/patient-family-lookup/${clean}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success && Array.isArray(res.data.profiles) && res.data.profiles.length > 0) {
+          setSuggestedProfiles(res.data.profiles);
+        } else {
+          setSuggestedProfiles([]);
+        }
+      } catch (error) {
+        console.error("Family lookup error:", error);
+        setSuggestedProfiles([]);
+      } finally {
+        setIsSearchingProfiles(false);
+      }
+    } else {
+      setSuggestedProfiles([]);
+      setSelectedProfileId(null);
+    }
+  }, [token]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -210,6 +243,91 @@ const ReceptionDashboard = () => {
     });
   };
 
+  // --- 📲 OPERATION: SHARE TOKEN VIA WHATSAPP (MANUAL/FALLBACK) ---
+  const handleShareTokenWhatsApp = (p) => {
+    const trackingLink = `${window.location.origin}/patient/status?id=${p._id}`;
+    const msg = tokenMessage({
+      patientName: p.patientName,
+      tokenNumber: p.tokenNumber,
+      doctorName: p.doctorId?.name,
+      trackingLink
+    });
+    const opened = openWhatsApp(p.patientPhone, msg);
+    if (!opened) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Mobile Number',
+        text: 'The patient mobile number is missing or invalid for WhatsApp.',
+        confirmButtonColor: '#0F766E'
+      });
+    }
+  };
+
+  // --- 💬 OPERATION: SEND AUTOMATED SMS & WHATSAPP ALERT (PAID GATEWAY SERVICE) ---
+  const handleSendPatientAlert = async (p) => {
+    if (!p.patientPhone) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Phone Number',
+        text: 'Cannot dispatch alert: patient phone number is missing.',
+        confirmButtonColor: '#0F766E'
+      });
+      return;
+    }
+
+    try {
+      Swal.fire({
+        title: 'Sending SMS & WhatsApp Alert...',
+        text: `Dispatching automated alerts to ${p.patientPhone}`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const res = await axios.post(`${API_URL}/api/queue/notify/${p._id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Alert Dispatched!',
+          text: `Automated SMS & WhatsApp notification sent to ${p.patientPhone}.`,
+          confirmButtonColor: '#0F766E'
+        });
+      }
+    } catch (err) {
+      const isLocked = err.response?.data?.serviceLocked || err.response?.status === 403;
+      if (isLocked) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'SMS & WhatsApp Gateway Locked',
+          text: err.response?.data?.message || "The SMS & WhatsApp module is a paid add-on. Upgrade your subscription to enable automated gateway delivery, or open WhatsApp directly from this device.",
+          showCancelButton: true,
+          confirmButtonText: 'Open WhatsApp Directly',
+          cancelButtonText: 'Close',
+          confirmButtonColor: '#0F766E'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            handleShareTokenWhatsApp(p);
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Alert Delivery Failed',
+          text: err.response?.data?.message || 'Failed to dispatch alert via gateway. You can open WhatsApp directly.',
+          showCancelButton: true,
+          confirmButtonText: 'Open WhatsApp Directly',
+          confirmButtonColor: '#0F766E'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            handleShareTokenWhatsApp(p);
+          }
+        });
+      }
+    }
+  };
+
   // --- 🛠️ OPERATION: START CONSULTATION SESSION ---
   const handleStartSession = async (queueId) => {
     if (isProcessing) return;
@@ -245,7 +363,9 @@ const ReceptionDashboard = () => {
       const res = await axios.post(`${API_URL}/api/queue/add`, formData, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data.success) {
         Swal.fire({ icon: formData.isEmergency ? 'warning' : 'success', title: formData.isEmergency ? 'Emergency Token Issued' : 'Token Generated', text: `${formData.patientName} is now in queue.`, timer: 2000, showConfirmButton: false, background: '#EEF6FA' });
-        setFormData({ patientName: '', patientPhone: '', doctorId: '', visitType: 'Walk-in', isEmergency: false });
+        setFormData({ patientId: '', patientName: '', patientPhone: '', doctorId: '', visitType: 'Walk-in', isEmergency: false });
+        setSuggestedProfiles([]);
+        setSelectedProfileId(null);
         await fetchDashboardData(true);
       }
     } catch { Swal.fire('Error', 'Registration failed', 'error'); } finally { setIsProcessing(false); }
@@ -383,9 +503,82 @@ const ReceptionDashboard = () => {
                 <h3 className="font-heading text-base md:text-xl text-white truncate">{formData.isEmergency ? '🚨 Emergency' : 'Walk-in Entry'}</h3>
                 {formData.isEmergency && <Siren size={20} className="text-white animate-bounce flex-shrink-0" />}
               </div>
-              <form onSubmit={handleManualSubmit} className="space-y-2 md:space-y-4">
-                <input type="text" required placeholder="Patient Name" className="w-full bg-white/10 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40" value={formData.patientName} onChange={(e) => setFormData({ ...formData, patientName: e.target.value })} />
-                <input type="tel" required placeholder="Phone" className="w-full bg-white/10 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40" value={formData.patientPhone} onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })} />
+              <form onSubmit={handleManualSubmit} className="space-y-2 md:space-y-3">
+                {/* 1. Mobile Phone Input First */}
+                <div>
+                  <input 
+                    type="tel" 
+                    required 
+                    placeholder="Mobile (10 Digits)" 
+                    className="w-full bg-white/10 border border-white/20 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/50 font-bold" 
+                    value={formData.patientPhone} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({ ...prev, patientPhone: val }));
+                      handlePhoneLookup(val);
+                    }} 
+                  />
+                </div>
+
+                {/* 2. Family Suggestions Quick-Select Chips */}
+                {suggestedProfiles.length > 0 && (
+                  <div className="space-y-1.5 p-2.5 bg-black/20 rounded-xl md:rounded-2xl border border-white/10 animate-in fade-in">
+                    <div className="flex justify-between items-center text-[10px] text-white/80 font-black uppercase tracking-wider">
+                      <span>Select Family Member:</span>
+                      {isSearchingProfiles && <RefreshCw size={10} className="animate-spin text-marigold" />}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                      {suggestedProfiles.map((p, idx) => {
+                        const isSel = (p._id && selectedProfileId === p._id) || (formData.patientName === p.name && !selectedProfileId);
+                        return (
+                          <button
+                            key={p._id || idx}
+                            type="button"
+                            onClick={() => {
+                              setSelectedProfileId(p._id || 'temp');
+                              setFormData(prev => ({
+                                ...prev,
+                                patientName: p.name,
+                                patientId: p._id || ''
+                              }));
+                            }}
+                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all text-left flex items-center gap-1 cursor-pointer ${
+                              isSel
+                                ? 'bg-marigold text-teak font-black shadow-xs ring-1 ring-white/60'
+                                : 'bg-white/15 text-white hover:bg-white/25'
+                            }`}
+                          >
+                            <span>{p.name}</span>
+                            <span className="text-[10px] opacity-75">({p.relationship || 'Self'})</span>
+                          </button>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedProfileId(null);
+                          setFormData(prev => ({ ...prev, patientName: '', patientId: '' }));
+                        }}
+                        className="px-2 py-1 rounded-lg text-xs font-bold bg-white/5 hover:bg-white/15 text-white/70 border border-white/10 cursor-pointer"
+                      >
+                        + Other
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Patient Name */}
+                <div>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="Patient Name" 
+                    className="w-full bg-white/10 border border-white/15 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40 font-medium" 
+                    value={formData.patientName} 
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })} 
+                  />
+                </div>
+
                 <select required className="w-full bg-white/10 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold" value={formData.doctorId} onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}>
                   <option value="" className="text-black">Assign Doctor</option>
                   {doctors.map(d => <option key={d._id} value={d._id} className="text-black">Dr. {d.name} {!d.isAvailable ? '(Break)' : ''}</option>)}
@@ -470,6 +663,7 @@ const ReceptionDashboard = () => {
                                 </button>
                               )}
                               <button onClick={() => handleAddVitals(p.patientPhone)} className="p-1.5 md:p-3 bg-white border border-sandstone rounded-lg md:rounded-xl text-khaki hover:text-marigold transition-all shadow-sm flex-shrink-0" title="Add Vitals"><Activity size={14} /></button>
+                              <button onClick={() => handleSendPatientAlert(p)} className="p-1.5 md:p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg md:rounded-xl transition-all shadow-sm flex-shrink-0 flex items-center justify-center" title="Send SMS & WhatsApp Alert"><MessageCircle size={14} /></button>
                               <button onClick={() => handleCopyTracker(p._id)} className="p-1.5 md:p-3 bg-teak rounded-lg md:rounded-xl text-white hover:bg-marigold transition-all shadow-lg flex-shrink-0" title="Copy Link"><UserCheck size={14} /></button>
                             </div>
                           </td>

@@ -4,7 +4,7 @@ import { Plus, Trash2, Layers, Tag, CheckSquare } from 'lucide-react';
 const SERVICE_OPTIONS = [
   { key: 'full', label: 'Full Suite (All-Inclusive)', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
   { key: 'billing', label: 'Patient Billing & Invoicing', color: 'bg-blue-100 text-blue-800 border-blue-300' },
-  { key: 'messaging', label: 'Instant SMS & Queue Alerts', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+  { key: 'messaging', label: 'SMS & WhatsApp Notification Gateway (Paid Add-On)', color: 'bg-purple-100 text-purple-800 border-purple-300' },
   { key: 'appointments', label: 'Online Booking & Scheduling', color: 'bg-amber-100 text-amber-800 border-amber-300' },
   { key: 'lab-connect', label: 'Lab Integration & Diagnostic Routing', color: 'bg-cyan-100 text-cyan-800 border-cyan-300' },
   { key: 'analytics', label: 'Advanced Clinic Analytics', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
@@ -14,7 +14,7 @@ const SERVICE_OPTIONS = [
 
 const AVAILABLE_MODULES = [
   { key: 'billing', label: 'Billing' },
-  { key: 'messaging', label: 'Messaging' },
+  { key: 'messaging', label: 'SMS & WhatsApp Gateway' },
   { key: 'appointments', label: 'Appointments' },
   { key: 'lab-connect', label: 'Lab Connect' },
   { key: 'analytics', label: 'Analytics' },

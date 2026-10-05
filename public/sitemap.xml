@@ -1,120 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
-  <!-- Primary Landing Page -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://appointory.in/</loc>
-    <lastmod>2026-05-24</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <mobile:mobile/>
   </url>
-  
-  <!-- Staff Authentication & Registration -->
-  <url>
-    <loc>https://appointory.in/login</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/register-clinic</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/forgot-password</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/reset-password</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-    <mobile:mobile/>
-  </url>
-  
-  <!-- Patient Public Pages -->
-  <url>
-    <loc>https://appointory.in/patient/login</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/patient/register</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/patient/forgot-password</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/patient/checkin</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/patient/status</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-    <mobile:mobile/>
-  </url>
-  
-  <!-- Shared Public Info -->
-  <url>
-    <loc>https://appointory.in/contact</loc>
-    <lastmod>2026-05-24</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <mobile:mobile/>
-  </url>
-  
-  <!-- Legal Pages -->
   <url>
     <loc>https://appointory.in/privacy</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-    <mobile:mobile/>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
     <loc>https://appointory.in/terms</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-    <mobile:mobile/>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://appointory.in/cookie-policy</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>yearly</changefreq>
+    <loc>https://appointory.in/contact</loc>
+    <lastmod>2026-10-04</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <mobile:mobile/>
-  </url>
-  <url>
-    <loc>https://appointory.in/refund-policy</loc>
-    <lastmod>2026-09-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-    <mobile:mobile/>
   </url>
 </urlset>

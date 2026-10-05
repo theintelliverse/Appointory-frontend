@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "redirects": [
@@ -13,19 +12,56 @@
       ],
       "destination": "https://appointory.in/:path*",
       "permanent": true
+    },
+    {
+      "source": "/doctor/profile/:slug",
+      "destination": "/d/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/clinic/profile/:slug",
+      "destination": "/c/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/lab/profile/:slug",
+      "destination": "/l/:slug",
+      "permanent": true
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "handle": "filesystem"
+      "source": "/:section(patient|admin|receptionist|superadmin)/:rest*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
     },
     {
-      "src": "/api/(.*)",
-      "dest": "https://api.appointory.in/api/$1"
+      "source": "/doctor/:page(dashboard|appointments|prescriptions|reports|templates|all-reports)/:rest*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
     },
     {
-      "src": "/.*",
-      "dest": "/index.html"
+      "source": "/:authPage(login|register-clinic|pending-approval|maintenance|subscription-checkout)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

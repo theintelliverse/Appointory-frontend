@@ -6,8 +6,8 @@ const SEO = ({ title, description, url, keywords, image, schemaMarkup, noindex }
     const siteUrl = import.meta.env.VITE_SITE_URL || "https://appointory.in";
 
     const defaultTitle = `${brandName} | Real-time Clinical Management, Smart Billing & Digital Health Locker`;
-    const defaultDescription = `${brandName} is India's premier AI-powered clinic management system, OPD queue intelligence, smart medical billing with GST invoicing, instant patient messaging alerts, independent diagnostic lab network, and AES-256 encrypted digital health locker.`;
-    const defaultKeywords = `${brandName}, appointory, doctor appointment booking software, clinic management system, clinic billing software, GST medical invoice, OPD queue token system, live queue tracking, patient messaging alerts, digital health locker, medical report storage, pathology lab referral, independent diagnostic lab portal, waiting room TV token display, doctor prescription templates, healthcare IT India, EMR system, ABHA ABDM health record`;
+    const defaultDescription = `${brandName} is India's leading clinic management platform featuring real-time OPD queue tracking, smart medical billing with 0% GST healthcare exemption, anti-fraud QR invoice verification, automated SMS & WhatsApp queue alerts, independent diagnostic lab network, and DPDP Act 2023 compliant AES-256 digital health locker.`;
+    const defaultKeywords = `${brandName}, appointory, doctor appointment booking software, clinic management system, clinic billing software, 0% GST medical invoice, healthcare GST exemption notification 12/2017, anti-fraud QR bill verification, OPD queue token system, live queue tracking, SMS and WhatsApp queue alerts, receptionist family auto-suggest, walk-in family booking, DPDP Act health locker, medical report storage, pathology lab referral, independent diagnostic lab portal, waiting room TV token display, doctor prescription templates, healthcare IT India, EMR system, family appointment booking, slot hold reservation`;
 
     const imageUrl = image
         ? (image.startsWith('http') ? image : `${siteUrl}${image}`)
