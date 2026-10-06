@@ -903,7 +903,7 @@ const BookAppointment = () => {
                         popup: 'rounded-[2rem]',
                         confirmButton: 'rounded-xl px-10 py-3 font-semibold text-sm'
                     }
-                }).then(() => navigate('/patient/dashboard'));
+                }).then(() => navigate('/patient/dashboard?tab=appointments'));
             }
         } catch (err) {
             setError(err.response?.data?.message || 'The clinical server encountered an error.');

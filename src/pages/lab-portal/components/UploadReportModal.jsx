@@ -28,7 +28,8 @@ const UploadReportModal = ({
           <div className="bg-slate-50 p-4 rounded-2xl grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 border border-slate-150">
             <p>Patient Name: <span className="text-slate-800 font-extrabold">{uploadModalPatient.patientName}</span></p>
             <p>Phone: <span className="text-slate-800 font-extrabold">{uploadModalPatient.patientPhone}</span></p>
-            <p className="col-span-2">Test: <span className="text-emerald-700 font-extrabold">{uploadModalPatient.testName || 'Routine Diagnosis'}</span></p>
+            <p className="col-span-1">Patient ID: <span className="text-teal-700 font-mono text-[11px] font-extrabold">{uploadModalPatient.patientId?._id || uploadModalPatient.patientId || 'Auto-linked to Account'}</span></p>
+            <p className="col-span-1">Test: <span className="text-emerald-700 font-extrabold truncate">{uploadModalPatient.testName || 'Routine Diagnosis'}</span></p>
           </div>
 
           <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-emerald-500 transition-all cursor-pointer bg-slate-50/50 hover:bg-white relative">

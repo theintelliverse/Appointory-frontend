@@ -5,8 +5,10 @@ const AppointmentCard = ({ appointment, onClick }) => {
   const status = appointment.status || 'Confirmed';
   
   const statusStyles = {
+    Scheduled: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     Confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     Waiting: 'bg-teal-50 text-teal-700 border-teal-200',
+    'Pending-Approval': 'bg-amber-50 text-amber-700 border-amber-200',
     Pending: 'bg-amber-50 text-amber-700 border-amber-200',
     Completed: 'bg-slate-100 text-slate-600 border-slate-200',
     Cancelled: 'bg-rose-50 text-rose-700 border-rose-200'

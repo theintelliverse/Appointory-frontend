@@ -1,14 +1,65 @@
 User-agent: *
 Allow: /
-Allow: /d/
 Allow: /c/
+Allow: /d/
 Allow: /l/
-Allow: /book
+Allow: /features/
+Allow: /for/
+Allow: /pricing
+Allow: /blog
+Allow: /compare/
+Allow: /clinic-software/
+Allow: /about
+Allow: /press
+Allow: /links
+Allow: /contact
 Allow: /privacy
 Allow: /terms
-Allow: /contact
+Allow: /cookie-policy
+Allow: /refund-policy
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /ai.txt
 
-# Private SPA paths are tagged with 'X-Robots-Tag: noindex, nofollow, noarchive' HTTP headers.
-# They are not Disallowed here so search crawlers can discover the noindex headers.
+# Disallow private operational, patient, and clinician routes (DPDP Act & HIPAA/NMC compliance)
+Disallow: /patient/
+Disallow: /doctor/dashboard
+Disallow: /doctor/appointments
+Disallow: /doctor/prescriptions
+Disallow: /doctor/reports
+Disallow: /doctor/all-reports
+Disallow: /doctor/templates
+Disallow: /doctor/locker-search
+Disallow: /doctor/records
+Disallow: /admin/
+Disallow: /receptionist/
+Disallow: /superadmin/
+Disallow: /lab/portal/
+Disallow: /api/
+
+# 🤖 Explicit AI Search Bots & Generative Engine Optimization (GEO / AEO)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
 
 Sitemap: https://appointory.in/sitemap.xml

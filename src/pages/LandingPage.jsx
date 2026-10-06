@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
+import PatientAuthBookingModal from '../components/patient/PatientAuthBookingModal';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -60,6 +61,18 @@ const MOCK_CLINICS = [
 
 const LandingPage = () => {
   const navigate = useNavigate();
+
+  const [showAuthBookingModal, setShowAuthBookingModal] = useState(false);
+
+  const handleBookAppointmentClick = () => {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (token && role === 'patient') {
+      navigate('/patient/book-appointment');
+    } else {
+      setShowAuthBookingModal(true);
+    }
+  };
 
   const [clinicsQueues, setClinicsQueues] = useState(MOCK_CLINICS);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -129,8 +142,8 @@ const LandingPage = () => {
   // 2. Smart Billing & Invoicing Simulator (Sample Data)
   const [billingItems, setBillingItems] = useState([
     { id: 1, name: 'Doctor Consultation (General OPD)', sac: '999312', price: 500, selected: true },
-    { id: 2, name: 'Complete Blood Count (CBC Profile)', sac: '999313', price: 350, selected: true },
-    { id: 3, name: 'Electrocardiogram (ECG 12-Lead)', sac: '999313', price: 400, selected: false },
+    { id: 2, name: 'Complete Blood Count (CBC Profile)', sac: '999316', price: 350, selected: true },
+    { id: 3, name: 'Electrocardiogram (ECG 12-Lead)', sac: '999316', price: 400, selected: false },
     { id: 4, name: 'Vitals Screening & Fasting Glucose', sac: '999312', price: 150, selected: true },
   ]);
   const [billingGstRate, setBillingGstRate] = useState(0); // 0% default (Healthcare exempt under Notification No. 12/2017)
@@ -1071,7 +1084,10 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
 
           <div className="flex items-center gap-2 sm:gap-2.5">
             <button
-              onClick={() => navigate('/patient/login')}
+              onClick={() => {
+                const token = localStorage.getItem('patientToken');
+                navigate(token ? '/patient/health-locker' : '/patient/login');
+              }}
               aria-label="Patient Health Locker Login"
               className="px-3.5 py-1.5 border border-teal-300 text-teal-800 bg-teal-50/70 hover:bg-teal-600 hover:text-white rounded-full text-xs font-bold tracking-wide transition-all shadow-2xs active:scale-95 cursor-pointer hidden md:flex items-center gap-1.5"
             >
@@ -1125,11 +1141,24 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
           <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
             {/* PRIMARY CTA: BOOK APPOINTMENT */}
             <button
-              onClick={() => navigate('/book')}
+              onClick={handleBookAppointmentClick}
               className="px-7 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-[14.5px] shadow-lg shadow-teal-600/30 hover:-translate-y-0.5 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <Calendar size={17} />
               <span>Book Appointment</span>
+            </button>
+
+            {/* HEALTH LOCKER */}
+            <button
+              onClick={() => {
+                const token = localStorage.getItem('patientToken');
+                navigate(token ? '/patient/health-locker' : '/patient/login');
+              }}
+              aria-label="Patient Health Locker"
+              className="px-5 py-3 bg-teal-50/80 hover:bg-teal-100 border-2 border-teal-200 hover:border-teal-400 rounded-2xl font-bold text-[14.5px] text-teal-800 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95 shadow-xs"
+            >
+              <FolderHeart size={17} className="text-teal-600" />
+              <span>Health Locker</span>
             </button>
 
             {/* STAFF LOGIN */}
@@ -1685,7 +1714,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                             <span className="text-[8.5px]">⚡</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-center mb-0.5">
-                                <span className="font-bold text-teal-400">SwasthyaMitra Smart Alert</span>
+                                <span className="font-bold text-teal-400">Appointory Smart Alert</span>
                                 <span className="text-[6.5px] text-white/60">Now</span>
                               </div>
                               <p className="font-medium text-white/90 leading-tight text-[11.5px]">
@@ -2758,10 +2787,10 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                 <div className="text-[11px] text-khaki bg-sandstone/15 p-3 rounded-xl border border-sandstone/25 leading-relaxed space-y-1">
                   <div className="flex items-center gap-1.5 font-bold text-teak">
                     <span>💡</span>
-                    <span>Statutory Healthcare GST Note:</span>
+                    <span>Statutory Healthcare GST & SAC Verification Notice:</span>
                   </div>
                   <p>
-                    Under <strong>Central Tax Notification No. 12/2017 (Rate)</strong>, healthcare services by clinical establishments (consultations, diagnostic tests, procedures) are <strong>0% Exempt from GST</strong>. 12%/18% applies mainly to pharmacy medicines and consumables. Always consult your Chartered Accountant (CA) before configuring clinic tax rates.
+                    Under <strong>Central Tax Notification No. 12/2017 (Rate)</strong>, healthcare services by clinical establishments are <strong>0% Exempt from GST</strong> (SAC <strong>999312</strong> for doctor clinical consultations and SAC <strong>999316</strong> for medical pathology & diagnostic tests). Tax exemption eligibility, SAC classification, and GSTIN requirement <strong>must be formally verified with your certified Chartered Accountant (CA)</strong> based on your establishment registration and state tax rules.
                   </p>
                 </div>
               </div>
@@ -3951,6 +3980,13 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Patient Auth & Booking Modal */}
+      <PatientAuthBookingModal
+        isOpen={showAuthBookingModal}
+        onClose={() => setShowAuthBookingModal(false)}
+        onAuthenticated={() => navigate('/patient/book-appointment')}
+      />
 
       <Footer />
     </div>

@@ -155,7 +155,7 @@ const HealthLocker = () => {
     try {
       const doc = new jsPDF();
       const isLab = inv.billingType === 'lab';
-      const entityName = inv.clinicId?.name || inv.clinicName || 'SwasthyaMitra Healthcare';
+      const entityName = inv.clinicId?.name || inv.clinicName || 'Appointory Healthcare';
       const entityAddress = inv.clinicId?.address || 'Digital Health Facility';
       const entityPhone = inv.clinicId?.phone || '';
 
@@ -241,7 +241,7 @@ const HealthLocker = () => {
       doc.setTextColor(148, 163, 184);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('This is a verified digital medical receipt stored in your SwasthyaMitra Health Vault.', 14, 280);
+      doc.text('This is a verified digital medical receipt stored in your Appointory Health Vault.', 14, 280);
 
       doc.save(`Receipt_${inv.invoiceNumber}.pdf`);
     } catch (err) {
@@ -252,7 +252,7 @@ const HealthLocker = () => {
   const handleDownloadPrescriptionPdf = (record, schedule) => {
     try {
       const doc = new jsPDF();
-      const clinicName = record.clinicName || 'SwasthyaMitra Healthcare';
+      const clinicName = record.clinicName || 'Appointory Healthcare';
       const doctorName = record.doctorName ? `Dr. ${record.doctorName}` : 'Consultant Specialist';
       const patientName = data?.name || 'Valued Patient';
       const dateStr = new Date(record.date || record.visitDate || Date.now()).toLocaleDateString('en-IN', {
@@ -336,7 +336,7 @@ const HealthLocker = () => {
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text('This is a verified digital prescription from SwasthyaMitra Healthcare Portal.', 14, 280);
+      doc.text('This is a verified digital prescription from Appointory Healthcare Portal.', 14, 280);
       doc.text(`Printed: ${new Date().toLocaleString('en-IN')}`, 196, 280, { align: 'right' });
 
       doc.save(`Prescription_${patientName.replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '_')}.pdf`);
@@ -361,7 +361,7 @@ const HealthLocker = () => {
       ? `🟢 Active Course (Day ${schedule.currentDay} of ${schedule.totalDays})`
       : `✓ Course Concluded (${schedule.totalDays} Days)`;
 
-    const msg = `*Prescription from ${doctor}*\n🏥 *${clinic}*\n📅 Date: ${dateStr}\n📋 Diagnosis: ${record.diagnosis || 'Clinical Consultation'}\nStatus: ${statusBadge}\n\n*Prescribed Medications:*${medsText}\n\n_View digital records on SwasthyaMitra Portal_`;
+    const msg = `*Prescription from ${doctor}*\n🏥 *${clinic}*\n📅 Date: ${dateStr}\n📋 Diagnosis: ${record.diagnosis || 'Clinical Consultation'}\nStatus: ${statusBadge}\n\n*Prescribed Medications:*${medsText}\n\n_View digital records on Appointory Portal_`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -385,6 +385,7 @@ const HealthLocker = () => {
       formData.append('fileType', uploadFileType);
       if (selectedMemberId || data?._id) {
         formData.append('memberId', selectedMemberId || data._id);
+        formData.append('patientId', selectedMemberId || data._id);
       }
 
       await axios.post(`${API_URL}/api/auth/patient/upload-document`, formData, {
@@ -1523,6 +1524,37 @@ const HealthLocker = () => {
                 </div>
               )}
 
+              {/* Target Patient / Account Verification */}
+              {data.familyMembers && data.familyMembers.length > 1 ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Patient / Member for Document</label>
+                  <select
+                    value={selectedMemberId || data._id}
+                    onChange={(e) => setSelectedMemberId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-teal-50/60 border border-teal-200 rounded-xl text-sm font-bold text-teal-950 focus:outline-none focus:border-teal-500"
+                  >
+                    {data.familyMembers.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name} ({m.relationship || (m.isPrimaryAccount ? 'Self' : 'Family')}) - ID: {String(m._id).slice(-6).toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
+                    <span className="font-extrabold text-teal-950 text-sm">{data.name || 'Valued Patient'}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
+                    <span className="font-mono font-bold text-teal-800 text-xs">
+                      {data._id ? String(data._id).slice(-8).toUpperCase() : 'VERIFIED'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
                 <input
@@ -1646,7 +1678,7 @@ const HealthLocker = () => {
             <div id="patient-print-receipt" className="p-6 space-y-4 text-xs">
               <div className="text-center border-b border-slate-200 pb-3">
                 <h2 className="text-lg font-black text-slate-900">
-                  {selectedBillInvoice.clinicId?.name || selectedBillInvoice.clinicName || 'SwasthyaMitra Healthcare Facility'}
+                  {selectedBillInvoice.clinicId?.name || selectedBillInvoice.clinicName || 'Appointory Healthcare Facility'}
                 </h2>
                 <p className="text-[11px] text-slate-500 font-medium">
                   {selectedBillInvoice.clinicId?.address || 'Digital Healthcare Partner Network'}
@@ -1746,14 +1778,14 @@ const HealthLocker = () => {
               </div>
 
               <div className="text-center pt-2 text-[10px] text-slate-400">
-                This is a secure electronic receipt from SwasthyaMitra Health Vault.
+                This is a secure electronic receipt from Appointory Health Vault.
               </div>
             </div>
 
             {/* Modal Footer Actions */}
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-end gap-2 print:hidden">
               <a
-                href={`/verify/invoice/${selectedBillInvoice.invoiceNumber || selectedBillInvoice._id}`}
+                href={`/verify/invoice/${selectedBillInvoice.invoiceNumber || selectedBillInvoice._id}${selectedBillInvoice.verificationToken ? `?token=${selectedBillInvoice.verificationToken}` : ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"

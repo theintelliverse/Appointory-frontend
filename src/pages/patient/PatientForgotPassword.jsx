@@ -15,6 +15,7 @@ const PatientForgotPassword = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [debugOtp, setDebugOtp] = useState('');
     const [formData, setFormData] = useState({
         phone: '',
         otp: '',
@@ -36,11 +37,19 @@ const PatientForgotPassword = () => {
         }
 
         setLoading(true);
+        setDebugOtp('');
         try {
             const res = await axios.post(`${API_URL}/api/auth/patient/forgot-password`, { phone: formData.phone });
             if (res.data.success) {
                 setStep(2);
-                Swal.fire({ icon: 'success', title: 'OTP Sent! 📱', text: res.data.message, background: '#F8FAFC', confirmButtonColor: '#0D9488' });
+                if (res.data.debugOtp) setDebugOtp(res.data.debugOtp);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'OTP Sent! 📱',
+                    text: res.data.message,
+                    background: '#F8FAFC',
+                    confirmButtonColor: '#0D9488'
+                });
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to send OTP', confirmButtonColor: '#0D9488' });
@@ -49,14 +58,42 @@ const PatientForgotPassword = () => {
         }
     };
 
-    const handleVerifyOTP = (e) => {
+    const handleVerifyOTP = async (e) => {
         e.preventDefault();
         const cleanOtp = formData.otp.replace(/\D/g, '');
         if (!cleanOtp || cleanOtp.length !== 6) {
             Swal.fire({ icon: 'error', title: 'Invalid OTP', text: 'Enter 6-digit code', confirmButtonColor: '#0D9488' });
             return;
         }
-        setStep(3);
+
+        setLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/api/auth/patient/verify-otp`, {
+                phone: formData.phone,
+                otp: cleanOtp
+            });
+
+            if (res.data.success) {
+                setStep(3);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'OTP Verified! ✅',
+                    text: 'Please set your new password.',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#F8FAFC'
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Verification Failed',
+                text: err.response?.data?.message || 'Invalid or expired OTP',
+                confirmButtonColor: '#0D9488'
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleResetPassword = async (e) => {

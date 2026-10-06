@@ -29,7 +29,10 @@ export default function VerifyInvoice() {
       }
       try {
         setLoading(true);
-        const res = await axios.get(`${API_URL}/api/public/verify/invoice/${id}`);
+        const searchParams = new URLSearchParams(window.location.search);
+        const token = searchParams.get('token') || searchParams.get('t');
+        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+        const res = await axios.get(`${API_URL}/api/public/verify/invoice/${id}${tokenQuery}`);
         if (res.data.success && res.data.verified) {
           setVerified(true);
           setInvoice(res.data.invoice);
@@ -206,8 +209,15 @@ export default function VerifyInvoice() {
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Patient Summary (Masked)</span>
-                  <p className="font-bold text-slate-900 mt-0.5">
-                    Name: {invoice.patient.name} • Mobile: {invoice.patient.phone}
+                  <p className="font-bold text-slate-900 mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <span>Name: {invoice.patient.name}</span>
+                    <span>•</span>
+                    <span>Mobile: {invoice.patient.phone}</span>
+                    {invoice.patient.id && (
+                      <span className="text-[10px] font-mono text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-md border border-teal-200">
+                        Patient ID: {invoice.patient.id.slice(-8).toUpperCase()}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">

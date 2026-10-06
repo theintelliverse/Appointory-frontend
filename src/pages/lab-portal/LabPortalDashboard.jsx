@@ -165,7 +165,8 @@ const LabPortalDashboard = () => {
           reportType: 'Diagnostic',
           defaultNotes: dbConfig.defaultNotes || 'Results are clinically validated. Correlate with symptoms.',
           defaultDoctorName: dbConfig.defaultDoctorName || 'Pathologist',
-          testFee: dbConfig.testFee || 450
+          testFee: dbConfig.testFee || 450,
+          publicListingConsent: Boolean(dbConfig.publicListingConsent)
         });
       }
     } catch (err) {
@@ -399,6 +400,10 @@ const LabPortalDashboard = () => {
       doc.text(`Referred Tests: ${activeDigitalPatient.testName || 'Routine Diagnosis'}`, 20, 86);
       doc.text(`Date of Visit: ${new Date(activeDigitalPatient.createdAt).toLocaleDateString()}`, 130, 70);
       doc.text(`Report ID: LP-${activeDigitalPatient._id.slice(-8).toUpperCase()}`, 130, 78);
+      const patientRef = activeDigitalPatient.patientId?._id || activeDigitalPatient.patientId;
+      if (patientRef) {
+        doc.text(`Patient ID: ${String(patientRef).slice(-8).toUpperCase()}`, 130, 86);
+      }
 
       // Findings Section
       doc.setFontSize(bodyFontSize + 4);
@@ -486,7 +491,8 @@ const LabPortalDashboard = () => {
         bodyFontSize: reportConfig.bodyFontSize,
         defaultNotes: reportConfig.defaultNotes,
         defaultDoctorName: reportConfig.defaultDoctorName,
-        testFee: reportConfig.testFee
+        testFee: reportConfig.testFee,
+        publicListingConsent: reportConfig.publicListingConsent
       };
       
       const res = await labApi().patch('/api/lab-connect/settings/lab', payload);

@@ -22,17 +22,24 @@ import {
   UserCheck,
   Plus,
   Sun,
-  Trash2
+  Trash2,
+  ShieldCheck,
+  Globe
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
 import ClinicQR from '../../components/ClinicQR';
+import ClinicSeoSettingsTab from './components/ClinicSeoSettingsTab';
 import { API_URL } from '../../config/runtime';
 
 const ClinicSettings = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const initialTab = searchParams.get('tab') === 'schedule' || searchParams.get('tab') === 'leaves' ? 'schedule' : 'profile';
+  const initialTab = searchParams.get('tab') === 'schedule' || searchParams.get('tab') === 'leaves' 
+    ? 'schedule' 
+    : searchParams.get('tab') === 'seo' 
+      ? 'seo' 
+      : 'profile';
 
   const [loading, setLoading] = useState(true);
   const [activeSettingsTab, setActiveSettingsTab] = useState(initialTab); // 'profile', 'schedule', 'labs', or 'seo'
@@ -52,7 +59,9 @@ const ClinicSettings = () => {
     bio: '',
     specialtiesStr: '',
     seoTitle: '',
-    seoDescription: ''
+    seoDescription: '',
+    publicListingConsent: false,
+    publicListingConsentDate: null
   });
 
   // Lab Connection States
@@ -103,7 +112,7 @@ const ClinicSettings = () => {
         });
 
         if (res.data.success) {
-          const { name, clinicCode, contactNumber, contactPhone, address, gstin, openingTime, closingTime, breakStartTime, breakEndTime, slotDurationMinutes, workingDays, slug, bio, specialties, seoTitle, seoDescription } = res.data.data;
+          const { name, clinicCode, contactNumber, contactPhone, address, gstin, openingTime, closingTime, breakStartTime, breakEndTime, slotDurationMinutes, workingDays, slug, bio, specialties, seoTitle, seoDescription, publicListingConsent, publicListingConsentDate } = res.data.data;
           setFormData({
             name: name || '',
             clinicCode: clinicCode || '',
@@ -120,7 +129,9 @@ const ClinicSettings = () => {
             bio: bio || '',
             specialtiesStr: Array.isArray(specialties) ? specialties.join(', ') : '',
             seoTitle: seoTitle || '',
-            seoDescription: seoDescription || ''
+            seoDescription: seoDescription || '',
+            publicListingConsent: Boolean(publicListingConsent),
+            publicListingConsentDate: publicListingConsentDate || null
           });
         }
         setLoading(false);
@@ -533,6 +544,14 @@ const ClinicSettings = () => {
             Lab Partners
             {activeSettingsTab === 'labs' && <div className="absolute bottom-0 left-0 w-full h-[3px] bg-teak rounded-t" />}
           </button>
+          <button
+            onClick={() => setActiveSettingsTab('seo')}
+            className={`py-3 px-4 font-bold text-sm uppercase tracking-wider relative transition-all flex items-center gap-2 ${activeSettingsTab === 'seo' ? 'text-teak font-black' : 'text-khaki hover:text-teak'}`}
+          >
+            <Globe size={16} />
+            SEO & Google Listing
+            {activeSettingsTab === 'seo' && <div className="absolute bottom-0 left-0 w-full h-[3px] bg-teak rounded-t" />}
+          </button>
         </div>
 
         <main className="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6">
@@ -699,6 +718,47 @@ const ClinicSettings = () => {
                         })}
                       </div>
                       <p className="text-[14px] text-khaki italic ml-2">Quick Slots will be shown only on selected days.</p>
+                    </div>
+
+                    {/* 📋 DPDP Act 2023 Explicit Directory Consent Card */}
+                    <div className="p-6 bg-parchment rounded-3xl border border-sandstone space-y-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2.5 rounded-2xl border ${formData.publicListingConsent ? 'bg-teal-50 border-teal-200 text-teal-800' : 'bg-sandstone/20 border-sandstone text-khaki'}`}>
+                            <ShieldCheck size={22} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black uppercase tracking-wider text-teak">
+                              Public Clinic Directory Consent (DPDP Act 2023)
+                            </h4>
+                            <p className="text-xs text-khaki font-medium mt-0.5">
+                              Publish and list this facility on the public directory at <code className="text-teak font-mono">/c/{formData.slug || 'clinic-code'}</code>
+                            </p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                          <input 
+                            type="checkbox" 
+                            checked={Boolean(formData.publicListingConsent)}
+                            onChange={(e) => setFormData({ ...formData, publicListingConsent: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-sandstone/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-700"></div>
+                        </label>
+                      </div>
+                      <div className="text-xs text-teak bg-white p-4 rounded-2xl border border-sandstone/50 leading-relaxed space-y-1">
+                        <p className="font-bold text-teak">
+                          Written Consent Declaration:
+                        </p>
+                        <p className="text-khaki text-[11.5px]">
+                          By enabling this toggle, you provide explicit written authorization under India’s Digital Personal Data Protection (DPDP) Act 2023 for Appointory to publicly display this clinical establishment’s address, contact details, consultation fee schedule, and consenting medical practitioners. If disabled, your clinic is excluded from public directories, AI discovery, and search engine indexation.
+                        </p>
+                        {formData.publicListingConsentDate && (
+                          <p className="text-[10.5px] text-teal-700 font-mono pt-1">
+                            ✓ Consent logged on: {new Date(formData.publicListingConsentDate).toLocaleString('en-IN')}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="pt-6">
@@ -1475,6 +1535,12 @@ const ClinicSettings = () => {
                 </div>
               </div>
             </div>
+          )}
+          {activeSettingsTab === 'seo' && (
+            <ClinicSeoSettingsTab
+              clinicData={formData}
+              onConsentUpdated={(consent) => setFormData(prev => ({ ...prev, publicListingConsent: consent }))}
+            />
           )}
         </main>
         <Footer />

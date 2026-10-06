@@ -64,13 +64,29 @@ const LabPublicProfile = () => {
   }
 
   if (error || !data) {
+    const isConsentNotice = error?.toLowerCase().includes('consent') || error?.toLowerCase().includes('dpdp');
     return (
       <div className="min-h-screen bg-parchment flex items-center justify-center p-4">
-        <div className="max-w-md bg-white border border-stone-200 rounded-2xl p-6 text-center space-y-4 shadow-sm">
-          <AlertCircle className="mx-auto text-amber-500" size={48} />
-          <h2 className="text-xl font-bold text-slate-800">Lab Profile Not Found</h2>
-          <p className="text-sm text-slate-600">{error || 'The requested diagnostic lab profile is inactive or unavailable.'}</p>
-          <Link to="/" className="inline-block bg-teak text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-slate-800 transition">
+        <div className="max-w-md bg-white border border-stone-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+          {isConsentNotice ? (
+            <div className="w-16 h-16 bg-teal-50 text-teal-700 rounded-2xl flex items-center justify-center mx-auto border border-teal-200">
+              <ShieldCheck size={36} />
+            </div>
+          ) : (
+            <AlertCircle className="mx-auto text-amber-500" size={48} />
+          )}
+          <h2 className="text-xl font-bold text-slate-800">
+            {isConsentNotice ? 'Diagnostic Lab Not Publicly Listed' : 'Lab Profile Not Found'}
+          </h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            {error || 'The requested diagnostic lab profile is inactive or unavailable.'}
+          </p>
+          {isConsentNotice && (
+            <p className="text-[11px] text-teal-800 bg-teal-50/70 p-3 rounded-xl border border-teal-200/60 leading-normal">
+              🔒 In compliance with India’s <strong>Digital Personal Data Protection (DPDP) Act 2023</strong>, independent diagnostic laboratories require explicit written authorization before being indexed or browsed on the public directory.
+            </p>
+          )}
+          <Link to="/" className="inline-block bg-teak text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl hover:bg-slate-800 transition">
             Back to Home
           </Link>
         </div>

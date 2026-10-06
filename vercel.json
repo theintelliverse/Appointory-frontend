@@ -31,6 +31,58 @@
   ],
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/assets/:match*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).(png|jpg|jpeg|webp|svg|ico|webmanifest)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
+      "source": "/(sitemap.xml|robots.txt|llms.txt|llms-full.txt|ai.txt)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
       "source": "/:section(patient|admin|receptionist|superadmin)/:rest*",
       "headers": [
         {
@@ -59,6 +111,48 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/c/:slug",
+      "destination": "https://api.appointory.in/c/:slug"
+    },
+    {
+      "source": "/clinics",
+      "destination": "https://api.appointory.in/clinics"
+    },
+    {
+      "source": "/clinics/:city",
+      "destination": "https://api.appointory.in/clinics/:city"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api.appointory.in/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://api.appointory.in/robots.txt"
+    },
+    {
+      "source": "/:route(d|l)/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|Sogou|ia_archiver|PerplexityBot|ClaudeBot|Claude-SearchBot|GPTBot|OAI-SearchBot|ChatGPT-User|Applebot).*"
+        }
+      ],
+      "destination": "/api/bot-ssr?path=/:route/:slug"
+    },
+    {
+      "source": "/verify/invoice/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Slackbot|SkypeUriPreview|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|Sogou|ia_archiver|PerplexityBot|ClaudeBot|Claude-SearchBot|GPTBot|OAI-SearchBot|ChatGPT-User|Applebot).*"
+        }
+      ],
+      "destination": "/api/bot-ssr?path=/verify/invoice/:id"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

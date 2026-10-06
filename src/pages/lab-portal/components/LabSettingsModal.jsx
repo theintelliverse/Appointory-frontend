@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, X, Save, TrendingUp, Clock, FileCheck, Building } from 'lucide-react';
-import Swal from 'sweetalert2';
+import React from 'react';
+import { Settings, X, Save, TrendingUp, ShieldCheck } from 'lucide-react';
 
 const LabSettingsModal = ({
   isOpen,
@@ -94,6 +93,25 @@ const LabSettingsModal = ({
                   value={reportConfig.defaultNotes}
                   onChange={(e) => setReportConfig({ ...reportConfig, defaultNotes: e.target.value })}
                 />
+              </div>
+
+              {/* 📋 DPDP Act 2023 Explicit Directory Consent */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={18} className={reportConfig.publicListingConsent ? 'text-teal-600' : 'text-slate-400'} />
+                    <span className="text-[11px] font-black uppercase text-slate-700 tracking-wider">Public Directory Listing (DPDP Act 2023)</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(reportConfig.publicListingConsent)}
+                    onChange={(e) => setReportConfig({ ...reportConfig, publicListingConsent: e.target.checked })}
+                    className="w-4 h-4 accent-teal-600 rounded cursor-pointer"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed bg-white p-2.5 rounded-xl border border-slate-100">
+                  Explicit written authorization under DPDP Act 2023 to list this laboratory, address, test catalog, and operational schedule on the Appointory public diagnostic directory. Without consent, the lab profile is strictly restricted from public viewing.
+                </p>
               </div>
 
               <div className="flex items-center gap-3 pt-4">

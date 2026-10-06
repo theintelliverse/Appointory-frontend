@@ -8,7 +8,7 @@ import {
   CreditCard, DollarSign, Sparkles, FileText, AlertTriangle, 
   Beaker, Check, Clock, Eye, Share2, ChevronRight, X, TrendingUp, CalendarCheck, Settings, QrCode,
   Tag, Percent, MessageCircle, FileDown, FlaskConical, Download, Ticket,
-  ChevronLeft, Calendar, Filter
+  ChevronLeft, Calendar, Filter, Users
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -40,6 +40,7 @@ const ReceptionistBilling = () => {
   const [autoFetched, setAutoFetched] = useState(false);
   const [fetchedQueue, setFetchedQueue] = useState(null);
   const [doctors, setDoctors] = useState([]);
+  const [familyMembersList, setFamilyMembersList] = useState([]);
   
   // Doctor Appointment Booking Option (Optional, defaults to false)
   const [bookAppointment, setBookAppointment] = useState(false);
@@ -88,6 +89,7 @@ const ReceptionistBilling = () => {
 
   // Bill Form State
   const [formData, setFormData] = useState({
+    patientId: null,
     patientName: '',
     patientPhone: '',
     doctorId: '',
@@ -205,9 +207,14 @@ const ReceptionistBilling = () => {
         const data = res.data;
         setDoctors(data.doctors || []);
         
-        // 1. Fill Patient Basic Info
-        const pName = data.patient?.name || (data.queue?.patientName || '');
-        const pPhone = data.patient?.phone || phoneToSearch;
+        // 1. Fill Patient Basic Info & Linked Family Members
+        const primaryPatient = data.patient;
+        const familyList = data.familyMembers || [];
+        setFamilyMembersList(familyList);
+
+        const pId = primaryPatient?._id || primaryPatient?.id || null;
+        const pName = primaryPatient?.name || (data.queue?.patientName || '');
+        const pPhone = primaryPatient?.phone || phoneToSearch;
         const qId = data.queue?.id || null;
         const docId = data.queue?.doctorId || (data.doctors?.[0]?._id || '');
         const docName = data.queue?.doctorName || (data.doctors?.[0]?.name || '');
@@ -286,6 +293,7 @@ const ReceptionistBilling = () => {
 
         setFormData(prev => ({
           ...prev,
+          patientId: pId,
           patientName: pName,
           patientPhone: pPhone,
           doctorId: docId,
@@ -301,7 +309,7 @@ const ReceptionistBilling = () => {
         Swal.fire({
           icon: 'success',
           title: 'Details Auto-Fetched!',
-          text: `Fetched info for ${pName || pPhone}.${detectedPrescriptions.length > 0 ? ` Found ${detectedPrescriptions.length} prescribed lab test(s)!` : ''}`,
+          text: `Fetched info for ${pName || pPhone}.${familyList.length > 1 ? ` (${familyList.length} linked family accounts found)` : ''}${detectedPrescriptions.length > 0 ? ` Found ${detectedPrescriptions.length} prescribed lab test(s)!` : ''}`,
           timer: 2000,
           showConfirmButton: false,
           background: '#EEF6FA'
@@ -309,8 +317,10 @@ const ReceptionistBilling = () => {
       }
     } catch (err) {
       console.warn("Auto-fetch error, switching to manual mode:", err);
+      setFamilyMembersList([]);
       setFormData(prev => ({
         ...prev,
+        patientId: null,
         patientPhone: phoneToSearch,
         patientName: prev.patientName || '',
         paidAmount: items.reduce((s, i) => s + Number(i.amount || 0), 0)
@@ -461,6 +471,7 @@ const ReceptionistBilling = () => {
     setSubmitting(true);
     try {
       const payload = {
+        patientId: formData.patientId || null,
         patientName: formData.patientName,
         patientPhone: formData.patientPhone,
         doctorId: formData.doctorId || null,
@@ -494,7 +505,9 @@ const ReceptionistBilling = () => {
         }
 
         // Reset Form
+        setFamilyMembersList([]);
         setFormData({
+          patientId: null,
           patientName: '',
           patientPhone: '',
           doctorId: '',
@@ -870,7 +883,8 @@ const ReceptionistBilling = () => {
   // WhatsApp Share Receipt using free click-to-chat link
   const handleShareWhatsApp = (inv) => {
     if (!inv) return;
-    const verifyUrl = `${window.location.origin}/verify/invoice/${inv.invoiceNumber || inv._id}`;
+    const tokenSuffix = inv.verificationToken ? `?token=${inv.verificationToken}` : '';
+    const verifyUrl = `${window.location.origin}/verify/invoice/${inv.invoiceNumber || inv._id}${tokenSuffix}`;
     const msg = receiptMessage({
       patientName: inv.patientName || 'Patient',
       invoiceNumber: inv.invoiceNumber,
@@ -1048,7 +1062,12 @@ const ReceptionistBilling = () => {
 
     const escapeCsv = (val) => {
       if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
+      let str = String(val);
+      // Neutralize CSV/Formula injection (CWE-1236) if starting with =, +, -, @, \t, \r
+      if (/^[=+\-@\t\r]/.test(str)) {
+        str = `'${str}`;
+      }
+      str = str.replace(/"/g, '""');
       return `"${str}"`;
     };
 
@@ -1082,7 +1101,7 @@ const ReceptionistBilling = () => {
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
     const dateStamp = new Date().toISOString().slice(0, 10);
-    link.setAttribute('download', `SwasthyaMitra_Billing_${historyFilter}_${dateFilterPeriod}_${dateStamp}.csv`);
+    link.setAttribute('download', `Appointory_Billing_${historyFilter}_${dateFilterPeriod}_${dateStamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1272,15 +1291,77 @@ const ReceptionistBilling = () => {
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <User size={18} className="text-teal-600" /> Patient & Practitioner Details
                   </h3>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    {autoFetched ? 'Auto-Filled' : 'Manual Entry'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {formData.patientId && (
+                      <span className="text-[10px] font-mono font-bold text-teal-800 bg-teal-100/80 px-2 py-0.5 rounded-md">
+                        Patient ID: {String(formData.patientId).slice(-8).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      {autoFetched ? 'Auto-Filled' : 'Manual Entry'}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Linked Accounts / Family Members Selector */}
+                {familyMembersList && familyMembersList.length > 0 && (
+                  <div className="bg-teal-50/70 border border-teal-200/90 rounded-2xl p-3.5 space-y-2.5 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-teal-950 flex items-center gap-1.5">
+                        <Users size={15} className="text-teal-700" />
+                        Select Patient / Family Member for Bill:
+                      </span>
+                      <span className="text-[10px] font-bold text-teal-700 bg-teal-100/90 px-2 py-0.5 rounded-full">
+                        {familyMembersList.length} Account{familyMembersList.length > 1 ? 's' : ''} Linked
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {familyMembersList.map((m) => {
+                        const mId = m._id || m.id;
+                        const isSelected = (formData.patientId && String(formData.patientId) === String(mId)) ||
+                          (!formData.patientId && formData.patientName === m.name);
+                        return (
+                          <button
+                            key={mId}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({
+                                ...prev,
+                                patientId: mId,
+                                patientName: m.name
+                              }));
+                            }}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                              isSelected
+                                ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-teal-400 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span>{m.name}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
+                              isSelected ? 'bg-teal-800 text-teal-100' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {m.relationship || (m.isPrimaryAccount ? 'Self' : 'Family')}
+                              {m.isMinor ? ' • Minor' : ''}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Patient Name */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Patient Full Name *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-600">Patient Full Name *</label>
+                      {formData.patientId && (
+                        <span className="text-[10px] font-mono text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded">
+                          ID: {String(formData.patientId).slice(-8).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="text"
                       required
@@ -2196,7 +2277,7 @@ const ReceptionistBilling = () => {
                   <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-xl border border-slate-200">
                     <div className="p-1 bg-white rounded-lg border border-slate-200 shrink-0">
                       <QRCodeSVG
-                        value={`${window.location.origin}/verify/invoice/${selectedInvoice.invoiceNumber || selectedInvoice._id}`}
+                        value={`${window.location.origin}/verify/invoice/${selectedInvoice.invoiceNumber || selectedInvoice._id}${selectedInvoice.verificationToken ? `?token=${selectedInvoice.verificationToken}` : ''}`}
                         size={56}
                         level="M"
                       />
@@ -2342,6 +2423,16 @@ const ReceptionistBilling = () => {
                   onChange={(e) => setBillingSettings({ ...billingSettings, taxEnabled: e.target.checked })}
                   className="w-5 h-5 accent-teal-700 rounded cursor-pointer"
                 />
+              </div>
+
+              {/* CA / Statutory Verification Notice */}
+              <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
+                <p className="font-bold flex items-center gap-1">
+                  <span>💡</span> Statutory CA Verification Advisory:
+                </p>
+                <p className="text-amber-800/90 leading-relaxed text-[10.5px]">
+                  Clinical consultations (SAC <strong>999312</strong>) and diagnostic pathology services (SAC <strong>999316</strong>) are typically 0% exempt under Notification No. 12/2017-Central Tax (Rate). Please have your certified <strong>Chartered Accountant (CA)</strong> formally verify your facility's tax exemption and SAC mapping before enabling taxes.
+                </p>
               </div>
 
               {/* Clinic GSTIN */}

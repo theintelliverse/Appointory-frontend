@@ -7,7 +7,7 @@ import {
   FileText, Clock, ExternalLink, LogOut,
   ShieldCheck, Activity, Search, Pill, X, Eye, Share2, Copy, Check, ChevronRight, RefreshCcw, FolderHeart, Calendar, Plus, Stethoscope, CheckCircle,
   Home, Users, History, User, Bell, Heart, Zap, Thermometer, Weight, Droplets, ArrowUpRight, QrCode, Upload, ArrowRight, Sparkles, MapPin, AlertCircle, Receipt,
-  Sunrise, Sun, Moon, Utensils, Timer, Star, Edit3
+  Sunrise, Sun, Moon, Utensils, Timer, Star, Edit3, Loader2, FileUp, ChevronLeft
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import SEO from '../../components/SEO';
@@ -96,6 +96,15 @@ const PatientDashboard = () => {
   const [patientReviews, setPatientReviews] = useState([]);
   const [editingReview, setEditingReview] = useState(null);
 
+  // Upload Modal State
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadFileType, setUploadFileType] = useState('Lab Report');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
   const handleTabSwitch = (newTab) => {
     if (newTab === 'appointments') {
       setSearchParams({ tab: 'appointments' });
@@ -126,14 +135,81 @@ const PatientDashboard = () => {
         }).catch(() => ({ data: { success: true, reviews: [] } }))
       ]);
 
-      setPatientData(profileRes.data.data);
-      setAppointments(appointmentsRes.data.data || []);
-      setPatientReviews(reviewsRes.data.reviews || []);
+      const fetchedProfile = profileRes.data?.data;
+      if (fetchedProfile) {
+        setPatientData(fetchedProfile);
+        const pName = fetchedProfile.name;
+        if (
+          pName &&
+          pName.trim().toLowerCase() !== 'patient' &&
+          pName.trim().toLowerCase() !== 'valued patient'
+        ) {
+          localStorage.setItem('patientName', pName.trim());
+        } else {
+          // If profile has generic name, sync cached name from localStorage (e.g. 'JAL')
+          const stored = localStorage.getItem('patientName') || localStorage.getItem('userName');
+          if (
+            stored &&
+            stored.trim().toLowerCase() !== 'patient' &&
+            stored.trim().toLowerCase() !== 'valued patient'
+          ) {
+            axios.patch(`${API_URL}/api/auth/patient/update-profile`, { name: stored.trim() }, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).catch(() => {});
+          }
+        }
+      }
+      setAppointments(appointmentsRes.data?.data || []);
+      setPatientReviews(reviewsRes.data?.reviews || []);
     } catch (err) {
       console.error("❌ Vault Access Error:", err.response?.data || err.message);
       if (err.response?.status === 401) navigate('/patient/login');
     }
   }, [navigate]);
+
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setUploadError("Please select a file to upload.");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+    setUploadSuccess(false);
+
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('document', selectedFile);
+      formData.append('title', uploadTitle.trim() || selectedFile.name);
+      formData.append('fileType', uploadFileType);
+      if (patientData?._id) {
+        formData.append('patientId', patientData._id);
+      }
+
+      await axios.post(`${API_URL}/api/auth/patient/upload-document`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setUploadSuccess(true);
+      setTimeout(() => {
+        setShowUploadModal(false);
+        setSelectedFile(null);
+        setUploadTitle('');
+        setUploadSuccess(false);
+        fetchProfile();
+      }, 1200);
+    } catch (err) {
+      console.error("Upload error", err);
+      setUploadError(err.response?.data?.message || "Failed to upload document. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -162,19 +238,84 @@ const PatientDashboard = () => {
     };
   }, [fetchProfile, patientData?.phone]);
 
-  const displayName = patientData?.name || "Patient";
+  const displayName = useMemo(() => {
+    // 1. Direct name from patientData
+    const pName = patientData?.name;
+    if (
+      pName &&
+      pName.trim() !== '' &&
+      pName.trim().toLowerCase() !== 'patient' &&
+      pName.trim().toLowerCase() !== 'valued patient'
+    ) {
+      return pName.trim();
+    }
+
+    // 2. Name from localStorage (which Sidebar uses, e.g. "JAL")
+    const storedName = localStorage.getItem('patientName') || localStorage.getItem('userName');
+    if (
+      storedName &&
+      storedName.trim() !== '' &&
+      storedName.trim().toLowerCase() !== 'patient' &&
+      storedName.trim().toLowerCase() !== 'valued patient'
+    ) {
+      return storedName.trim();
+    }
+
+    // 3. Cached profile from localStorage
+    try {
+      const cachedProfileStr = localStorage.getItem('patient_profile_cache');
+      if (cachedProfileStr) {
+        const cached = JSON.parse(cachedProfileStr);
+        if (
+          cached?.name &&
+          cached.name.trim().toLowerCase() !== 'patient' &&
+          cached.name.trim().toLowerCase() !== 'valued patient'
+        ) {
+          return cached.name.trim();
+        }
+      }
+    } catch (e) {
+      console.error("❌ Error parsing cached profile:", e);
+    }
+
+    // 4. Fallback if patientData has any non-empty string
+    if (pName && pName.trim() !== '') {
+      return pName.trim();
+    }
+
+    return (storedName && storedName.trim()) || "Patient";
+  }, [patientData]);
 
   const upcomingAppointments = useMemo(() => {
-    return appointments.filter(app =>
-      app.status === 'Scheduled' || app.status === 'Waiting' || app.status === 'Confirmed' || new Date(app.appointmentDate || app.createdAt) >= new Date()
-    ).sort((a, b) => new Date(a.appointmentDate || a.createdAt) - new Date(b.appointmentDate || b.createdAt));
+    return appointments.filter(app => {
+      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
+      return !isConcluded;
+    }).sort((a, b) => new Date(a.appointmentDate || a.createdAt) - new Date(b.appointmentDate || b.createdAt));
   }, [appointments]);
 
   const pastAppointments = useMemo(() => {
-    return appointments.filter(app =>
-      app.status === 'Completed' || app.status === 'Cancelled' || new Date(app.appointmentDate || app.createdAt) < new Date()
-    ).sort((a, b) => new Date(b.appointmentDate || b.createdAt) - new Date(a.appointmentDate || a.createdAt));
+    return appointments.filter(app => {
+      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
+      return isConcluded;
+    }).sort((a, b) => new Date(b.appointmentDate || b.createdAt) - new Date(a.appointmentDate || a.createdAt));
   }, [appointments]);
+
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
+  const APPOINTMENTS_PER_PAGE = 4;
+
+  const totalUpcomingPages = Math.ceil(upcomingAppointments.length / APPOINTMENTS_PER_PAGE) || 1;
+  const totalPastPages = Math.ceil(pastAppointments.length / APPOINTMENTS_PER_PAGE) || 1;
+
+  const paginatedUpcoming = useMemo(() => {
+    const start = (upcomingPage - 1) * APPOINTMENTS_PER_PAGE;
+    return upcomingAppointments.slice(start, start + APPOINTMENTS_PER_PAGE);
+  }, [upcomingAppointments, upcomingPage]);
+
+  const paginatedPast = useMemo(() => {
+    const start = (pastPage - 1) * APPOINTMENTS_PER_PAGE;
+    return pastAppointments.slice(start, start + APPOINTMENTS_PER_PAGE);
+  }, [pastAppointments, pastPage]);
 
   const nextHeroAppointment = upcomingAppointments[0];
 
@@ -613,8 +754,8 @@ const PatientDashboard = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/patient/health-locker?action=upload')}
-                  className="p-4 bg-white border border-slate-200/80 hover:border-teal-500/50 hover:shadow-lg rounded-2xl flex flex-col items-start transition-all group text-left shadow-sm"
+                  onClick={() => setShowUploadModal(true)}
+                  className="p-4 bg-white border border-slate-200/80 hover:border-teal-500/50 hover:shadow-lg rounded-2xl flex flex-col items-start transition-all group text-left shadow-sm cursor-pointer"
                 >
                   <div className="w-11 h-11 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center mb-2.5 group-hover:scale-105 group-hover:bg-teal-600 group-hover:text-white transition-all">
                     <Upload size={20} />
@@ -801,7 +942,10 @@ const PatientDashboard = () => {
             {/* Segment Switcher */}
             <div className="bg-slate-200/80 p-1.5 rounded-2xl flex items-center max-w-sm mx-auto shadow-inner">
               <button
-                onClick={() => setAppointmentSegment('upcoming')}
+                onClick={() => {
+                  setAppointmentSegment('upcoming');
+                  setUpcomingPage(1);
+                }}
                 className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${appointmentSegment === 'upcoming'
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -810,7 +954,10 @@ const PatientDashboard = () => {
                 Upcoming ({upcomingAppointments.length})
               </button>
               <button
-                onClick={() => setAppointmentSegment('past')}
+                onClick={() => {
+                  setAppointmentSegment('past');
+                  setPastPage(1);
+                }}
                 className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all ${appointmentSegment === 'past'
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -824,13 +971,59 @@ const PatientDashboard = () => {
             <div className="space-y-3">
               {appointmentSegment === 'upcoming' ? (
                 upcomingAppointments.length > 0 ? (
-                  upcomingAppointments.map((apt, idx) => (
-                    <AppointmentCard
-                      key={apt._id || idx}
-                      appointment={apt}
-                      onClick={(a) => setSelectedAppointment(a)}
-                    />
-                  ))
+                  <>
+                    {paginatedUpcoming.map((apt, idx) => (
+                      <AppointmentCard
+                        key={apt._id || idx}
+                        appointment={apt}
+                        onClick={(a) => setSelectedAppointment(a)}
+                      />
+                    ))}
+
+                    {totalUpcomingPages > 1 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200/80 px-1">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Showing <strong className="text-slate-800">{(upcomingPage - 1) * APPOINTMENTS_PER_PAGE + 1}</strong> to <strong className="text-slate-800">{Math.min(upcomingPage * APPOINTMENTS_PER_PAGE, upcomingAppointments.length)}</strong> of <strong className="text-slate-800">{upcomingAppointments.length}</strong>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setUpcomingPage(p => Math.max(1, p - 1))}
+                            disabled={upcomingPage === 1}
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                          >
+                            <ChevronLeft size={14} />
+                            <span>Prev</span>
+                          </button>
+
+                          {Array.from({ length: totalUpcomingPages }, (_, i) => i + 1).map(page => (
+                            <button
+                              key={page}
+                              type="button"
+                              onClick={() => setUpcomingPage(page)}
+                              className={`w-7 h-7 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                                upcomingPage === page
+                                  ? 'bg-teal-600 text-white shadow-sm'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() => setUpcomingPage(p => Math.min(totalUpcomingPages, p + 1))}
+                            disabled={upcomingPage === totalUpcomingPages}
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                          >
+                            <span>Next</span>
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center space-y-4 shadow-sm">
                     <div className="w-14 h-14 bg-teal-50 rounded-2xl border border-teal-100 text-teal-600 flex items-center justify-center mx-auto">
@@ -842,7 +1035,7 @@ const PatientDashboard = () => {
                     </div>
                     <button
                       onClick={() => navigate('/patient/book-appointment')}
-                      className="py-2.5 px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-teal-600/20 active:scale-95 transition-all inline-flex items-center gap-2"
+                      className="py-2.5 px-5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-teal-600/20 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"
                     >
                       <Plus size={16} /> Book Token
                     </button>
@@ -850,13 +1043,59 @@ const PatientDashboard = () => {
                 )
               ) : (
                 pastAppointments.length > 0 ? (
-                  pastAppointments.map((apt, idx) => (
-                    <AppointmentCard
-                      key={apt._id || idx}
-                      appointment={{ ...apt, status: apt.status || 'Completed' }}
-                      onClick={(a) => setSelectedAppointment(a)}
-                    />
-                  ))
+                  <>
+                    {paginatedPast.map((apt, idx) => (
+                      <AppointmentCard
+                        key={apt._id || idx}
+                        appointment={{ ...apt, status: apt.status || 'Completed' }}
+                        onClick={(a) => setSelectedAppointment(a)}
+                      />
+                    ))}
+
+                    {totalPastPages > 1 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200/80 px-1">
+                        <span className="text-xs text-slate-500 font-medium">
+                          Showing <strong className="text-slate-800">{(pastPage - 1) * APPOINTMENTS_PER_PAGE + 1}</strong> to <strong className="text-slate-800">{Math.min(pastPage * APPOINTMENTS_PER_PAGE, pastAppointments.length)}</strong> of <strong className="text-slate-800">{pastAppointments.length}</strong>
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setPastPage(p => Math.max(1, p - 1))}
+                            disabled={pastPage === 1}
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                          >
+                            <ChevronLeft size={14} />
+                            <span>Prev</span>
+                          </button>
+
+                          {Array.from({ length: totalPastPages }, (_, i) => i + 1).map(page => (
+                            <button
+                              key={page}
+                              type="button"
+                              onClick={() => setPastPage(page)}
+                              className={`w-7 h-7 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                                pastPage === page
+                                  ? 'bg-teal-600 text-white shadow-sm'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() => setPastPage(p => Math.min(totalPastPages, p + 1))}
+                            disabled={pastPage === totalPastPages}
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                          >
+                            <span>Next</span>
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="bg-white border border-slate-200/80 rounded-2xl p-8 text-center space-y-2 shadow-sm">
                     <History size={32} className="text-slate-300 mx-auto" />
@@ -911,7 +1150,7 @@ const PatientDashboard = () => {
             </div>
 
             <div className="p-5 bg-white rounded-2xl border border-teal-500/40 inline-block shadow-xl shadow-teal-500/10">
-              <QRCodeSVG value={JSON.stringify({ type: 'APPOINTORY_PATIENT', phone: patientData?.phone || '', name: patientData?.name || '' })} size={180} />
+              <QRCodeSVG value={JSON.stringify({ type: 'APPOINTORY_PATIENT', phone: patientData?.phone || '', name: displayName || '' })} size={180} />
             </div>
 
             <div className="bg-white/5 p-3 rounded-2xl border border-white/10 text-left space-y-1">
@@ -955,6 +1194,159 @@ const PatientDashboard = () => {
             fetchProfile();
           }}
         />
+      )}
+
+      {/* Direct Upload Health Document Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <FileUp className="text-teal-400" size={20} />
+                <h3 className="font-bold text-base tracking-tight">Upload Health Document</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setUploadError(null);
+                  setSelectedFile(null);
+                }}
+                className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFileUpload} className="p-5 space-y-4 overflow-y-auto">
+              {uploadError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+
+              {uploadSuccess && (
+                <div className="p-3 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                  <CheckCircle size={16} className="shrink-0" />
+                  <span>Document uploaded successfully!</span>
+                </div>
+              )}
+
+              {/* Target Patient / Account Verification */}
+              {patientData && (
+                <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
+                    <span className="font-extrabold text-teal-950 text-sm">{patientData.name || 'Valued Patient'}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
+                    <span className="font-mono font-bold text-teal-800 text-xs">
+                      {patientData._id ? String(patientData._id).slice(-8).toUpperCase() : 'VERIFIED'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Blood Test, Chest X-Ray, Prescription"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Category</label>
+                <select
+                  value={uploadFileType}
+                  onChange={(e) => setUploadFileType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
+                >
+                  <option value="Lab Report">Lab Report</option>
+                  <option value="Prescription">Prescription</option>
+                  <option value="Imaging / X-Ray">Imaging / X-Ray</option>
+                  <option value="Scan Report">Scan Report</option>
+                  <option value="Discharge Summary">Discharge Summary</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Select File (PDF or Image)</label>
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${selectedFile ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200 hover:border-teal-400 bg-slate-50/50'}`}
+                  onClick={() => document.getElementById('dashboard-file-input').click()}
+                >
+                  <input
+                    id="dashboard-file-input"
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setSelectedFile(e.target.files[0]);
+                        if (!uploadTitle) setUploadTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
+                      }
+                    }}
+                  />
+                  {selectedFile ? (
+                    <div className="space-y-1">
+                      <FileText size={32} className="mx-auto text-teal-600" />
+                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{selectedFile.name}</p>
+                      <p className="text-xs font-medium text-teal-600">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                        className="text-xs text-rose-600 font-semibold hover:underline pt-1 inline-block cursor-pointer"
+                      >
+                        Choose different file
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload size={32} className="mx-auto text-slate-400" />
+                      <p className="text-sm font-medium text-slate-700">Click to browse or drag & drop</p>
+                      <p className="text-xs text-slate-400 font-normal">Supports PNG, JPG, JPEG, PDF (Max 10MB)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setUploadError(null);
+                    setSelectedFile(null);
+                  }}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading || !selectedFile}
+                  className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all cursor-pointer"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} /> Upload Now
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

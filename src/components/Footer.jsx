@@ -11,13 +11,13 @@ const Footer = () => {
 
       <div className="max-w-7xl mx-auto px-6">
         {/* Top Grid Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-12 border-b border-teal-800/40">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-teal-800/40">
           
           {/* Column 1: Branding & Philosophy */}
-          <div className="space-y-5">
+          <div className="space-y-5 md:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/10 overflow-hidden">
-                <img src="/Appointory_logo.jpg" alt="Appointory Logo" className="w-full h-full object-cover" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/10 overflow-hidden bg-white/10">
+                <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="font-heading text-xl font-black tracking-tight text-white block">
@@ -27,86 +27,129 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-xs text-[#D4E4DF]/70 font-medium leading-relaxed max-w-sm">
-              Revolutionizing healthcare access with intelligent queue management, secure cloud prescriptions, 
-              and a unified digital health vault. Experience seamless, wait-free clinical care.
+              Care without the Waiting Room. Revolutionizing OPD clinics with live TV token displays, WhatsApp alerts, 0% GST billing, and connected diagnostic labs.
             </p>
+            <div className="pt-2 flex items-center gap-3 text-xs text-[#D4E4DF]/60">
+              <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+              <span>•</span>
+              <Link to="/press" className="hover:text-white transition-colors">Press</Link>
+              <span>•</span>
+              <Link to="/links" className="hover:text-white transition-colors">Links</Link>
+            </div>
           </div>
 
-          {/* Column 2: Digital Patient Portals */}
-          <div className="space-y-4 col-span-1 md:pl-12">
+          {/* Column 2: Platform Features */}
+          <div className="space-y-4">
             <h4 className="text-xs font-black uppercase text-[#2D9B6F] tracking-widest">
-              Patient Services
+              Core Features
             </h4>
-            <ul className="space-y-2 text-sm font-semibold text-[#D4E4DF]/80">
+            <ul className="space-y-2 text-xs font-semibold text-[#D4E4DF]/80">
               <li>
-                <Link to="/patient/login" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Health Record Locker
+                <Link to="/features/queue-management" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> OPD Queue Management
                 </Link>
               </li>
               <li>
-                <Link to="/patient/checkin" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Contactless Check-In
+                <Link to="/features/token-display-tv" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Waiting Room TV Display
                 </Link>
               </li>
               <li>
-                <Link to="/patient/register" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Setup Wellness Profile
+                <Link to="/features/gst-billing" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> 0% GST Billing (SAC 999312)
+                </Link>
+              </li>
+              <li>
+                <Link to="/features/lab-network" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Diagnostic Lab Handshake
+                </Link>
+              </li>
+              <li>
+                <Link to="/features/digital-prescription" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Digital Rx Generator
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: Provider Portals (NEW) */}
+          {/* Column 3: Solutions & Portals */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase text-[#2D9B6F] tracking-widest">
-              Provider Portals
+              Solutions & Pricing
             </h4>
-            <ul className="space-y-2 text-sm font-semibold text-[#D4E4DF]/80">
+            <ul className="space-y-2 text-xs font-semibold text-[#D4E4DF]/80">
               <li>
-                <Link to="/admin/dashboard" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Clinic Management
+                <Link to="/for/clinics" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> For Polyclinics
                 </Link>
               </li>
               <li>
-                <Link to="/doctor/dashboard" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Doctor Dashboard
+                <Link to="/for/doctors" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> For Independent Doctors
                 </Link>
               </li>
               <li>
-                <Link to="/receptionist/dashboard" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Reception & Queue
+                <Link to="/for/labs" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> For Pathology Labs
                 </Link>
               </li>
               <li>
-                <Link to="/lab/dashboard" className="hover:text-white transition-colors flex items-center gap-2">
-                  <span className="text-[#2D9B6F]">•</span> Laboratory Portal
+                <Link to="/pricing" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Plans & Pricing
+                </Link>
+              </li>
+              <li>
+                <Link to="/compare/appointory-vs-practo" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Appointory vs Practo
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="hover:text-white transition-colors flex items-center gap-1.5">
+                  <span className="text-[#2D9B6F]">•</span> Clinical Insights & Blog
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Trust & Live Status */}
+          {/* Column 4: Major Indian Cities */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase text-[#2D9B6F] tracking-widest">
-              Security & Compliance
+              Cities in India
+            </h4>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-xs font-medium text-[#D4E4DF]/80">
+              <Link to="/clinic-software/ahmedabad" className="hover:text-white transition-colors">Ahmedabad</Link>
+              <Link to="/clinic-software/surat" className="hover:text-white transition-colors">Surat</Link>
+              <Link to="/clinic-software/vadodara" className="hover:text-white transition-colors">Vadodara</Link>
+              <Link to="/clinic-software/rajkot" className="hover:text-white transition-colors">Rajkot</Link>
+              <Link to="/clinic-software/mumbai" className="hover:text-white transition-colors">Mumbai</Link>
+              <Link to="/clinic-software/delhi" className="hover:text-white transition-colors">Delhi NCR</Link>
+              <Link to="/clinic-software/bengaluru" className="hover:text-white transition-colors">Bengaluru</Link>
+              <Link to="/clinic-software/pune" className="hover:text-white transition-colors">Pune</Link>
+            </div>
+          </div>
+
+          {/* Column 5: Trust & Live Status */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase text-[#2D9B6F] tracking-widest">
+              DPDP Compliance
             </h4>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 px-4 py-3 bg-teal-950/40 rounded-2xl border border-teal-800/30">
-                <ShieldCheck size={18} className="text-[#2D9B6F]" />
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-teal-950/40 rounded-xl border border-teal-800/30">
+                <ShieldCheck size={18} className="text-[#2D9B6F] shrink-0" />
                 <div>
-                  <p className="text-sm font-black uppercase text-white tracking-wider">HIPAA Secure Vault</p>
-                  <p className="text-[10px] font-bold text-[#D4E4DF]/60 uppercase">OTP-Protected Healthcare Records</p>
+                  <p className="text-xs font-black uppercase text-white tracking-wider">DPDP Act 2023</p>
+                  <p className="text-[10px] font-bold text-[#D4E4DF]/60">AES-256 Vault</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between px-4 py-3 bg-teal-950/40 rounded-2xl border border-teal-800/30">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between px-3 py-2.5 bg-teal-950/40 rounded-xl border border-teal-800/30">
+                <div className="flex items-center gap-2">
                   <Activity size={16} className="text-[#2D9B6F]" />
-                  <span className="text-sm font-black uppercase tracking-wider">Real-time Node</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">Cloud Engine</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                   <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Active</span>
+                  <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">99.9% Up</span>
                 </div>
               </div>
             </div>

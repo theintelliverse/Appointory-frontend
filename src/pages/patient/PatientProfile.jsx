@@ -23,6 +23,15 @@ const PatientProfile = () => {
     return localStorage.getItem('patient_sms_alerts') !== 'false';
   });
 
+  // Phone change state
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneStep, setPhoneStep] = useState(1); // 1: Enter new phone, 2: Enter OTP
+  const [newPhone, setNewPhone] = useState('');
+  const [phoneOtp, setPhoneOtp] = useState('');
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+  const [phoneDebugOtp, setPhoneDebugOtp] = useState('');
+
   // Edit form state
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +59,7 @@ const PatientProfile = () => {
       if (res.data.success && res.data.data) {
         const data = res.data.data;
         setProfile(data);
+        localStorage.setItem('patient_profile_cache', JSON.stringify(data));
         setFormData({
           name: data.name || '',
           email: data.email || '',
@@ -66,25 +76,50 @@ const PatientProfile = () => {
       }
     } catch (err) {
       console.error("Failed to load profile:", err);
-      // Fallback from localStorage
-      const cachedName = localStorage.getItem('patientName') || 'Valued Patient';
-      const cachedPhone = localStorage.getItem('userPhone') || '';
-      setProfile({
-        name: cachedName,
-        phone: cachedPhone,
-        email: '',
-        age: null,
-        gender: null,
-        bloodGroup: null,
-        address: '',
-        allergies: '',
-        documents: [],
-        medicalHistory: []
-      });
-      setFormData(prev => ({
-        ...prev,
-        name: cachedName
-      }));
+      // Fallback from cached profile or localStorage
+      const cachedProfileStr = localStorage.getItem('patient_profile_cache');
+      let usedCached = false;
+      if (cachedProfileStr) {
+        try {
+          const cached = JSON.parse(cachedProfileStr);
+          if (cached && typeof cached === 'object') {
+            setProfile(cached);
+            setFormData({
+              name: cached.name || '',
+              email: cached.email || '',
+              age: cached.age ? String(cached.age) : '',
+              gender: cached.gender || '',
+              bloodGroup: cached.bloodGroup || '',
+              address: cached.address || '',
+              allergies: cached.allergies || ''
+            });
+            usedCached = true;
+          }
+        } catch (e) {
+          console.error('Error parsing cached profile', e);
+        }
+      }
+
+      if (!usedCached) {
+        const cachedName = localStorage.getItem('patientName') || 'Valued Patient';
+        const cachedPhone = localStorage.getItem('userPhone') || '';
+        setProfile({
+          name: cachedName,
+          phone: cachedPhone,
+          email: '',
+          age: null,
+          gender: null,
+          bloodGroup: null,
+          address: '',
+          allergies: '',
+          documents: [],
+          medicalHistory: []
+        });
+        setFormData(prev => ({
+          ...prev,
+          name: cachedName
+        }));
+      }
     } finally {
       setLoading(false);
     }
@@ -132,11 +167,12 @@ const PatientProfile = () => {
       const res = await axios.patch(
         `${API_URL}/api/auth/patient/update-profile`,
         {
+          patientId: profile?._id,
           name: formData.name.trim(),
           email: formData.email.trim(),
           age: formData.age ? parseInt(formData.age, 10) : null,
-          gender: formData.gender,
-          bloodGroup: formData.bloodGroup,
+          gender: formData.gender || null,
+          bloodGroup: formData.bloodGroup || null,
           address: formData.address.trim(),
           allergies: formData.allergies.trim()
         },
@@ -145,16 +181,18 @@ const PatientProfile = () => {
 
       if (res.data.success) {
         localStorage.setItem('patientName', formData.name.trim());
-        setProfile(prev => ({
-          ...prev,
+        const updated = {
+          ...(profile || {}),
           name: formData.name.trim(),
           email: formData.email.trim(),
           age: formData.age ? parseInt(formData.age, 10) : null,
-          gender: formData.gender,
-          bloodGroup: formData.bloodGroup,
+          gender: formData.gender || null,
+          bloodGroup: formData.bloodGroup || null,
           address: formData.address.trim(),
           allergies: formData.allergies.trim()
-        }));
+        };
+        setProfile(updated);
+        localStorage.setItem('patient_profile_cache', JSON.stringify(updated));
 
         setIsEditing(false);
         Swal.fire({
@@ -175,6 +213,89 @@ const PatientProfile = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendPhoneChangeOtp = async (e) => {
+    e.preventDefault();
+    const clean = newPhone.replace(/\D/g, '').slice(-10);
+    if (!clean || clean.length !== 10) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    const currentClean = (profile?.phone || phone || '').replace(/\D/g, '').slice(-10);
+    if (clean === currentClean) {
+      setPhoneError('New number must be different from your current number');
+      return;
+    }
+
+    setPhoneLoading(true);
+    setPhoneError('');
+    setPhoneDebugOtp('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API_URL}/api/auth/patient/send-change-phone-otp`, {
+        newPhone: clean
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        if (res.data.debugOtp) setPhoneDebugOtp(res.data.debugOtp);
+        setPhoneStep(2);
+      }
+    } catch (err) {
+      setPhoneError(err.response?.data?.message || 'Failed to send OTP to new number');
+    } finally {
+      setPhoneLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneChange = async (e) => {
+    e.preventDefault();
+    const clean = newPhone.replace(/\D/g, '').slice(-10);
+    const cleanOtp = phoneOtp.replace(/\D/g, '');
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setPhoneError('Please enter the 6-digit OTP code');
+      return;
+    }
+
+    setPhoneLoading(true);
+    setPhoneError('');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API_URL}/api/auth/patient/verify-change-phone`, {
+        newPhone: clean,
+        otp: cleanOtp
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data.success) {
+        if (res.data.token) localStorage.setItem('token', res.data.token);
+        if (res.data.newPhone) localStorage.setItem('userPhone', res.data.newPhone);
+
+        setShowPhoneModal(false);
+        setPhoneStep(1);
+        setNewPhone('');
+        setPhoneOtp('');
+        setPhoneDebugOtp('');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Mobile Number Updated! 📱',
+          text: `Your account mobile number is now +91 ${res.data.newPhone}`,
+          timer: 2000,
+          showConfirmButton: false,
+          background: '#F8FAFC'
+        });
+
+        loadProfile();
+      }
+    } catch (err) {
+      setPhoneError(err.response?.data?.message || 'Failed to verify OTP or update phone number');
+    } finally {
+      setPhoneLoading(false);
     }
   };
 
@@ -278,10 +399,26 @@ const PatientProfile = () => {
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg font-bold text-slate-900 truncate leading-snug">{name}</h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1.5">
-                  <Phone size={13} className="text-slate-400 shrink-0" />
-                  <span>{phone}</span>
-                </p>
+                <div className="text-xs text-slate-500 font-medium mt-0.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Phone size={13} className="text-slate-400 shrink-0" />
+                    <span>{phone}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoneStep(1);
+                      setNewPhone('');
+                      setPhoneOtp('');
+                      setPhoneError('');
+                      setPhoneDebugOtp('');
+                      setShowPhoneModal(true);
+                    }}
+                    className="text-[11px] text-teal-600 font-bold hover:underline cursor-pointer shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5 truncate flex items-center gap-1.5">
                   <Mail size={13} className="text-slate-400 shrink-0" />
                   <span className="truncate">{email}</span>
@@ -510,15 +647,34 @@ const PatientProfile = () => {
                 />
               </div>
 
-              {/* Phone (Read-Only) */}
+              {/* Phone with Change Option */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Registered Phone (Linked to OTP)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">Registered Phone</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoneStep(1);
+                      setNewPhone('');
+                      setPhoneOtp('');
+                      setPhoneError('');
+                      setPhoneDebugOtp('');
+                      setShowPhoneModal(true);
+                    }}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-bold hover:underline cursor-pointer"
+                  >
+                    Change with OTP
+                  </button>
+                </div>
                 <input
                   type="text"
                   disabled
                   value={phone}
                   className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500 cursor-not-allowed"
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Verified mobile number linked to OTP authentication.
+                </p>
               </div>
 
               {/* Email Address */}
@@ -633,6 +789,184 @@ const PatientProfile = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Change Phone Number Modal */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4 relative">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Change Phone Number</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">OTP Verification Required</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhoneModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {phoneError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs font-semibold">
+                <AlertCircle size={15} className="shrink-0 text-rose-500" />
+                <span>{phoneError}</span>
+              </div>
+            )}
+
+            {phoneStep === 1 && (
+              <form onSubmit={handleSendPhoneChangeOtp} className="space-y-4">
+                <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600 font-medium">
+                  Current Number: <strong className="text-slate-900">+91 {phone}</strong>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    New Mobile Number
+                  </label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-500 font-bold text-sm pointer-events-none">+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={newPhone}
+                      onChange={(e) => {
+                        setNewPhone(e.target.value.replace(/\D/g, ''));
+                        setPhoneError('');
+                      }}
+                      placeholder="Enter new 10-digit number"
+                      autoFocus
+                      required
+                      className="w-full pl-12 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    An OTP will be sent to this new number to verify ownership.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPhoneModal(false)}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={phoneLoading || newPhone.length !== 10}
+                    className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-teal-600/20 active:scale-95 disabled:opacity-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    {phoneLoading ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Send OTP</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {phoneStep === 2 && (
+              <form onSubmit={handleVerifyPhoneChange} className="space-y-4">
+                <div className="p-2.5 bg-teal-50 border border-teal-100 rounded-xl flex items-center justify-between text-xs">
+                  <div>
+                    <p className="font-bold text-teal-800">OTP Sent to New Number</p>
+                    <p className="text-slate-600 font-medium">+91 {newPhone}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoneStep(1);
+                      setPhoneOtp('');
+                      setPhoneError('');
+                    }}
+                    className="text-teal-700 font-bold hover:underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {phoneDebugOtp && (
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-bold text-center">
+                    Dev Test OTP: <span className="font-mono tracking-widest text-emerald-950 font-black">{phoneDebugOtp}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Enter 6-Digit OTP
+                  </label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={phoneOtp}
+                    onChange={(e) => {
+                      setPhoneOtp(e.target.value.replace(/\D/g, ''));
+                      setPhoneError('');
+                    }}
+                    placeholder="• • • • • •"
+                    autoFocus
+                    required
+                    className="w-full py-2.5 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-black text-lg tracking-[0.35em] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Didn't get OTP?</span>
+                  <button
+                    type="button"
+                    onClick={handleSendPhoneChangeOtp}
+                    disabled={phoneLoading}
+                    className="text-teal-600 font-bold hover:underline cursor-pointer disabled:opacity-50"
+                  >
+                    Resend
+                  </button>
+                </div>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoneStep(1);
+                      setPhoneOtp('');
+                      setPhoneError('');
+                    }}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={phoneLoading || phoneOtp.length !== 6}
+                    className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md shadow-teal-600/20 active:scale-95 disabled:opacity-50 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    {phoneLoading ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <span>Verify &amp; Update</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

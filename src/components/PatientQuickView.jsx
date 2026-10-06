@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   X,
@@ -60,7 +60,7 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
     }
   };
 
-  const fetchFullProfile = async (targetMemberId) => {
+  const fetchFullProfile = useCallback(async (targetMemberId) => {
     try {
       const queryParams = new URLSearchParams();
       const idToUse = targetMemberId !== undefined ? targetMemberId : (activeMemberId || patientId);
@@ -80,11 +80,11 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeMemberId, patientId, patientName, phone, token]);
 
   useEffect(() => {
     if (phone || patientId) fetchFullProfile(patientId || null);
-  }, [phone, patientId, patientName, token]);
+  }, [phone, patientId, fetchFullProfile]);
 
   if (loading) return (
     <div className="fixed inset-0 bg-teak/40 backdrop-blur-md z-50 flex items-center justify-center">

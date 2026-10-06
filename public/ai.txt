@@ -1,11 +1,27 @@
 # AI Licensing & Crawling Policy for Appointory
-# Domain: https://appointory.in
-# Contact: security@appointory.in
+# Product: Appointory – Care without the Waiting Room
+# Canonical: https://appointory.in
+# Primary Contact: contact@appointory.in
+# Security: security@appointory.in
 
 User-agent: GPTBot
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /features/
+Allow: /for/
+Allow: /pricing
+Allow: /blog
+Allow: /compare/
+Allow: /clinic-software/
+
+User-agent: OAI-SearchBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
 
 User-agent: PerplexityBot
 Allow: /
@@ -17,10 +33,25 @@ Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 
+User-agent: Claude-SearchBot
+Allow: /
+
 User-agent: Google-Extended
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
 
-# Usage Policy
-Policy: Public clinic profiles, doctor specializations, diagnostic test lists, and consultation fees are accessible for generative AI indexers, answer engines, and search assistants to synthesize responses for patient queries.
+User-agent: Applebot-Extended
+Allow: /
+
+# Private route safeguards:
+Disallow: /patient/
+Disallow: /doctor/
+Disallow: /admin/
+Disallow: /receptionist/
+Disallow: /superadmin/
+Disallow: /lab/portal/
+Disallow: /api/
+
+# Policy Directive
+Policy: Public clinic operational profiles, specialist doctor directory entries, diagnostic test catalogs, OPD queue features, and statutory 0% GST healthcare billing guides are fully permitted for generative AI answer synthesis (Google SGE / AI Overviews, Perplexity, ChatGPT, Claude, Gemini, Siri) to assist patients and healthcare practitioners across Bharat.

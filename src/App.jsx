@@ -66,6 +66,23 @@ const DoctorPublicProfile = lazy(() => import('./pages/public/DoctorPublicProfil
 const LabPublicProfile = lazy(() => import('./pages/public/LabPublicProfile'));
 const VerifyInvoice = lazy(() => import('./pages/public/VerifyInvoice'));
 
+// Dedicated SEO & Landing Pages
+const FeatureQueueManagement = lazy(() => import('./pages/seo/FeatureQueueManagement'));
+const FeatureTokenTv = lazy(() => import('./pages/seo/FeatureTokenTv'));
+const FeatureGstBilling = lazy(() => import('./pages/seo/FeatureGstBilling'));
+const FeatureLabNetwork = lazy(() => import('./pages/seo/FeatureLabNetwork'));
+const FeatureDigitalPrescription = lazy(() => import('./pages/seo/FeatureDigitalPrescription'));
+const ForClinics = lazy(() => import('./pages/seo/ForClinics'));
+const ForDoctors = lazy(() => import('./pages/seo/ForDoctors'));
+const ForLabs = lazy(() => import('./pages/seo/ForLabs'));
+const PricingPage = lazy(() => import('./pages/seo/PricingPage'));
+const BlogIndexPage = lazy(() => import('./pages/seo/BlogIndexPage'));
+const ComparePracto = lazy(() => import('./pages/seo/ComparePracto'));
+const CityLandingPage = lazy(() => import('./pages/seo/CityLandingPage'));
+const AboutPage = lazy(() => import('./pages/seo/AboutPage'));
+const PressPage = lazy(() => import('./pages/seo/PressPage'));
+const LinksPage = lazy(() => import('./pages/seo/LinksPage'));
+
 // Super Admin & Subscriptions
 const SuperAdminDashboard = lazy(() => import('./pages/superadmin/SuperAdminDashboard'));
 const SubscriptionCheckout = lazy(() => import('./pages/shared/SubscriptionCheckout'));
@@ -99,8 +116,10 @@ const checkIsPublicPath = () => {
   return p === '/' || p === '/login' || p === '/register-clinic' || p === '/forgot-password' ||
          p === '/reset-password' || p === '/privacy' || p === '/terms' || p === '/contact' ||
          p === '/cookie-policy' || p === '/refund-policy' || p === '/book' || p === '/book-appointment' ||
-         p === '/maintenance' || p.startsWith('/c/') || p.startsWith('/d/') || p.startsWith('/l/') ||
-         p.startsWith('/verify/');
+         p === '/maintenance' || p === '/pricing' || p === '/blog' || p === '/about' || p === '/press' || p === '/links' ||
+         p.startsWith('/c/') || p.startsWith('/d/') || p.startsWith('/l/') ||
+         p.startsWith('/verify/') || p.startsWith('/features/') || p.startsWith('/for/') ||
+         p.startsWith('/compare/') || p.startsWith('/clinic-software/');
 };
 
 const PlatformGuard = ({ children }) => {
@@ -295,6 +314,23 @@ const App = () => {
               <Route path="/book" element={<BookAppointment />} />
               <Route path="/book-appointment" element={<BookAppointment />} />
               <Route path="/verify/invoice/:id" element={<VerifyInvoice />} />
+
+              {/* --- 🌟 Dedicated SEO & Landing Pages --- */}
+              <Route path="/features/queue-management" element={<FeatureQueueManagement />} />
+              <Route path="/features/token-display-tv" element={<FeatureTokenTv />} />
+              <Route path="/features/gst-billing" element={<FeatureGstBilling />} />
+              <Route path="/features/lab-network" element={<FeatureLabNetwork />} />
+              <Route path="/features/digital-prescription" element={<FeatureDigitalPrescription />} />
+              <Route path="/for/clinics" element={<ForClinics />} />
+              <Route path="/for/doctors" element={<ForDoctors />} />
+              <Route path="/for/labs" element={<ForLabs />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/blog" element={<BlogIndexPage />} />
+              <Route path="/compare/appointory-vs-practo" element={<ComparePracto />} />
+              <Route path="/clinic-software/:city" element={<CityLandingPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/press" element={<PressPage />} />
+              <Route path="/links" element={<LinksPage />} />
 
               {/* --- 👑 Super Admin Dashboard Route --- */}
               <Route

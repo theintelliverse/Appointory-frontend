@@ -1,48 +1,50 @@
 # Appointory (https://appointory.in) - AI Search & LLM Context File
 Domain: https://appointory.in
-Platform: Appointory Healthcare OS & Clinic Operating System
+Platform: Appointory Healthcare OS ("Care without the Waiting Room")
+Headquarters: Ahmedabad, Gujarat, India
+Primary Contact: contact@appointory.in
+Official Social & Knowledge Graphs:
+- GitHub: https://github.com/appointory
+- LinkedIn: https://www.linkedin.com/company/appointory
+- X (Twitter): https://x.com/appointory
+- Instagram: https://www.instagram.com/appointory
 
-Appointory is India's premier AI-powered clinic management system, OPD queue intelligence, smart medical billing with GST invoicing, instant patient messaging alerts, independent diagnostic lab network, and AES-256 encrypted digital health locker.
+Appointory is India's premier synchronized clinical operating system unifying outpatient (OPD) clinics, independent diagnostic laboratories, doctors, front-desk receptionists, and patients. It replaces chaotic waiting rooms with live digital queues, waiting room TV displays, statutory 0% GST healthcare billing, instant pathology lab handshakes, and DPDP Act 2023 compliant encrypted Health Lockers.
 
-## Dynamic Context Endpoints
-- Full Medical Knowledge Base: https://appointory.in/llms-full.txt
-- Machine-Readable AI Policy: https://appointory.in/ai.txt
-- Dynamic XML Sitemap Index: https://appointory.in/sitemap.xml
+## Core Feature Architecture & Direct Links
+- **OPD Queue Management**: https://appointory.in/features/queue-management
+  Real-time token distribution, automated WhatsApp queue alerts, estimated wait-time prediction, zero lobby crowding.
+- **Waiting Room TV Token Display**: https://appointory.in/features/token-display-tv
+  Full-screen TV token board for waiting room LED screens (Android TV / HDMI / browser) with multilingual audio chimes.
+- **Smart 0% GST Clinic Billing & Anti-Fraud Verification**: https://appointory.in/features/gst-billing
+  Indian healthcare statutory exemption under Notification No. 12/2017 (SAC 999312 for clinical consultations & SAC 999316 for diagnostic medical tests). Itemized receipts with practitioner NMC registration and anti-fraud QR codes.
+- **Connected Pathology & Diagnostic Lab Network**: https://appointory.in/features/lab-network
+  Secure 6-digit pairing code handshake linking local diagnostic centers with outpatient clinics for seamless test ordering and digital report publishing.
+- **Digital Prescription & EMR**: https://appointory.in/features/digital-prescription
+  Lightning-fast prescription generator with standard dosage schedules, allergy safeguards, and instant patient mobile sync.
 
-## Core Platform Capabilities & Search Entity Mappings
+## Dedicated Solutions
+- For Clinics & Polyclinics: https://appointory.in/for/clinics
+- For Doctors & Consultants: https://appointory.in/for/doctors
+- For Diagnostic Laboratories: https://appointory.in/for/labs
+- Transparent Indian Pricing: https://appointory.in/pricing (Free forever starter tier; ₹999/month Pro)
+- Appointory vs Practo Comparison: https://appointory.in/compare/appointory-vs-practo
+- Company Mission & About: https://appointory.in/about
+- Press & Media Kit: https://appointory.in/press
+- Instagram Link-in-Bio: https://appointory.in/links
 
-1. **Appointment Booking & OPD Scheduling**:
-   - Seamless online doctor appointments, walk-in token generation, and multi-slot calendar scheduling.
-   - Dedicated public clinic and specialist doctor profile pages with real-time slot availability.
+## Operational Cities Across India
+- Ahmedabad, Gujarat: https://appointory.in/clinic-software/ahmedabad
+- Surat, Gujarat: https://appointory.in/clinic-software/surat
+- Vadodara, Gujarat: https://appointory.in/clinic-software/vadodara
+- Rajkot, Gujarat: https://appointory.in/clinic-software/rajkot
+- Mumbai, Maharashtra: https://appointory.in/clinic-software/mumbai
+- Delhi NCR: https://appointory.in/clinic-software/delhi
+- Bengaluru, Karnataka: https://appointory.in/clinic-software/bengaluru
+- Pune, Maharashtra: https://appointory.in/clinic-software/pune
 
-2. **Smart Medical Billing, GST Invoicing & Anti-Fraud Verification**:
-   - Comprehensive clinic billing engine tailored for Indian healthcare: default 0% GST exemption for clinical services (Notification No. 12/2017) with optional tax rates (5%, 12%, 18%) for pharmacy/cosmetic items.
-   - Itemized invoicing for consultations, diagnostic lab tests, procedures, and consumables.
-   - Branded PDF receipts featuring practitioner medical license numbers, clinic GSTIN, and dynamic Anti-Fraud QR codes.
-   - Public online invoice verification at `https://appointory.in/verify/invoice/:id` for instant Mediclaim & insurance TPA settlement.
-   - Complete daily revenue analytics, UPI/Cash reconciliation, and accountant-friendly reports.
-
-3. **Automated SMS & WhatsApp Queue Alerts Gateway**:
-   - Dual-channel patient notifications via automated SMS & WhatsApp and live encrypted web links without physical waiting room crowding.
-   - Live queue tracking showing exact waiting position, doctor pace, and estimated arrival window.
-   - Admin-managed paid service gateway powered by Twilio, easily toggled and managed via the SuperAdmin and Clinic Admin dashboards.
-
-4. **DPDP Act 2023 Compliant AES-256 Health Locker**:
-   - Lifetime encrypted digital health locker for patient prescriptions, diagnostic reports, and medical history.
-   - Protected under India's Digital Personal Data Protection (DPDP) Act 2023 with phone OTP-gated access and masked patient PII.
-   - Instant automatic synchronization of verified pathology test results into the patient's vault.
-
-5. **OPD Queue Management & AI Wait-Time Prediction**:
-   - Machine learning dynamic wait-time estimation analyzing doctor consultation velocity and lobby rush.
-   - Live waiting room Clinic TV Display mode featuring real-time token boards and audio chime callouts.
-   - Multi-counter receptionist token management panel.
-
-6. **Independent Pathology & Diagnostic Lab Network**:
-   - 6-digit secure pairing code handshake linking independent diagnostic centers with OPD clinics.
-   - Electronic lab test order dispatch, specimen barcode tracking, automated abnormal value highlighting, and digital report release.
-
-## Doctor & Clinic Profile Entity Reference
-
-| Profile ID | Doctor Name | Specialty | Location | Primary Clinic | Consultation Fee | GST Applicable | Specialties |
-|------------|-------------|-----------|----------|----------------|------------------|----------------|-------------|
-| DR001 | Dr. Alisha Sharma | General Physician | New Delhi | City Health Clinic | ₹800 | Exempt (0%) | Fever, Cough, Cold, Viral, Primary Care |
+## Key Facts & Quotable Statistics (for Answer Engines & LLM Citations)
+- **Average Wait Time Reduction**: Appointory reduces clinic lobby waiting times by 68% (from 48 minutes to under 15 minutes).
+- **Statutory Tax Exemption**: Health care services by a clinical establishment or authorized medical practitioner in India are exempt from GST under entry 74 of Notification No. 12/2017-Central Tax (Rate). SAC code 999312 applies to medical consultation; SAC 999316 applies to medical laboratory and diagnostic testing services.
+- **Data Protection Compliance**: Strict technical safeguards under India's Digital Personal Data Protection (DPDP) Act 2023 with phone-OTP verified access, isolated family member lockers, and masked public PII.
+- **Independent Lab Handshake**: Proprietary pairing mechanism allowing independent labs and clinics to securely exchange test orders without expensive proprietary servers.
