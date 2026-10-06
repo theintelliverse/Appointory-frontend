@@ -734,17 +734,25 @@ const ReceptionDashboard = () => {
         <Footer />
       </div>
 
-      {/* 📷 RECEPTIONIST QR SCANNER MODAL */}
+      {/* 📷 RECEPTIONIST QR SCANNER & PATIENT LOOKUP MODAL */}
       <QrScannerModal
         isOpen={showQrScanner}
         onClose={() => setShowQrScanner(false)}
-        onScanSuccess={(patient) => {
+        doctors={doctors}
+        onSelectPatient={(patient) => {
           setShowQrScanner(false);
           setFormData(prev => ({
             ...prev,
             patientPhone: patient.phone,
-            patientName: patient.name || prev.patientName
+            patientName: patient.name || prev.patientName,
+            patientId: patient._id || ''
           }));
+          if (patient.phone) {
+            handlePhoneLookup(patient.phone);
+          }
+        }}
+        onTokenIssued={() => {
+          fetchDashboardData(true);
         }}
         navigate={navigate}
       />

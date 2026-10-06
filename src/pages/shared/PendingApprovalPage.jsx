@@ -84,8 +84,8 @@ const PendingApprovalPage = ({ facility, onLogout }) => {
             className="flex items-center gap-3.5 cursor-pointer group transition-all duration-300"
             onClick={() => navigate('/')}
           >
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-marigold/20 overflow-hidden group-hover:rotate-6 transition-transform">
-              <img src="/Appointory_logo.jpg" alt="Appointory Logo" className="w-full h-full object-cover" />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-marigold/20 overflow-hidden group-hover:rotate-6 transition-transform bg-white border border-sandstone p-2 shrink-0">
+              <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-teak">Appointory</h1>

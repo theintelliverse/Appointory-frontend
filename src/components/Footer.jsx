@@ -15,15 +15,15 @@ const Footer = () => {
           
           {/* Column 1: Branding & Philosophy */}
           <div className="space-y-5 md:col-span-1">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/10 overflow-hidden bg-white/10">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-md shadow-black/20 p-2 overflow-hidden shrink-0">
                 <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
               </div>
-              <div>
-                <span className="font-heading text-xl font-black tracking-tight text-white block">
+              <div className="flex flex-col justify-center">
+                <span className="font-heading text-xl font-black tracking-tight text-white block leading-tight">
                   Appointory<span className="text-[#2D9B6F]">.</span>
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#D4E4DF]/40 block mt-0.5">Healthcare OS for Bharat</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#D4E4DF]/70 block mt-0.5">Healthcare OS for Bharat</span>
               </div>
             </div>
             <p className="text-xs text-[#D4E4DF]/70 font-medium leading-relaxed max-w-sm">

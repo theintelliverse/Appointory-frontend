@@ -1251,7 +1251,7 @@ const ClinicSettings = () => {
                 <div className="border-b border-sandstone pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="font-heading text-lg font-bold text-teak flex items-center gap-2">
-                      <FlaskConical size={18} className="text-teal-600" /> In-House Diagnostic Lab Holidays & Raja
+                      <FlaskConical size={18} className="text-teal-600" /> In-House Diagnostic Lab Holidays &amp; Planned Closures
                     </h3>
                     <p className="text-xs text-khaki mt-0.5">
                       Schedule planned closures, calibration days, or technician leave for your internal clinic lab.

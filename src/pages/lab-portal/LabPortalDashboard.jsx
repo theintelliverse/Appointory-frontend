@@ -712,10 +712,10 @@ const LabPortalDashboard = () => {
               <button
                 onClick={() => setShowScheduleModal(true)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-slate-900/10 active:scale-95 shrink-0"
-                title="Manage Weekly Working Days, Holidays & Raja"
+                title="Manage Weekly Working Days & Holiday Schedule"
               >
                 <CalendarOff size={16} className="text-teal-400" />
-                Schedule & Raja
+                Schedule & Holidays
               </button>
 
               <button
@@ -1177,7 +1177,7 @@ const LabPortalDashboard = () => {
               />
               <QuickActionTile 
                 icon={<CalendarOff size={14} className="text-rose-600" />} 
-                label="Holidays & Raja" 
+                label="Holidays & Closures" 
                 color="bg-rose-50 text-rose-700 hover:bg-rose-100/50" 
                 onClick={() => { setShowScheduleModal(true); setShowQuickActions(false); }} 
               />

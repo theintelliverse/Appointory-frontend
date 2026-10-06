@@ -38,7 +38,6 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
     const [error, setError] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
-    const [pdfViewMode, setPdfViewMode] = useState('preview'); // 'preview' (A4 image) | 'embed' (Native PDF)
 
     const viewerContainerRef = useRef(null);
     const TIMEOUT_DURATION = 60000;
@@ -52,29 +51,29 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
     // High-resolution 300 DPI A4 page rendering via Cloudinary
     const getCloudinaryPreviewImage = (url, page = 1) => {
         if (!url) return '';
-        if (url.includes('cloudinary.com')) {
+        const clean = url.replace('/upload/fl_inline/', '/upload/');
+        if (clean.includes('cloudinary.com')) {
             // High-res 300 DPI, 2000px width, crisp PNG render of specific page
             const params = `f_png,q_auto:best,dn_300,w_2000,pg_${page}`;
-            return url.replace(/\.pdf(\?.*)?$/i, '.png$1').replace('/upload/', `/upload/${params}/`);
+            return clean.replace(/\.pdf(\?.*)?$/i, '.png$1').replace('/upload/', `/upload/${params}/`);
         }
-        return url;
+        return clean;
     };
 
     const getDirectPdfUrl = (url) => {
         if (!url) return '';
-        if (url.includes('cloudinary.com') && !url.includes('fl_inline')) {
-            return url.replace('/upload/', '/upload/fl_inline/');
-        }
-        return url;
+        // Remove fl_inline since Cloudinary returns 400 with fl_inline
+        return url.replace('/upload/fl_inline/', '/upload/');
     };
 
     const getDownloadUrl = (url, title) => {
         if (!url) return '';
-        if (url.includes('cloudinary.com')) {
+        const clean = url.replace('/upload/fl_inline/', '/upload/');
+        if (clean.includes('cloudinary.com')) {
             const cleanTitle = encodeURIComponent((title || 'report').replace(/[^a-zA-Z0-9_-]/g, '_'));
-            return url.replace('/upload/', `/upload/fl_attachment:${cleanTitle}/`);
+            return clean.replace('/upload/', `/upload/fl_attachment:${cleanTitle}/`);
         }
-        return url;
+        return clean;
     };
 
     // Reset zoom and pan whenever document changes
@@ -387,61 +386,29 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                             {currentDoc?.fileType || 'Medical Report'} • {currentDoc?.uploadedAt ? new Date(currentDoc.uploadedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Verified Document'}
                         </p>
                     </div>
-                </div>
-
-                {/* Center: Mode Switcher & Page Controls */}
-                <div className="hidden md:flex items-center gap-2">
-                    {isPdfDocument && (
-                        <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 shadow-inner">
-                            <button
-                                type="button"
-                                onClick={() => { setPdfViewMode('preview'); resetZoomAndPan(); }}
-                                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                    pdfViewMode === 'preview'
-                                        ? 'bg-teal-600 text-white shadow-sm'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <Eye size={13} /> A4 Page View
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setPdfViewMode('embed'); resetZoomAndPan(); }}
-                                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                                    pdfViewMode === 'embed'
-                                        ? 'bg-teal-600 text-white shadow-sm'
-                                        : 'text-slate-400 hover:text-white'
-                                }`}
-                            >
-                                <FileText size={13} /> Native PDF Frame
-                            </button>
-                        </div>
-                    )}
-
-                    {/* PDF Multi-page flip (Page 1, 2, 3...) */}
-                    {isPdfDocument && pdfViewMode === 'preview' && (
-                        <div className="flex items-center gap-1 bg-slate-800/90 px-2 py-1 rounded-xl border border-slate-700/80 text-xs">
-                            <button
-                                type="button"
-                                onClick={() => { setPageNumber((p) => Math.max(1, p - 1)); setLoading(true); }}
-                                disabled={pageNumber <= 1}
-                                className="p-1 text-slate-400 hover:text-white disabled:opacity-30 transition-colors"
-                                title="Previous Page"
-                            >
-                                <ChevronLeft size={16} />
-                            </button>
-                            <span className="text-slate-200 font-semibold px-1">Page {pageNumber}</span>
-                            <button
-                                type="button"
-                                onClick={() => { setPageNumber((p) => p + 1); setLoading(true); }}
-                                className="p-1 text-slate-400 hover:text-white transition-colors"
-                                title="Next Page"
-                            >
-                                <ChevronRight size={16} />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                </div>                {/* Center: PDF Multi-page flip (Page 1, 2, 3...) */}
+                {isPdfDocument && (
+                    <div className="hidden sm:flex items-center gap-1.5 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700/80 text-xs shadow-inner">
+                        <button
+                            type="button"
+                            onClick={() => { setPageNumber((p) => Math.max(1, p - 1)); setLoading(true); }}
+                            disabled={pageNumber <= 1}
+                            className="p-1 text-slate-400 hover:text-white disabled:opacity-30 transition-colors cursor-pointer"
+                            title="Previous Page"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        <span className="text-slate-200 font-bold px-1.5">Page {pageNumber}</span>
+                        <button
+                            type="button"
+                            onClick={() => { setPageNumber((p) => p + 1); setLoading(true); }}
+                            className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Next Page"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -451,11 +418,11 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                             href={getDirectPdfUrl(imageUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700/80"
+                            className="p-2 sm:px-3 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border border-slate-700/80 cursor-pointer"
                             title="Open PDF in New Browser Tab"
                         >
                             <ExternalLink size={15} />
-                            <span className="hidden lg:inline">Open in Tab</span>
+                            <span className="hidden sm:inline">Open in Tab</span>
                         </a>
                     )}
 
@@ -463,7 +430,7 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                     <button
                         type="button"
                         onClick={handleDownload}
-                        className="p-2 sm:px-3 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-teal-600/20 transition-all active:scale-95"
+                        className="p-2 sm:px-3 sm:py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-teal-600/20 transition-all active:scale-95 cursor-pointer"
                         title="Download Document"
                     >
                         <Download size={15} />
@@ -474,7 +441,7 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                     <button
                         type="button"
                         onClick={toggleFullscreen}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all hidden sm:flex"
+                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all hidden sm:flex cursor-pointer"
                         title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     >
                         {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
@@ -484,7 +451,7 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-rose-500/20 hover:text-rose-400 rounded-xl transition-all ml-1"
+                        className="p-2 text-slate-400 hover:text-white hover:bg-rose-500/20 hover:text-rose-400 rounded-xl transition-all ml-1 cursor-pointer"
                         title="Close Viewer (Esc)"
                     >
                         <X size={20} />
@@ -492,54 +459,31 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                 </div>
             </header>
 
-            {/* --- Mobile View Mode Bar --- */}
+            {/* --- Mobile PDF Page Controls Bar --- */}
             {isPdfDocument && (
-                <div className="flex md:hidden items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-xs">
-                    <div className="flex items-center gap-1 bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                <div className="flex sm:hidden items-center justify-center px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-xs">
+                    <div className="flex items-center gap-1.5 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 text-white">
                         <button
                             type="button"
-                            onClick={() => { setPdfViewMode('preview'); resetZoomAndPan(); }}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                                pdfViewMode === 'preview' ? 'bg-teal-600 text-white' : 'text-slate-400'
-                            }`}
+                            onClick={() => { setPageNumber((p) => Math.max(1, p - 1)); setLoading(true); }}
+                            disabled={pageNumber <= 1}
+                            className="p-0.5 disabled:opacity-30 cursor-pointer"
                         >
-                            A4 Page
+                            <ChevronLeft size={15} />
                         </button>
+                        <span className="text-xs font-semibold px-2">Page {pageNumber}</span>
                         <button
                             type="button"
-                            onClick={() => { setPdfViewMode('embed'); resetZoomAndPan(); }}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${
-                                pdfViewMode === 'embed' ? 'bg-teal-600 text-white' : 'text-slate-400'
-                            }`}
+                            onClick={() => { setPageNumber((p) => p + 1); setLoading(true); }}
+                            className="p-0.5 cursor-pointer"
                         >
-                            PDF Frame
+                            <ChevronRight size={15} />
                         </button>
                     </div>
-
-                    {pdfViewMode === 'preview' && (
-                        <div className="flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 text-xs text-white">
-                            <button
-                                type="button"
-                                onClick={() => { setPageNumber((p) => Math.max(1, p - 1)); setLoading(true); }}
-                                disabled={pageNumber <= 1}
-                                className="p-0.5 disabled:opacity-30"
-                            >
-                                <ChevronLeft size={14} />
-                            </button>
-                            <span className="text-[11px] font-semibold">Page {pageNumber}</span>
-                            <button
-                                type="button"
-                                onClick={() => { setPageNumber((p) => p + 1); setLoading(true); }}
-                                className="p-0.5"
-                            >
-                                <ChevronRight size={14} />
-                            </button>
-                        </div>
-                    )}
                 </div>
             )}
 
-            {/* --- Central Canvas: A4 Sheet Document Stage --- */}
+            {/* --- Central Canvas: Direct A4 Sheet Document Stage --- */}
             <main 
                 className="flex-1 overflow-hidden relative flex items-center justify-center bg-gradient-to-b from-slate-950 via-[#0a0f1d] to-slate-950 p-2 sm:p-6"
                 onWheel={handleWheel}
@@ -586,55 +530,42 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
                     </div>
                 )}
 
-                {/* Main A4 Document Sheet / PDF Embed */}
+                {/* Main A4 High-Res Document Sheet with Pinch-to-Zoom and Drag */}
                 {!error && imageUrl && (
-                    isPdfDocument && pdfViewMode === 'embed' ? (
-                        /* Native PDF iframe embed */
-                        <div className="w-full h-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-white">
-                            <iframe
-                                src={getDirectPdfUrl(imageUrl)}
-                                title={currentDoc?.title || 'PDF Report'}
-                                className="w-full h-full min-h-[500px] border-0"
+                    <div
+                        className="relative flex items-center justify-center w-full h-full overflow-hidden"
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onDoubleClick={handleDoubleClick}
+                    >
+                        <div
+                            className={`relative bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] rounded-md md:rounded-lg overflow-hidden border border-slate-200/60 select-none transition-transform duration-75 ease-out ${
+                                zoom > 100 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                            }`}
+                            style={{
+                                width: '100%',
+                                maxWidth: '820px',
+                                aspectRatio: '1 / 1.414',
+                                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+                                transformOrigin: 'center center',
+                                touchAction: 'none'
+                            }}
+                        >
+                            <img
+                                key={`${currentDoc?._id}-pg-${pageNumber}`}
+                                src={isPdfDocument ? getCloudinaryPreviewImage(imageUrl, pageNumber) : imageUrl}
+                                alt={currentDoc?.title || 'Diagnostic Report'}
+                                className="w-full h-full object-contain pointer-events-none select-none bg-white"
+                                draggable={false}
                                 onLoad={handleImageLoad}
+                                onError={handleImageError}
                             />
                         </div>
-                    ) : (
-                        /* A4 High-Res Document Sheet with Pinch-to-Zoom and Drag */
-                        <div
-                            className="relative flex items-center justify-center w-full h-full overflow-hidden"
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onTouchStart={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                            onDoubleClick={handleDoubleClick}
-                        >
-                            <div
-                                className={`relative bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] rounded-md md:rounded-lg overflow-hidden border border-slate-200/60 select-none transition-transform duration-75 ease-out ${
-                                    zoom > 100 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
-                                }`}
-                                style={{
-                                    width: '100%',
-                                    maxWidth: '820px',
-                                    aspectRatio: '1 / 1.414',
-                                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
-                                    transformOrigin: 'center center',
-                                    touchAction: 'none'
-                                }}
-                            >
-                                <img
-                                    key={`${currentDoc?._id}-pg-${pageNumber}`}
-                                    src={isPdfDocument ? getCloudinaryPreviewImage(imageUrl, pageNumber) : imageUrl}
-                                    alt={currentDoc?.title || 'Diagnostic Report'}
-                                    className="w-full h-full object-contain pointer-events-none select-none bg-white"
-                                    draggable={false}
-                                    onLoad={handleImageLoad}
-                                    onError={isPdfDocument ? () => setPdfViewMode('embed') : handleImageError}
-                                />
-                            </div>
-                        </div>
-                    )
+                    </div>
                 )}
             </main>
 

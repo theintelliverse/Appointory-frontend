@@ -190,16 +190,16 @@ const Sidebar = ({ role = 'lab' }) => {
         <div className="p-8">
           <div
             onClick={() => navigate(`/${userRole}/dashboard`)}
-            className="flex items-center gap-4 group cursor-pointer"
+            className="flex items-center gap-3.5 group cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-600/20 group-hover:rotate-6 transition-all duration-300 overflow-hidden">
-              <img src="/Appointory_logo.jpg" alt="Appointory Logo" className="w-full h-full object-cover" />
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-md shadow-teal-700/10 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 p-2 overflow-hidden shrink-0">
+              <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">
                 {clinicName.split(' ')[0]}<span className="text-teal-600">.</span>
               </h1>
-              <p className="text-[14px] font-bold text-gray-400 uppercase tracking-widest">Healthcare OS</p>
+              <p className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Healthcare OS</p>
             </div>
           </div>
         </div>

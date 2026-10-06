@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import {
-    Smartphone, ArrowRight, RefreshCw, ArrowLeft,
+import { 
+    Smartphone, ArrowRight, RefreshCw, ArrowLeft, 
     ShieldCheck, Lock, Eye, EyeOff, Activity, CheckCircle
 } from 'lucide-react';
 import SEO from '../../components/SEO';
@@ -134,10 +134,10 @@ const PatientForgotPassword = () => {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex items-center justify-center p-6 font-body">
-            <SEO
-                title="Patient Password Recovery"
-                description="Securely recover your Appointory patient account credentials using SMS OTP verification."
-                url="/patient/forgot-password"
+            <SEO 
+                title="Patient Password Recovery" 
+                description="Securely recover your Appointory patient account credentials using SMS OTP verification." 
+                url="/patient/forgot-password" 
             />
             <div className="w-full max-w-xl bg-white rounded-[3rem] shadow-2xl border border-slate-100 overflow-hidden flex flex-col md:flex-row">
                 {/* Left Side - Security Panel */}

@@ -55,7 +55,7 @@ const PatientStatus = () => {
         try {
             const res = await axios.get(`${API_URL}/api/queue/public/status/${queueId}`);
 
-            if (res.data.isCompleted) {
+            if (res.data.isCompleted || res.data.data?.status === 'Completed' || res.data.data?.status === 'Cancelled' || res.data.data?.isPastDay) {
                 setIsCompleted(true);
             } else if (res.data.isPendingApproval) {
                 setIsPending(true);
@@ -227,12 +227,20 @@ const PatientStatus = () => {
                 <p className="text-white/70 text-sm leading-relaxed mb-8">
                     Your consultation is finished. Access your prescriptions, lab reports and visit history in your personal Health Locker.
                 </p>
-                <button
-                    onClick={() => navigate('/patient/login')}
-                    className="w-full py-4 bg-gradient-to-r from-teal-400 to-cyan-400 text-slate-900 rounded-2xl font-semibold text-sm shadow-xl shadow-teal-400/20 active:scale-95 transition-all flex items-center justify-center gap-3"
-                >
-                    <Lock size={18} /> Open Health Locker
-                </button>
+                <div className="flex flex-col gap-3">
+                    <button
+                        onClick={() => navigate(isLoggedInPatient ? '/patient/health-locker' : '/patient/login')}
+                        className="w-full py-3.5 bg-gradient-to-r from-teal-400 to-cyan-400 text-slate-900 rounded-2xl font-bold text-sm shadow-xl shadow-teal-400/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Lock size={18} /> Open Health Locker
+                    </button>
+                    <button
+                        onClick={() => navigate(isLoggedInPatient ? '/patient/dashboard' : '/')}
+                        className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-semibold text-xs border border-white/20 transition-all flex items-center justify-center gap-2"
+                    >
+                        <ArrowRight size={15} /> Back to Dashboard
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -287,16 +287,30 @@ const PatientDashboard = () => {
   }, [patientData]);
 
   const upcomingAppointments = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return appointments.filter(app => {
       const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
-      return !isConcluded;
+      if (isConcluded) return false;
+
+      const appDate = new Date(app.appointmentDate || app.createdAt);
+      appDate.setHours(0, 0, 0, 0);
+      return appDate.getTime() >= today.getTime();
     }).sort((a, b) => new Date(a.appointmentDate || a.createdAt) - new Date(b.appointmentDate || b.createdAt));
   }, [appointments]);
 
   const pastAppointments = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return appointments.filter(app => {
       const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
-      return isConcluded;
+      if (isConcluded) return true;
+
+      const appDate = new Date(app.appointmentDate || app.createdAt);
+      appDate.setHours(0, 0, 0, 0);
+      return appDate.getTime() < today.getTime();
     }).sort((a, b) => new Date(b.appointmentDate || b.createdAt) - new Date(a.appointmentDate || a.createdAt));
   }, [appointments]);
 
@@ -410,8 +424,8 @@ const PatientDashboard = () => {
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 px-4 py-3 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl flex items-center justify-center shadow-md shadow-teal-600/20 overflow-hidden border border-teal-500/20 shrink-0">
-              <img src="/Appointory_logo.jpg" alt="Appointory Logo" className="w-full h-full object-cover" />
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl flex items-center justify-center shadow-md shadow-teal-600/20 overflow-hidden border border-teal-500/20 bg-white p-1.5 shrink-0">
+              <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">

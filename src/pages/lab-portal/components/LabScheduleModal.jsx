@@ -119,7 +119,7 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Add new Holiday / Raja
+  // Add new Scheduled Holiday
   const handleAddHoliday = async (e) => {
     e.preventDefault();
     if (!holidayForm.title.trim() || !holidayForm.startDate || !holidayForm.endDate) {
@@ -152,7 +152,7 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
       if (res.data.success) {
         Swal.fire({
           icon: 'success',
-          title: 'Holiday / Raja Scheduled',
+          title: 'Holiday Scheduled',
           text: `"${holidayForm.title}" recorded. Connected clinics will see this lab as closed during this period.`,
           confirmButtonColor: '#1B6CA8'
         });
@@ -171,10 +171,10 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Delete Holiday / Raja
+  // Delete Holiday / Scheduled Closure
   const handleDeleteLeave = async (leaveId, title) => {
     const confirm = await Swal.fire({
-      title: 'Remove Holiday / Raja?',
+      title: 'Remove Scheduled Holiday?',
       text: `Are you sure you want to remove "${title}"? Connected clinics will see this lab as available on these dates.`,
       icon: 'warning',
       showCancelButton: true,
@@ -384,14 +384,14 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* SECTION 2: SCHEDULE NEW LAB HOLIDAY / RAJA */}
+              {/* SECTION 2: SCHEDULE NEW LAB HOLIDAY */}
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Form: Add Holiday */}
                 <div className="lg:col-span-2 bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-200/80 rounded-3xl p-6 space-y-4">
                   <div className="border-b border-slate-200/60 pb-3">
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Plus size={16} className="text-blue-600" />
-                      Schedule Lab Holiday / Raja
+                      Schedule Lab Holiday &amp; Closure
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Set holiday closures for festivals, staff leave, or machine maintenance.
@@ -450,7 +450,7 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
                         placeholder="e.g. Routine autoclave & analyzer maintenance"
                         value={holidayForm.reason}
                         onChange={(e) => setHolidayForm({ ...holidayForm, reason: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-blue-600"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:border-blue-600"
                       />
                     </div>
 
@@ -459,7 +459,7 @@ const LabScheduleModal = ({ isOpen, onClose }) => {
                       disabled={submittingHoliday}
                       className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 disabled:opacity-50 active:scale-95"
                     >
-                      <Plus size={15} /> {submittingHoliday ? 'Scheduling...' : 'Add Lab Holiday / Raja'}
+                      <Plus size={15} /> {submittingHoliday ? 'Scheduling...' : 'Schedule Lab Holiday'}
                     </button>
                   </form>
                 </div>

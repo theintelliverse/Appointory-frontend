@@ -392,50 +392,6 @@ const ProfilePage = () => {
                                     />
                                 </div>
 
-                                {/* 📋 DPDP Act 2023 Explicit Directory Consent Card (Doctor) */}
-                                {role === 'doctor' && (
-                                    <div className="mt-8 p-5 sm:p-6 bg-slate-50/80 rounded-3xl border border-slate-200/80 space-y-3 relative z-10">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className={`p-2 rounded-xl border ${user.publicListingConsent ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-slate-100 border-slate-200 text-slate-400'}`}>
-                                                    <ShieldCheck size={20} />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
-                                                        Public Directory Listing Consent (DPDP Act 2023)
-                                                    </h4>
-                                                    <p className="text-[11px] text-slate-500 font-medium">
-                                                        Control whether your profile is publicly indexable and visible at <code className="text-teal-700 font-mono">/d/{user.slug || 'your-slug'}</code>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                                                <input 
-                                                    type="checkbox" 
-                                                    disabled={!isEditing}
-                                                    checked={Boolean(user.publicListingConsent)}
-                                                    onChange={(e) => setUser({ ...user, publicListingConsent: e.target.checked })}
-                                                    className="sr-only peer"
-                                                />
-                                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600 peer-disabled:opacity-50"></div>
-                                            </label>
-                                        </div>
-                                        <div className="text-[11px] text-slate-600 bg-white p-3.5 rounded-2xl border border-slate-200/60 leading-relaxed space-y-1">
-                                            <p className="font-semibold text-slate-700">
-                                                Written Consent Declaration:
-                                            </p>
-                                            <p className="text-slate-500">
-                                                By enabling this toggle, I hereby give explicit written authorization under India’s Digital Personal Data Protection (DPDP) Act 2023 for Appointory to display my verified doctor credentials, specialization, consultation fees, and appointment booking availability on the public directory. Without this consent, my profile remains strictly unlisted and hidden from public search engines.
-                                            </p>
-                                            {user.publicListingConsentDate && (
-                                                <p className="text-[10px] text-teal-700 font-mono pt-1">
-                                                    ✓ Consent logged on: {new Date(user.publicListingConsentDate).toLocaleString('en-IN')}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
                                 {isEditing && (
                                     <button 
                                         type="submit" 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -43,6 +44,19 @@ const Prescriptions = () => {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
+  const closeModal = useCallback(() => {
+    setShowModal(false);
+    setEditingId(null);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showModal) closeModal();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, closeModal]);
+
   const fetchPrescriptions = useCallback(async () => {
     setLoading(true);
     try {
@@ -86,11 +100,6 @@ const Prescriptions = () => {
     setNotes(p.notes || '');
     setMedicines(p.medicines && p.medicines.length > 0 ? p.medicines.map(m => ({ name: m.name || '', time: m.time || '', amount: m.amount || '', total: m.total || '' })) : [emptyMed()]);
     setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setEditingId(null);
   };
 
   const handleSubmit = async (e) => {
@@ -244,10 +253,10 @@ const Prescriptions = () => {
                         </button>
                       </div>
 
-                      {/* Diagnosis / Illness Name - Primary */}
+                      {/* Diagnosis / Clinical Condition - Primary */}
                       <div className="mb-4">
-                        <span className="text-[14px] font-black text-teal-600 uppercase tracking-[0.2em] flex items-center gap-1.5 mb-1">
-                          <AlertCircle size={10} /> Illness / Bimari
+                        <span className="text-[12px] font-black text-teal-600 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                          <AlertCircle size={12} /> Diagnosis / Condition
                         </span>
                         <h4 className="text-xl font-black text-slate-900 leading-tight tracking-tight">
                           {p.diagnosis || <span className="text-slate-300 font-bold italic">No diagnosis recorded</span>}
@@ -329,50 +338,55 @@ const Prescriptions = () => {
       </div>
 
       {/* Create / Update Prescription Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-4xl rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-2xl p-5 sm:p-8 max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-200 flex flex-col my-auto">
+      {showModal && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-in fade-in duration-200"
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl sm:rounded-[2rem] border border-slate-100 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
 
             {/* Modal Header */}
-            <div className="flex justify-between items-center mb-5 shrink-0 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${editingId ? 'bg-orange-50 text-orange-600' : 'bg-teal-50 text-teal-600'}`}>
+            <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm ${editingId ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-teal-50 text-teal-600 border border-teal-100'}`}>
                   {editingId ? <Edit3 size={20} /> : <Plus size={20} />}
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-tight">
                     {editingId ? 'Update Prescription' : 'New Prescription Record'}
                   </h2>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                    {editingId ? 'Edit illness, medicines and notes' : 'Issue new clinical medication order'}
+                    {editingId ? 'Edit clinical diagnosis, medicines and notes' : 'Issue new clinical medication order'}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
-                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-all"
+                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-all cursor-pointer"
+                title="Close"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 flex-grow">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
 
-              {/* ---- ILLNESS / BIMARI FIELD - TOP PRIORITY ---- */}
-              <div className="p-4 sm:p-5 bg-teal-50/80 border-2 border-teal-100 rounded-2xl space-y-2">
-                <label className="block text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Stethoscope size={15} className="text-teal-600" /> Illness / Bimari Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Viral Fever, Hypertension, Diabetes, Migraine..."
-                  value={diagnosis}
-                  onChange={(e) => setDiagnosis(e.target.value)}
-                  className="w-full bg-white border border-teal-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 transition-all text-slate-800 placeholder:text-slate-300 shadow-xs"
-                />
-              </div>
+                {/* ---- CLINICAL DIAGNOSIS / CONDITION FIELD ---- */}
+                <div className="p-4 sm:p-5 bg-teal-50/70 border border-teal-200/80 rounded-2xl space-y-2">
+                  <label className="block text-xs font-black text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Stethoscope size={15} className="text-teal-600" /> Clinical Diagnosis / Condition *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Viral Fever, Hypertension, Type-2 Diabetes, Acute Bronchitis..."
+                    value={diagnosis}
+                    onChange={(e) => setDiagnosis(e.target.value)}
+                    className="w-full bg-white border border-teal-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100 transition-all text-slate-800 placeholder:text-slate-400 shadow-xs"
+                  />
+                </div>
 
               {/* Patient Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -561,12 +575,14 @@ const Prescriptions = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-50 flex gap-3 shrink-0">
+              </div>
+
+              {/* Fixed Action Footer */}
+              <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/80 flex gap-3 shrink-0">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 py-4 text-white rounded-2xl font-black text-[14px] uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${editingId ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' : 'bg-teal-600 hover:bg-teal-700 shadow-teal-600/20'}`}
+                  className={`flex-1 py-3.5 text-white rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer ${editingId ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20' : 'bg-teal-600 hover:bg-teal-700 shadow-teal-600/20'}`}
                 >
                   {isSubmitting ? (
                     <RefreshCw size={16} className="animate-spin" />
@@ -578,14 +594,15 @@ const Prescriptions = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-6 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-[14px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                  className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

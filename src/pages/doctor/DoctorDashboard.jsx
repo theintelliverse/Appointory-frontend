@@ -43,7 +43,8 @@ import {
   Phone,
   Heart,
   CalendarDays,
-  Save
+  Save,
+  Star
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import PatientQuickView from '../../components/PatientQuickView';
@@ -1004,31 +1005,89 @@ const DoctorDashboard = () => {
               )}
 
               <div className="relative">
-                <button onClick={() => setShowNotifications(!showNotifications)} className="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition-all">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)} 
+                  className="relative w-9 h-9 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition-all cursor-pointer"
+                  title="Notifications"
+                >
                   <Bell size={16} />
                   {reminders.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[14px] font-bold rounded-full border-2 border-white flex items-center justify-center">{reminders.length}</span>
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full border-2 border-white flex items-center justify-center shadow-xs">
+                      {reminders.length}
+                    </span>
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute top-12 right-0 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-[100]">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-[14px] font-bold text-gray-900">Notifications</h4>
-                      <button onClick={() => setShowNotifications(false)} className="text-[14px] font-semibold text-teal-600">Dismiss</button>
+                  <div className="absolute top-12 right-0 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-[100] animate-in fade-in-50 zoom-in-95 duration-150">
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Notifications</h4>
+                        {reminders.length > 0 && (
+                          <span className="px-1.5 py-0.2 bg-teal-50 text-teal-700 text-[10px] font-bold rounded-md">
+                            {reminders.length} new
+                          </span>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => { setReminders([]); setShowNotifications(false); }} 
+                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 cursor-pointer"
+                      >
+                        Dismiss
+                      </button>
                     </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {reminders.slice(0, 4).map((rem, i) => (
-                        <div key={i} className="flex gap-2.5 p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                          <div className={`p-1.5 rounded-lg shrink-0 ${rem.type === 'lab' ? 'bg-red-50 text-red-500' : rem.type === 'followup' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`}>
-                            {rem.type === 'lab' ? <FlaskConical size={12} /> : rem.type === 'followup' ? <Calendar size={12} /> : <Bell size={12} />}
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
+                      {reminders.map((rem, i) => (
+                        <div 
+                          key={rem.id || i} 
+                          onClick={() => {
+                            setShowNotifications(false);
+                            if (rem.type === 'patient_request') {
+                              navigate('/doctor/appointments');
+                            } else if (rem.type === 'lab') {
+                              navigate('/doctor/reports');
+                            } else if (rem.type === 'review') {
+                              navigate('/doctor/profile');
+                            }
+                          }}
+                          className="flex items-start gap-2.5 p-2.5 hover:bg-teal-50/50 rounded-xl transition-all cursor-pointer border border-transparent hover:border-teal-100/60"
+                        >
+                          <div className={`p-2 rounded-xl shrink-0 mt-0.5 ${
+                            rem.type === 'lab' 
+                              ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                              : rem.type === 'patient_request' 
+                              ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                              : rem.type === 'review' 
+                              ? 'bg-amber-50 text-amber-600 border border-amber-100' 
+                              : 'bg-teal-50 text-teal-600 border border-teal-100'
+                          }`}>
+                            {rem.type === 'lab' ? (
+                              <FlaskConical size={13} />
+                            ) : rem.type === 'patient_request' ? (
+                              <UserPlus size={13} />
+                            ) : rem.type === 'review' ? (
+                              <Star size={13} />
+                            ) : (
+                              <Bell size={13} />
+                            )}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-[14px] font-semibold text-gray-800 truncate">{rem.title}</p>
-                            <p className="text-[14px] text-gray-400 truncate">{rem.patientName}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-gray-800 leading-tight truncate">{rem.title}</p>
+                            <p className="text-[11px] text-gray-500 font-medium truncate mt-0.5">{rem.patientName}</p>
                           </div>
+                          {rem.time && (
+                            <span className="text-[9.5px] font-bold text-teal-700 bg-teal-50/80 px-1.5 py-0.5 rounded-md shrink-0">
+                              {rem.time}
+                            </span>
+                          )}
                         </div>
                       ))}
-                      {reminders.length === 0 && <p className="text-center py-3 text-[14px] text-gray-400">No alerts</p>}
+                      {reminders.length === 0 && (
+                        <div className="text-center py-6 space-y-1">
+                          <Bell size={24} className="mx-auto text-gray-300" />
+                          <p className="text-xs font-bold text-gray-700">No New Requests</p>
+                          <p className="text-[11px] text-gray-400">All patient requests and lab reports are up to date.</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1722,27 +1781,57 @@ const DoctorDashboard = () => {
 
                       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 flex-1 flex flex-col" style={{ minHeight: '180px' }}>
                         <div className="flex justify-between items-center mb-2.5">
-                          <h3 className="text-[14px] font-bold text-gray-900 flex items-center gap-1.5">
-                            <Bell size={13} className="text-orange-400" /> Reminders
+                          <h3 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wider">
+                            <Bell size={13} className="text-teal-600" /> Pending Requests &amp; Reviews
                           </h3>
-                          <button onClick={() => navigate('/doctor/appointments')} className="text-[14px] font-bold text-teal-600">View All</button>
+                          <button onClick={() => navigate('/doctor/appointments')} className="text-xs font-bold text-teal-600 hover:text-teal-700 cursor-pointer">View All</button>
                         </div>
-                        <div className="space-y-1.5 flex-grow overflow-y-auto">
+                        <div className="space-y-1.5 flex-grow overflow-y-auto custom-scrollbar">
                           {reminders.map((rem, idx) => (
-                            <div key={rem._id || `rem-${idx}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-all cursor-pointer">
-                              <div className={`p-1.5 rounded-md shrink-0 ${rem.type === 'lab' ? 'bg-red-50 text-red-500' : rem.type === 'followup' ? 'bg-orange-50 text-orange-500' : rem.type === 'prescription' ? 'bg-purple-50 text-purple-500' : 'bg-blue-50 text-blue-500'}`}>
-                                {rem.type === 'lab' ? <FlaskConical size={12} /> : rem.type === 'followup' ? <Calendar size={12} /> : rem.type === 'prescription' ? <FileText size={12} /> : <Bell size={12} />}
+                            <div 
+                              key={rem.id || rem._id || `rem-${idx}`} 
+                              onClick={() => {
+                                if (rem.type === 'patient_request') navigate('/doctor/appointments');
+                                else if (rem.type === 'lab') navigate('/doctor/reports');
+                                else if (rem.type === 'review') navigate('/doctor/profile');
+                              }}
+                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-teal-50/50 transition-all cursor-pointer border border-transparent hover:border-teal-100/60"
+                            >
+                              <div className={`p-1.5 rounded-lg shrink-0 ${
+                                rem.type === 'lab' 
+                                  ? 'bg-rose-50 text-rose-600' 
+                                  : rem.type === 'patient_request' 
+                                  ? 'bg-blue-50 text-blue-600' 
+                                  : rem.type === 'review' 
+                                  ? 'bg-amber-50 text-amber-600' 
+                                  : 'bg-teal-50 text-teal-600'
+                              }`}>
+                                {rem.type === 'lab' ? (
+                                  <FlaskConical size={12} />
+                                ) : rem.type === 'patient_request' ? (
+                                  <UserPlus size={12} />
+                                ) : rem.type === 'review' ? (
+                                  <Star size={12} />
+                                ) : (
+                                  <Bell size={12} />
+                                )}
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-[14px] font-semibold text-gray-800 truncate">{rem.title}</p>
-                                <p className="text-[14px] text-gray-400 truncate">{rem.patientName}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-800 truncate">{rem.title}</p>
+                                <p className="text-[11px] text-gray-400 truncate">{rem.patientName}</p>
                               </div>
+                              {rem.time && (
+                                <span className="text-[9.5px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0">
+                                  {rem.time}
+                                </span>
+                              )}
                             </div>
                           ))}
                           {reminders.length === 0 && (
-                            <div className="flex-1 flex flex-col items-center justify-center py-5">
-                              <Bell className="text-gray-200 mb-1.5" size={18} />
-                              <p className="text-[14px] font-bold text-gray-300">No reminders</p>
+                            <div className="flex-1 flex flex-col items-center justify-center py-5 text-center">
+                              <Bell className="text-gray-300 mb-1" size={18} />
+                              <p className="text-xs font-bold text-gray-500">No Pending Requests</p>
+                              <p className="text-[10px] text-gray-400">All patient requests and reviews are clear.</p>
                             </div>
                           )}
                         </div>

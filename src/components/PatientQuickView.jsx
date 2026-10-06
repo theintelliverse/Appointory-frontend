@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import {
   X,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import ReportViewer from './ReportViewer';
 import { API_URL } from '../config/runtime';
+
 const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
   const [patientData, setPatientData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,14 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
   const [weight, setWeight] = useState("");
   const [bmi, setBmi] = useState("");
   const [activeMemberId, setActiveMemberId] = useState(patientId || null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     let active = true;
@@ -86,38 +96,48 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
     if (phone || patientId) fetchFullProfile(patientId || null);
   }, [phone, patientId, fetchFullProfile]);
 
-  if (loading) return (
-    <div className="fixed inset-0 bg-teak/40 backdrop-blur-md z-50 flex items-center justify-center">
-      <div className="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center gap-4">
-        <Database className="animate-bounce text-marigold" size={40} />
-        <p className="font-heading text-xl text-teak">Decrypting Locker...</p>
-      </div>
-    </div>
-  );
+  if (loading) {
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-3 border border-slate-100">
+          <Database className="animate-bounce text-teal-600" size={36} />
+          <p className="font-bold text-base text-slate-800">Decrypting Health Locker...</p>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   if (!patientData) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 bg-teak/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-10">
-        <div className="bg-parchment w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col border border-sandstone">
+      <div 
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-3 sm:p-6 overflow-hidden animate-in fade-in duration-200"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <div className="bg-[#F7FAF9] w-full max-w-4xl max-h-[88vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-sandstone animate-in zoom-in-95 duration-200">
 
           {/* --- Header --- */}
-          <div className="p-8 md:px-12 border-b border-sandstone flex justify-between items-center bg-white">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-marigold rounded-2xl flex items-center justify-center text-white shadow-lg shadow-marigold/20">
-                <History size={24} />
+          <div className="p-4 sm:p-6 border-b border-sandstone flex justify-between items-center bg-white shrink-0">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 bg-teal-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-teal-600/20 shrink-0">
+                <History size={22} />
               </div>
               <div>
-                <h2 className="text-3xl font-heading text-teak">{patientData.name}</h2>
-                <p className="text-[14px] font-black uppercase tracking-widest text-khaki">Digital Health Locker • {phone}</p>
+                <h2 className="text-xl sm:text-2xl font-black text-teak tracking-tight leading-tight">{patientData.name}</h2>
+                <p className="text-xs font-bold uppercase tracking-wider text-khaki">Digital Health Locker • {phone}</p>
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-3 hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all text-khaki"
+              className="p-2.5 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all text-slate-400 cursor-pointer"
+              title="Close"
             >
-              <X size={28} />
+              <X size={22} />
             </button>
           </div>
 
@@ -156,7 +176,7 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
             </div>
           )}
 
-          <div className="flex-grow p-4 md:p-12 overflow-y-auto space-y-8 md:space-y-12">
+          <div className="flex-grow p-4 md:p-8 overflow-y-auto space-y-6 md:space-y-8 custom-scrollbar">
 
             {/* --- Vitals Summary Row --- */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -330,7 +350,8 @@ const PatientQuickView = ({ phone, patientId, patientName, onClose }) => {
           onClose={() => setSelectedReportIndex(null)}
         />
       )}
-    </>
+    </>,
+    document.body
   );
 };
 

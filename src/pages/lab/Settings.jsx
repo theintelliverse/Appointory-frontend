@@ -444,7 +444,7 @@ const Settings = () => {
                               <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
                                 isActive ? 'bg-amber-500 text-white animate-pulse' : 'bg-white border text-slate-600'
                               }`}>
-                                {isActive ? 'Today' : (isLabSpecific ? 'Lab Raja' : 'Holiday')}
+                                {isActive ? 'Today' : (isLabSpecific ? 'Lab Closure' : 'Holiday')}
                               </span>
                             </div>
                             <p className="text-[11px] font-semibold text-slate-600">

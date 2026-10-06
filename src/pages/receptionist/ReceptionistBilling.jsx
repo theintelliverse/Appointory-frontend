@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import {
-  User, Phone, Search, RefreshCw, ArrowLeft, Stethoscope, 
-  Receipt, Plus, Trash2, Printer, CheckCircle2, ShieldCheck, 
-  CreditCard, DollarSign, Sparkles, FileText, AlertTriangle, 
+  User, Phone, Search, RefreshCw, ArrowLeft, Stethoscope,
+  Receipt, Plus, Trash2, Printer, CheckCircle2, ShieldCheck,
+  CreditCard, DollarSign, Sparkles, FileText, AlertTriangle,
   Beaker, Check, Clock, Eye, Share2, ChevronRight, X, TrendingUp, CalendarCheck, Settings, QrCode,
   Tag, Percent, MessageCircle, FileDown, FlaskConical, Download, Ticket,
   ChevronLeft, Calendar, Filter, Users
@@ -41,7 +41,7 @@ const ReceptionistBilling = () => {
   const [fetchedQueue, setFetchedQueue] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [familyMembersList, setFamilyMembersList] = useState([]);
-  
+
   // Doctor Appointment Booking Option (Optional, defaults to false)
   const [bookAppointment, setBookAppointment] = useState(false);
 
@@ -174,17 +174,84 @@ const ReceptionistBilling = () => {
     }
   }, [token]);
 
+  const fetchDoctors = useCallback(async () => {
+    try {
+      // 1. First try dedicated billing doctors endpoint
+      const res = await axios.get(`${API_URL}/api/billing/doctors`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.success && Array.isArray(res.data.doctors) && res.data.doctors.length > 0) {
+        setDoctors(res.data.doctors);
+        return;
+      }
+    } catch (err) {
+      console.log("Billing doctors endpoint failed", err?.message);
+      // Fallback to staff/all
+    }
+
+    try {
+      // 2. Try staff all endpoint
+      const staffRes = await axios.get(`${API_URL}/api/staff/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (staffRes.data?.success && Array.isArray(staffRes.data.staff)) {
+        const docList = staffRes.data.staff.filter(s => s.role?.toLowerCase() === 'doctor');
+        if (docList.length > 0) {
+          setDoctors(docList);
+          return;
+        } else {
+          // If no separate doctor accounts exist, use admins as practitioners
+          const adminList = staffRes.data.staff.filter(s => s.role?.toLowerCase() === 'admin');
+          if (adminList.length > 0) {
+            setDoctors(adminList);
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Staff all endpoint failed", err?.message);
+      // Fallback
+    }
+
+    try {
+      // 3. Try clinic public doctors
+      const clinicId = localStorage.getItem('clinicId');
+      if (clinicId) {
+        const clinicDocRes = await axios.get(`${API_URL}/api/clinic/public/doctors/${clinicId}`);
+        if (clinicDocRes.data?.doctors && clinicDocRes.data.doctors.length > 0) {
+          setDoctors(clinicDocRes.data.doctors);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load doctors:", err);
+    }
+  }, [token]);
+
   // Load Initial Data (Doctors & Invoice History)
   useEffect(() => {
-    Promise.resolve().then(() => {
+    Promise.resolve().then(async () => {
       fetchInvoices();
+      fetchDoctors();
     });
-  }, [fetchInvoices]);
+  }, [fetchInvoices, fetchDoctors]);
+
+  // Auto-select doctor if only 1 exists and none selected yet
+  useEffect(() => {
+    if (doctors.length === 1 && !formData.doctorId) {
+      setFormData(prev => ({
+        ...prev,
+        doctorId: doctors[0]._id,
+        doctorName: doctors[0].name
+      }));
+    }
+  }, [doctors, formData.doctorId]);
 
   // 🔍 AUTO-FETCH PATIENT & APPOINTMENT BY PHONE
-  const handleAutoFetch = async (e) => {
-    if (e) e.preventDefault();
-    const phoneToSearch = searchPhone.trim();
+  const handleAutoFetch = async (eOrPhone) => {
+    if (eOrPhone && typeof eOrPhone === 'object' && eOrPhone.preventDefault) {
+      eOrPhone.preventDefault();
+    }
+    const phoneToSearch = (typeof eOrPhone === 'string' ? eOrPhone : searchPhone).trim();
     if (!phoneToSearch || phoneToSearch.length < 10) {
       Swal.fire({
         icon: 'warning',
@@ -205,8 +272,10 @@ const ReceptionistBilling = () => {
 
       if (res.data.success) {
         const data = res.data;
-        setDoctors(data.doctors || []);
-        
+        if (Array.isArray(data.doctors) && data.doctors.length > 0) {
+          setDoctors(data.doctors);
+        }
+
         // 1. Fill Patient Basic Info & Linked Family Members
         const primaryPatient = data.patient;
         const familyList = data.familyMembers || [];
@@ -253,16 +322,16 @@ const ReceptionistBilling = () => {
         let defaultItems = [];
         if (billingType === 'clinic') {
           const isFollowup = data.queue?.visitType === 'Follow-up';
-          const consultFee = isFollowup 
-            ? (data.clinicFees?.feeFollowupConsult || billingSettings.feeFollowupConsult || 300) 
+          const consultFee = isFollowup
+            ? (data.clinicFees?.feeFollowupConsult || billingSettings.feeFollowupConsult || 300)
             : (data.clinicFees?.feeConsult || billingSettings.feeConsult || 500);
           defaultItems = [
-            { 
-              description: data.queue 
-                ? `${isFollowup ? 'Follow-up Consultation' : 'Doctor Consultation'} (${data.queue.doctorName})` 
-                : 'Doctor Consultation Fee', 
-              amount: consultFee, 
-              category: 'Consultation' 
+            {
+              description: data.queue
+                ? `${isFollowup ? 'Follow-up Consultation' : 'Doctor Consultation'} (${data.queue.doctorName})`
+                : 'Doctor Consultation Fee',
+              amount: consultFee,
+              category: 'Consultation'
             }
           ];
           if (data.queue?.visitType === 'Appointment') {
@@ -356,16 +425,16 @@ const ReceptionistBilling = () => {
       }
     } else {
       const isFollowup = fetchedQueue?.visitType === 'Follow-up';
-      const fee = isFollowup 
-        ? (billingSettings.feeFollowupConsult || 300) 
+      const fee = isFollowup
+        ? (billingSettings.feeFollowupConsult || 300)
         : (billingSettings.feeConsult || 500);
       setItems([
-        { 
-          description: fetchedQueue 
-            ? `${isFollowup ? 'Follow-up Consultation' : 'Doctor Consultation'} (${formData.doctorName || fetchedQueue.doctorName})` 
-            : 'Doctor Consultation Fee', 
-          amount: fee, 
-          category: 'Consultation' 
+        {
+          description: fetchedQueue
+            ? `${isFollowup ? 'Follow-up Consultation' : 'Doctor Consultation'} (${formData.doctorName || fetchedQueue.doctorName})`
+            : 'Doctor Consultation Fee',
+          amount: fee,
+          category: 'Consultation'
         }
       ]);
     }
@@ -435,14 +504,14 @@ const ReceptionistBilling = () => {
   // Calculate Financial Metrics
   const subtotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const duesAmount = Number(formData.onlinePendingDues || 0);
-  
+
   // Calculate discount based on Flat (₹) vs Percent (%)
   const discountAmount = discountType === 'percent'
     ? Math.round((subtotal * (Number(discountValue) || 0)) / 100)
     : (Number(discountValue) || 0);
 
-  const taxAmount = customTaxAmount !== null 
-    ? Number(customTaxAmount) 
+  const taxAmount = customTaxAmount !== null
+    ? Number(customTaxAmount)
     : (billingSettings.taxEnabled ? Math.max(0, Math.round((subtotal - discountAmount) * (billingSettings.taxRate / 100))) : 0);
 
   const totalAmount = Math.max(0, subtotal + duesAmount - discountAmount + taxAmount);
@@ -542,8 +611,8 @@ const ReceptionistBilling = () => {
             icon: 'success',
             title: `🎫 Token ${tokenNum} Booked & Invoice Issued!`,
             html: `<p class="font-bold text-lg text-teal-700">Receipt No: ${createdInv.invoiceNumber}</p>` +
-                  `<p class="font-black text-emerald-800 my-2 bg-emerald-100 p-2 rounded-xl border border-emerald-300">🎫 Queue Token #${tokenNum} created & active in live queue!</p>` +
-                  `<p class="text-xs text-slate-500 mt-1">Total: ₹${createdInv.totalAmount} | Paid: ₹${createdInv.paidAmount}</p>`,
+              `<p class="font-black text-emerald-800 my-2 bg-emerald-100 p-2 rounded-xl border border-emerald-300">🎫 Queue Token #${tokenNum} created & active in live queue!</p>` +
+              `<p class="text-xs text-slate-500 mt-1">Total: ₹${createdInv.totalAmount} | Paid: ₹${createdInv.paidAmount}</p>`,
             confirmButtonColor: '#0F766E',
             background: '#EEF6FA'
           });
@@ -589,7 +658,7 @@ const ReceptionistBilling = () => {
             icon: 'success',
             title: 'Lab Invoice Issued Successfully!',
             html: `<p class="font-bold text-lg text-teal-700">Receipt No: ${createdInv.invoiceNumber}</p>` +
-                  `<p class="text-xs text-slate-500 mt-1">Total: ₹${createdInv.totalAmount} | Paid: ₹${createdInv.paidAmount}</p>`,
+              `<p class="text-xs text-slate-500 mt-1">Total: ₹${createdInv.totalAmount} | Paid: ₹${createdInv.paidAmount}</p>`,
             confirmButtonColor: '#0F766E',
             background: '#EEF6FA'
           });
@@ -689,7 +758,7 @@ const ReceptionistBilling = () => {
 
   // Book Appointment Token for an Existing Clinic Invoice
   const handleBookTokenForInvoice = async (inv) => {
-    const doctorOptions = doctors.map(d => 
+    const doctorOptions = doctors.map(d =>
       `<option value="${d._id}" ${d._id === inv.doctorId ? 'selected' : ''}>${d.name} (${d.specialization || 'General'})</option>`
     ).join('');
 
@@ -787,9 +856,9 @@ const ReceptionistBilling = () => {
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'normal');
       doc.text(
-        isLab 
-          ? 'DEPARTMENT OF CLINICAL PATHOLOGY & DIAGNOSTICS' 
-          : 'MULTI-SPECIALTY HEALTHCARE & CLINICAL CONSULTATION', 
+        isLab
+          ? 'DEPARTMENT OF CLINICAL PATHOLOGY & DIAGNOSTICS'
+          : 'MULTI-SPECIALTY HEALTHCARE & CLINICAL CONSULTATION',
         15, 23
       );
       doc.text('Valid Electronic Healthcare Receipt • Appointory Network', 15, 29);
@@ -1009,7 +1078,7 @@ const ReceptionistBilling = () => {
   };
 
   const filteredInvoices = invoices.filter(inv => {
-    const matchesSearch = !historySearch || 
+    const matchesSearch = !historySearch ||
       inv.patientName?.toLowerCase().includes(historySearch.toLowerCase()) ||
       inv.patientPhone?.includes(historySearch) ||
       inv.invoiceNumber?.toLowerCase().includes(historySearch.toLowerCase());
@@ -1115,11 +1184,11 @@ const ReceptionistBilling = () => {
       {/* Main Content Area */}
       <div className="flex-grow flex flex-col min-h-screen overflow-y-auto pb-32 lg:pb-8">
         <main className="p-3 sm:p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-          
+
           {/* Header Bar */}
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm">
             <div>
-              <button 
+              <button
                 onClick={() => navigate('/receptionist/dashboard')}
                 className="flex items-center gap-2 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors mb-2 uppercase tracking-wider"
               >
@@ -1148,22 +1217,20 @@ const ReceptionistBilling = () => {
                 <button
                   type="button"
                   onClick={() => handleBillingTypeSwitch('clinic')}
-                  className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                    billingType === 'clinic' 
-                      ? 'bg-teal-700 text-white shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${billingType === 'clinic'
+                    ? 'bg-teal-700 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                    }`}
                 >
                   <Stethoscope size={15} /> Clinic Billing
                 </button>
                 <button
                   type="button"
                   onClick={() => handleBillingTypeSwitch('lab')}
-                  className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                    billingType === 'lab' 
-                      ? 'bg-indigo-600 text-white shadow-sm' 
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  className={`flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${billingType === 'lab'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                    }`}
                 >
                   <Beaker size={15} /> Lab Billing
                 </button>
@@ -1264,7 +1331,7 @@ const ReceptionistBilling = () => {
                 <div>
                   <p className="font-bold text-emerald-200 text-sm">Data Auto-Fetched Successfully!</p>
                   <p className="text-emerald-100/90 mt-0.5">
-                    Synced details for <strong>{formData.patientName}</strong>. 
+                    Synced details for <strong>{formData.patientName}</strong>.
                     {fetchedQueue ? (
                       <span> Assigned Doctor: <strong>{formData.doctorName}</strong> (Token: {fetchedQueue.tokenNumber}).</span>
                     ) : (
@@ -1281,10 +1348,10 @@ const ReceptionistBilling = () => {
 
           {/* MAIN BILLING FORM & SUMMARY GRID */}
           <form onSubmit={handleSubmitInvoice} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* LEFT 2 COLUMNS: Patient Details & Line Items */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* 1. Patient & Doctor Info Card */}
               <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
                 <div className="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -1331,16 +1398,14 @@ const ReceptionistBilling = () => {
                                 patientName: m.name
                               }));
                             }}
-                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
-                              isSelected
-                                ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
-                                : 'bg-white text-slate-700 border-slate-200 hover:border-teal-400 hover:bg-slate-50'
-                            }`}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${isSelected
+                              ? 'bg-teal-700 text-white border-teal-700 shadow-sm ring-2 ring-teal-700/20'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-teal-400 hover:bg-slate-50'
+                              }`}
                           >
                             <span>{m.name}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${
-                              isSelected ? 'bg-teal-800 text-teal-100' : 'bg-slate-100 text-slate-500'
-                            }`}>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider ${isSelected ? 'bg-teal-800 text-teal-100' : 'bg-slate-100 text-slate-500'
+                              }`}>
                               {m.relationship || (m.isPrimaryAccount ? 'Self' : 'Family')}
                               {m.isMinor ? ' • Minor' : ''}
                             </span>
@@ -1388,14 +1453,22 @@ const ReceptionistBilling = () => {
                   {/* Doctor Assignment (For Clinic Billing) */}
                   {billingType === 'clinic' && (
                     <div className="md:col-span-2">
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Assigned Doctor / Practitioner</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Assigned Doctor / Practitioner</label>
+                        {formData.doctorName && (
+                          <span className="text-[11px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                            Dr. {formData.doctorName}
+                          </span>
+                        )}
+                      </div>
                       <select
-                        value={formData.doctorId}
+                        value={formData.doctorId || ''}
                         onChange={(e) => {
-                          const doc = doctors.find(d => d._id === e.target.value);
+                          const selectedId = e.target.value;
+                          const doc = doctors.find(d => String(d._id) === String(selectedId));
                           setFormData({
                             ...formData,
-                            doctorId: e.target.value,
+                            doctorId: selectedId,
                             doctorName: doc ? doc.name : ''
                           });
                         }}
@@ -1404,7 +1477,7 @@ const ReceptionistBilling = () => {
                         <option value="">-- Select Doctor --</option>
                         {doctors.map(d => (
                           <option key={d._id} value={d._id}>
-                            {d.name} ({d.specialization || 'General'})
+                            Dr. {d.name} {d.specialization ? `(${d.specialization})` : ''} {!d.isAvailable ? ' - Break' : ''}
                           </option>
                         ))}
                       </select>
@@ -1485,7 +1558,7 @@ const ReceptionistBilling = () => {
                   {/* Individual test chips */}
                   <div className="flex flex-wrap gap-2 pt-1 border-t border-indigo-100/80">
                     {doctorPrescriptions.map((presc, pIdx) => (
-                      <div 
+                      <div
                         key={pIdx}
                         className="bg-white/95 border border-indigo-200/90 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-2xs"
                       >
@@ -1611,7 +1684,7 @@ const ReceptionistBilling = () => {
 
             {/* RIGHT COLUMN: Summary & Payment Tracker ("Paisa Bakki") */}
             <div className="space-y-6">
-              
+
               {/* Financial Calculation & Payment Card */}
               <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-5">
                 <h3 className="text-base font-bold text-slate-900 pb-2 border-b border-slate-100 flex items-center gap-2">
@@ -1736,11 +1809,10 @@ const ReceptionistBilling = () => {
                           key={mode}
                           type="button"
                           onClick={() => setFormData({ ...formData, paymentMode: mode })}
-                          className={`py-2 rounded-lg text-xs font-bold transition-all border ${
-                            formData.paymentMode === mode
-                              ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
-                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                          }`}
+                          className={`py-2 rounded-lg text-xs font-bold transition-all border ${formData.paymentMode === mode
+                            ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                            }`}
                         >
                           {mode}
                         </button>
@@ -1749,11 +1821,10 @@ const ReceptionistBilling = () => {
                   </div>
 
                   {/* Remaining Due ("Bakki Balance") Badge */}
-                  <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${
-                    remainingDue > 0 
-                      ? 'bg-rose-50 border-rose-200 text-rose-800' 
-                      : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  }`}>
+                  <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${remainingDue > 0
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    }`}>
                     <span>Status: <strong>{getPaymentStatus()}</strong></span>
                     <span>
                       {remainingDue > 0 ? `Remaining Balance: ₹${remainingDue}` : '✓ Fully Paid'}
@@ -1803,44 +1874,40 @@ const ReceptionistBilling = () => {
                   <button
                     type="button"
                     onClick={() => { setHistoryFilter('all'); setCurrentPage(1); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      historyFilter === 'all'
-                        ? 'bg-white text-slate-900 shadow-2xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${historyFilter === 'all'
+                      ? 'bg-white text-slate-900 shadow-2xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
                   >
                     All ({invoices.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => { setHistoryFilter('clinic'); setCurrentPage(1); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                      historyFilter === 'clinic'
-                        ? 'bg-teal-700 text-white shadow-2xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${historyFilter === 'clinic'
+                      ? 'bg-teal-700 text-white shadow-2xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
                   >
                     <Stethoscope size={12} /> Clinic ({clinicCount})
                   </button>
                   <button
                     type="button"
                     onClick={() => { setHistoryFilter('lab'); setCurrentPage(1); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                      historyFilter === 'lab'
-                        ? 'bg-indigo-600 text-white shadow-2xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${historyFilter === 'lab'
+                      ? 'bg-indigo-600 text-white shadow-2xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
                   >
                     <Beaker size={12} /> Lab ({labCount})
                   </button>
                   <button
                     type="button"
                     onClick={() => { setHistoryFilter('due'); setCurrentPage(1); }}
-                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                      historyFilter === 'due'
-                        ? 'bg-rose-600 text-white shadow-2xs font-black'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${historyFilter === 'due'
+                      ? 'bg-rose-600 text-white shadow-2xs font-black'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
                   >
                     <AlertTriangle size={12} /> Dues ({dueCount})
                   </button>
@@ -1919,177 +1986,174 @@ const ReceptionistBilling = () => {
             ) : (
               <>
                 <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                    <tr>
-                      <th className="p-3">Invoice #</th>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Type</th>
-                      <th className="p-3">Patient</th>
-                      <th className="p-3">Doctor</th>
-                      <th className="p-3">Total (₹)</th>
-                      <th className="p-3">Paid (₹)</th>
-                      <th className="p-3">Balance (₹)</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                    {paginatedInvoices.map((inv) => (
-                      <tr key={inv._id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-3 font-bold text-teal-700">{inv.invoiceNumber}</td>
-                        <td className="p-3 text-slate-500">{new Date(inv.billingDate).toLocaleDateString()}</td>
-                        <td className="p-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            inv.billingType === 'lab'
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                      <tr>
+                        <th className="p-3">Invoice #</th>
+                        <th className="p-3">Date</th>
+                        <th className="p-3">Type</th>
+                        <th className="p-3">Patient</th>
+                        <th className="p-3">Doctor</th>
+                        <th className="p-3">Total (₹)</th>
+                        <th className="p-3">Paid (₹)</th>
+                        <th className="p-3">Balance (₹)</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
+                      {paginatedInvoices.map((inv) => (
+                        <tr key={inv._id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-3 font-bold text-teal-700">{inv.invoiceNumber}</td>
+                          <td className="p-3 text-slate-500">{new Date(inv.billingDate).toLocaleDateString()}</td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${inv.billingType === 'lab'
                               ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
                               : 'bg-teal-100 text-teal-800 border border-teal-200'
-                          }`}>
-                            {inv.billingType === 'lab' ? <Beaker size={10} /> : <Stethoscope size={10} />}
-                            {inv.billingType === 'lab' ? 'Lab' : 'Clinic'}
-                          </span>
-                        </td>
-                        <td className="p-3 font-bold text-slate-900">
-                          {inv.patientName}
-                          <span className="block text-[10px] font-normal text-slate-400">{inv.patientPhone}</span>
-                        </td>
-                        <td className="p-3 text-slate-600">
-                          <div>{inv.doctorName || 'N/A'}</div>
-                          {inv.billingType === 'clinic' && (
-                            inv.queueId ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md mt-0.5">
-                                <Ticket size={10} /> In Queue
-                              </span>
+                              }`}>
+                              {inv.billingType === 'lab' ? <Beaker size={10} /> : <Stethoscope size={10} />}
+                              {inv.billingType === 'lab' ? 'Lab' : 'Clinic'}
+                            </span>
+                          </td>
+                          <td className="p-3 font-bold text-slate-900">
+                            {inv.patientName}
+                            <span className="block text-[10px] font-normal text-slate-400">{inv.patientPhone}</span>
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            <div>{inv.doctorName || 'N/A'}</div>
+                            {inv.billingType === 'clinic' && (
+                              inv.queueId ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md mt-0.5">
+                                  <Ticket size={10} /> In Queue
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md mt-0.5">
+                                  Bill Only
+                                </span>
+                              )
+                            )}
+                          </td>
+                          <td className="p-3 font-bold text-slate-900">₹{(inv.totalAmount || 0).toLocaleString()}</td>
+                          <td className="p-3 font-bold text-emerald-700">₹{(inv.paidAmount || 0).toLocaleString()}</td>
+                          <td className="p-3 font-bold">
+                            {inv.remainingDue > 0 ? (
+                              <span className="text-rose-600 font-black">₹{(inv.remainingDue).toLocaleString()}</span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md mt-0.5">
-                                Bill Only
-                              </span>
-                            )
-                          )}
-                        </td>
-                        <td className="p-3 font-bold text-slate-900">₹{(inv.totalAmount || 0).toLocaleString()}</td>
-                        <td className="p-3 font-bold text-emerald-700">₹{(inv.paidAmount || 0).toLocaleString()}</td>
-                        <td className="p-3 font-bold">
-                          {inv.remainingDue > 0 ? (
-                            <span className="text-rose-600 font-black">₹{(inv.remainingDue).toLocaleString()}</span>
-                          ) : (
-                            <span className="text-slate-400 font-normal">₹0</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            inv.paymentStatus === 'Paid' 
-                              ? 'bg-emerald-100 text-emerald-800' 
-                              : inv.paymentStatus === 'Partially Paid' 
-                              ? 'bg-amber-100 text-amber-800' 
-                              : 'bg-rose-100 text-rose-800'
-                          }`}>
-                            {inv.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {inv.billingType === 'clinic' && !inv.queueId && (
+                              <span className="text-slate-400 font-normal">₹0</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${inv.paymentStatus === 'Paid'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : inv.paymentStatus === 'Partially Paid'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-rose-100 text-rose-800'
+                              }`}>
+                              {inv.paymentStatus}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {inv.billingType === 'clinic' && !inv.queueId && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleBookTokenForInvoice(inv)}
+                                  className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-lg text-[10px] uppercase tracking-wider transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                  title="Book Doctor Appointment Token"
+                                >
+                                  <Ticket size={11} /> Book Token
+                                </button>
+                              )}
+                              {inv.remainingDue > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSettleDue(inv)}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-[10px] uppercase tracking-wider transition-colors inline-flex items-center gap-1 shadow-2xs"
+                                  title="Collect Outstanding Dues"
+                                >
+                                  <DollarSign size={11} /> Collect Due
+                                </button>
+                              )}
                               <button
                                 type="button"
-                                onClick={() => handleBookTokenForInvoice(inv)}
-                                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-lg text-[10px] uppercase tracking-wider transition-colors inline-flex items-center gap-1 shadow-2xs"
-                                title="Book Doctor Appointment Token"
+                                onClick={() => {
+                                  setSelectedInvoice(inv);
+                                  setShowPrintModal(true);
+                                }}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-teal-600 hover:text-white text-slate-700 font-bold rounded-lg text-[11px] transition-colors inline-flex items-center gap-1 border border-slate-200"
+                                title="View & Print Receipt"
                               >
-                                <Ticket size={11} /> Book Token
+                                <Eye size={12} /> View
                               </button>
-                            )}
-                            {inv.remainingDue > 0 && (
                               <button
                                 type="button"
-                                onClick={() => handleSettleDue(inv)}
-                                className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-lg text-[10px] uppercase tracking-wider transition-colors inline-flex items-center gap-1 shadow-2xs"
-                                title="Collect Outstanding Dues"
+                                onClick={() => handleDownloadInvoicePdf(inv)}
+                                className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors inline-flex items-center border border-slate-200"
+                                title="Download PDF"
                               >
-                                <DollarSign size={11} /> Collect Due
+                                <FileDown size={14} className="text-teal-700" />
                               </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedInvoice(inv);
-                                setShowPrintModal(true);
-                              }}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-teal-600 hover:text-white text-slate-700 font-bold rounded-lg text-[11px] transition-colors inline-flex items-center gap-1 border border-slate-200"
-                              title="View & Print Receipt"
-                            >
-                              <Eye size={12} /> View
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadInvoicePdf(inv)}
-                              className="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors inline-flex items-center border border-slate-200"
-                              title="Download PDF"
-                            >
-                              <FileDown size={14} className="text-teal-700" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* 10-per-page Pagination Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-                <div className="text-slate-500 font-medium">
-                  Showing <span className="font-bold text-slate-800">{filteredInvoices.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}</span> to <span className="font-bold text-slate-800">{Math.min(currentPage * ITEMS_PER_PAGE, filteredInvoices.length)}</span> of <span className="font-bold text-slate-800">{filteredInvoices.length}</span> bills
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent font-bold flex items-center gap-1 transition-all"
-                    >
-                      <ChevronLeft size={14} /> Prev
-                    </button>
+                {/* 10-per-page Pagination Controls */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+                  <div className="text-slate-500 font-medium">
+                    Showing <span className="font-bold text-slate-800">{filteredInvoices.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}</span> to <span className="font-bold text-slate-800">{Math.min(currentPage * ITEMS_PER_PAGE, filteredInvoices.length)}</span> of <span className="font-bold text-slate-800">{filteredInvoices.length}</span> bills
+                  </div>
 
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
-                        let pageNum = idx + 1;
-                        if (totalPages > 5 && currentPage > 3) {
-                          pageNum = currentPage - 3 + idx;
-                          if (pageNum > totalPages) pageNum = totalPages - (4 - idx);
-                        }
-                        return (
-                          <button
-                            key={pageNum}
-                            type="button"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 rounded-xl font-black text-xs transition-all ${
-                              currentPage === pageNum
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent font-bold flex items-center gap-1 transition-all"
+                      >
+                        <ChevronLeft size={14} /> Prev
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
+                          let pageNum = idx + 1;
+                          if (totalPages > 5 && currentPage > 3) {
+                            pageNum = currentPage - 3 + idx;
+                            if (pageNum > totalPages) pageNum = totalPages - (4 - idx);
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 rounded-xl font-black text-xs transition-all ${currentPage === pageNum
                                 ? 'bg-teal-700 text-white shadow-sm'
                                 : 'text-slate-600 hover:bg-slate-100 border border-slate-200'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      })}
-                    </div>
+                                }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent font-bold flex items-center gap-1 transition-all"
-                    >
-                      Next <ChevronRight size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent font-bold flex items-center gap-1 transition-all"
+                      >
+                        Next <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </main>
       </div>
@@ -2098,11 +2162,10 @@ const ReceptionistBilling = () => {
       {showPrintModal && selectedInvoice && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 space-y-4 my-8 animate-scaleIn">
-            
+
             {/* Modal Action Header (Hidden during window.print) */}
-            <div className={`p-4 flex flex-wrap justify-between items-center gap-2 print:hidden ${
-              selectedInvoice.billingType === 'lab' ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'
-            }`}>
+            <div className={`p-4 flex flex-wrap justify-between items-center gap-2 print:hidden ${selectedInvoice.billingType === 'lab' ? 'bg-slate-900 text-white' : 'bg-slate-900 text-white'
+              }`}>
               <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                 {selectedInvoice.billingType === 'lab' ? (
                   <><Beaker size={16} className="text-indigo-400" /> Lab Diagnostic Invoice</>
@@ -2155,16 +2218,14 @@ const ReceptionistBilling = () => {
 
             {/* PRINTABLE RECEIPT BODY - Full Page Professional Layout */}
             <div id="printable-receipt-area" className="p-6 md:p-8 space-y-6 text-slate-800 text-xs font-body bg-white">
-              
+
               {/* Header Info with Clinic / Lab Personalization */}
-              <div className={`border-b-2 pb-5 flex justify-between items-start gap-4 ${
-                selectedInvoice.billingType === 'lab' ? 'border-indigo-900' : 'border-slate-900'
-              }`}>
+              <div className={`border-b-2 pb-5 flex justify-between items-start gap-4 ${selectedInvoice.billingType === 'lab' ? 'border-indigo-900' : 'border-slate-900'
+                }`}>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center font-black text-sm print:border ${
-                      selectedInvoice.billingType === 'lab' ? 'bg-indigo-800' : 'bg-slate-900'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center font-black text-sm print:border ${selectedInvoice.billingType === 'lab' ? 'bg-indigo-800' : 'bg-slate-900'
+                      }`}>
                       {selectedInvoice.billingType === 'lab' ? '🔬' : '🏥'}
                     </div>
                     <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
@@ -2179,23 +2240,21 @@ const ReceptionistBilling = () => {
                   <p className="text-[10px] text-slate-500 font-medium">
                     {selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone ? `Contact: ${selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone}` : ''}
                     {(selectedInvoice.clinicId?.contactPhone || selectedInvoice.clinicPhone) ? ' | ' : ''}
-                    {selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin 
-                      ? `GSTIN: ${selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin}` 
+                    {selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin
+                      ? `GSTIN: ${selectedInvoice.clinicGstin || selectedInvoice.clinicId?.gstin}`
                       : 'GST-Exempt Healthcare Service (Notification No. 12/2017)'}
                   </p>
                 </div>
 
                 <div className="text-right shrink-0">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-1.5 border ${
-                    selectedInvoice.paymentStatus === 'Paid' 
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300' 
-                      : 'bg-rose-50 text-rose-800 border-rose-300'
-                  }`}>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-1.5 border ${selectedInvoice.paymentStatus === 'Paid'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                    : 'bg-rose-50 text-rose-800 border-rose-300'
+                    }`}>
                     {selectedInvoice.paymentStatus === 'Paid' ? '✓ PAID RECEIPT' : '⚠️ BALANCE DUE'}
                   </span>
-                  <h3 className={`text-sm font-black tracking-wider uppercase block ${
-                    selectedInvoice.billingType === 'lab' ? 'text-indigo-900' : 'text-slate-900'
-                  }`}>
+                  <h3 className={`text-sm font-black tracking-wider uppercase block ${selectedInvoice.billingType === 'lab' ? 'text-indigo-900' : 'text-slate-900'
+                    }`}>
                     {selectedInvoice.billingType === 'lab' ? 'PATHOLOGY INVOICE' : 'TAX INVOICE'}
                   </h3>
                   <p className="text-xs font-bold text-slate-700">
@@ -2208,9 +2267,8 @@ const ReceptionistBilling = () => {
               </div>
 
               {/* Patient & Practitioner Details Grid */}
-              <div className={`grid grid-cols-2 gap-4 p-4 rounded-xl border text-xs ${
-                selectedInvoice.billingType === 'lab' ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50/80 border-slate-200'
-              }`}>
+              <div className={`grid grid-cols-2 gap-4 p-4 rounded-xl border text-xs ${selectedInvoice.billingType === 'lab' ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50/80 border-slate-200'
+                }`}>
                 <div className="space-y-1">
                   <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Billed To (Patient)</span>
                   <strong className="text-slate-900 block text-sm font-black">{selectedInvoice.patientName}</strong>
@@ -2232,9 +2290,8 @@ const ReceptionistBilling = () => {
                       Reg / License: {selectedInvoice.doctorLicenseNumber || selectedInvoice.doctorId?.medicalLicenseNumber}
                     </p>
                   )}
-                  <p className={`font-bold uppercase tracking-wider text-[11px] ${
-                    selectedInvoice.billingType === 'lab' ? 'text-indigo-700' : 'text-teal-700'
-                  }`}>
+                  <p className={`font-bold uppercase tracking-wider text-[11px] ${selectedInvoice.billingType === 'lab' ? 'text-indigo-700' : 'text-teal-700'
+                    }`}>
                     {selectedInvoice.billingType === 'lab' ? '🔬 Diagnostic Lab Testing' : '🏥 Clinical Consultation'}
                   </p>
                 </div>
@@ -2244,9 +2301,8 @@ const ReceptionistBilling = () => {
               <div className="space-y-2">
                 <table className="w-full border-collapse text-left border border-slate-200">
                   <thead>
-                    <tr className={`text-white text-[10px] uppercase font-black tracking-wider ${
-                      selectedInvoice.billingType === 'lab' ? 'bg-indigo-900' : 'bg-slate-900'
-                    }`}>
+                    <tr className={`text-white text-[10px] uppercase font-black tracking-wider ${selectedInvoice.billingType === 'lab' ? 'bg-indigo-900' : 'bg-slate-900'
+                      }`}>
                       <th className="py-2.5 px-3 w-12 text-center">#</th>
                       <th className="py-2.5 px-3">
                         {selectedInvoice.billingType === 'lab' ? 'Investigation / Diagnostic Test' : 'Service / Item Description'}
@@ -2394,124 +2450,176 @@ const ReceptionistBilling = () => {
 
       {/* ⚙️ BILLING & TAX SETTINGS MODAL */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Settings className="text-teal-600" size={20} /> Billing & Tax Settings
-              </h3>
-              <button 
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4 md:p-6 animate-fadeIn">
+          <div
+            className="bg-white rounded-t-3xl sm:rounded-3xl max-w-xl md:max-w-2xl w-full border border-slate-100 shadow-2xl p-6 md:p-8 space-y-6 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile Drag Indicator */}
+            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-2 sm:hidden" />
+
+            {/* Header */}
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-100 shrink-0">
+                  <Settings size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900">
+                    Billing &amp; Tax Settings
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    GST statutory compliance, SAC mappings, and consultation fee rates
+                  </p>
+                </div>
+              </div>
+              <button
                 onClick={() => setShowSettingsModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                title="Close"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="space-y-4">
-              {/* Tax Auto Calculation Toggle */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-bold text-slate-800 block">Automatic Tax / GST Calculation</label>
-                  <p className="text-[11px] text-slate-500">
-                    Healthcare in India is exempt (Notification 12/2017). Enable only for taxable items/cosmetics.
+            <form onSubmit={handleSaveSettings} className="space-y-5">
+              {/* Tax Auto Calculation Toggle Switch */}
+              <div className="bg-slate-50 p-4 md:p-5 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-bold text-slate-900 block">
+                      Automatic Tax / GST Calculation
+                    </label>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${billingSettings.taxEnabled ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                      {billingSettings.taxEnabled ? 'Enabled' : '0% Exempt (Default)'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed max-w-md">
+                    Healthcare services in India are statutory exempt (Notification 12/2017). Enable only if your facility bills taxable procedures or cosmetic items.
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={billingSettings.taxEnabled}
-                  onChange={(e) => setBillingSettings({ ...billingSettings, taxEnabled: e.target.checked })}
-                  className="w-5 h-5 accent-teal-700 rounded cursor-pointer"
-                />
+                <button
+                  type="button"
+                  onClick={() => setBillingSettings({ ...billingSettings, taxEnabled: !billingSettings.taxEnabled })}
+                  className={`w-12 h-6 rounded-full relative transition-colors cursor-pointer shrink-0 self-start sm:self-center ${billingSettings.taxEnabled ? 'bg-teal-700' : 'bg-slate-300'
+                    }`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${billingSettings.taxEnabled ? 'left-7' : 'left-1'
+                    }`} />
+                </button>
               </div>
 
               {/* CA / Statutory Verification Notice */}
-              <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 space-y-1">
-                <p className="font-bold flex items-center gap-1">
+              <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200/90 text-xs text-amber-900 space-y-1.5">
+                <p className="font-bold flex items-center gap-1.5 text-amber-950">
                   <span>💡</span> Statutory CA Verification Advisory:
                 </p>
-                <p className="text-amber-800/90 leading-relaxed text-[10.5px]">
+                <p className="text-amber-900/90 leading-relaxed text-xs">
                   Clinical consultations (SAC <strong>999312</strong>) and diagnostic pathology services (SAC <strong>999316</strong>) are typically 0% exempt under Notification No. 12/2017-Central Tax (Rate). Please have your certified <strong>Chartered Accountant (CA)</strong> formally verify your facility's tax exemption and SAC mapping before enabling taxes.
                 </p>
               </div>
 
-              {/* Clinic GSTIN */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Clinic GSTIN / Reg No. (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 24AAAAA0000A1Z5"
-                  value={billingSettings.gstin || ''}
-                  onChange={(e) => setBillingSettings({ ...billingSettings, gstin: e.target.value.toUpperCase() })}
-                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono uppercase font-bold text-slate-900 focus:outline-none focus:border-teal-600"
-                />
-                <p className="text-[10px] text-slate-400 italic mt-0.5">Printed on official bills for patient Mediclaim claims.</p>
-              </div>
-
-              {/* Tax Rate % Input */}
-              {billingSettings.taxEnabled && (
+              {/* Grid: GSTIN & Tax Rate */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Default Tax / GST Rate (%)</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      required
-                      value={billingSettings.taxRate}
-                      onChange={(e) => setBillingSettings({ ...billingSettings, taxRate: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-teal-600"
-                    />
-                    <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">%</span>
-                  </div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Clinic GSTIN / Reg No. (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 24AAAAA0000A1Z5"
+                    value={billingSettings.gstin || ''}
+                    onChange={(e) => setBillingSettings({ ...billingSettings, gstin: e.target.value.toUpperCase() })}
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs md:text-sm font-mono uppercase font-bold text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Printed on official invoices for patient Mediclaim reimbursement.</p>
                 </div>
-              )}
+
+                {billingSettings.taxEnabled ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                      Default Tax / GST Rate (%)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        required
+                        value={billingSettings.taxRate}
+                        onChange={(e) => setBillingSettings({ ...billingSettings, taxRate: Number(e.target.value) })}
+                        className="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2 self-start">
+                    <span className="text-teal-700 font-bold text-xs">✓ Nil Rate Applied</span>
+                    <span className="text-[11px] text-slate-500">(0% GST as per SAC 999312)</span>
+                  </div>
+                )}
+              </div>
 
               {/* Consultation Fees Configuration */}
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <h4 className="text-xs font-bold uppercase text-slate-400 tracking-wider">Fixed Consultation Fee Rates</h4>
+              <div className="space-y-3 pt-3 border-t border-slate-100">
+                <h4 className="text-xs font-bold uppercase text-slate-500 tracking-wider">
+                  Default Consultation Fee Rates
+                </h4>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">New Consultation (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      value={billingSettings.feeConsult}
-                      onChange={(e) => setBillingSettings({ ...billingSettings, feeConsult: Number(e.target.value) })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none"
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      New Consultation (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={billingSettings.feeConsult}
+                        onChange={(e) => setBillingSettings({ ...billingSettings, feeConsult: Number(e.target.value) })}
+                        className="w-full pl-8 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Follow-up Visit (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      required
-                      value={billingSettings.feeFollowupConsult}
-                      onChange={(e) => setBillingSettings({ ...billingSettings, feeFollowupConsult: Number(e.target.value) })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none"
-                    />
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Follow-up Visit (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        value={billingSettings.feeFollowupConsult}
+                        onChange={(e) => setBillingSettings({ ...billingSettings, feeFollowupConsult: Number(e.target.value) })}
+                        className="w-full pl-8 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              {/* Action Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowSettingsModal(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={updatingSettings}
-                  className="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-teal-700 to-teal-800 hover:from-teal-800 hover:to-teal-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-teal-700/20 disabled:opacity-50 cursor-pointer"
                 >
-                  {updatingSettings ? 'Saving...' : 'Save Settings'}
+                  {updatingSettings ? 'Saving Settings...' : 'Save Settings'}
                 </button>
               </div>
             </form>
@@ -2523,14 +2631,21 @@ const ReceptionistBilling = () => {
       <QrScannerModal
         isOpen={showQrScanner}
         onClose={() => setShowQrScanner(false)}
+        doctors={doctors}
         onScanSuccess={(scannedPatient) => {
-          setSearchPhone(scannedPatient.phone);
+          const ph = scannedPatient.phone;
+          setSearchPhone(ph);
           setShowQrScanner(false);
-          // auto trigger fetch
-          setTimeout(() => {
-            const fetchBtn = document.querySelector('button[type="submit"]');
-            fetchBtn?.click();
-          }, 150);
+          handleAutoFetch(ph);
+        }}
+        onSelectPatient={(patient) => {
+          const ph = patient.phone;
+          setSearchPhone(ph);
+          setShowQrScanner(false);
+          handleAutoFetch(ph);
+        }}
+        onTokenIssued={() => {
+          fetchInvoices();
         }}
         navigate={navigate}
       />

@@ -154,10 +154,10 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
     return `${cName} in ${cCity}.${topServices ? ` Top services: ${topServices}.` : ''} Live token queue, no waiting room.`.slice(0, 170);
   }, [metaDescription, serverState, city, services]);
 
-  const currentSlug = slug || serverState?.slug || 'clinic';
-  const siteDomain = 'https://appointory.in';
-  const publicPageUrl = `${siteDomain}/c/${currentSlug}`;
-  const bookingPageUrl = `${siteDomain}/c/${currentSlug}?book=1`;
+  const currentSlug = (slug || serverState?.slug || (serverState?.clinicCode ? serverState.clinicCode.toLowerCase() : '') || (serverState?.clinicId ? String(serverState.clinicId) : '')).trim();
+  const siteDomain = typeof window !== 'undefined' ? window.location.origin : 'https://appointory.in';
+  const publicPageUrl = currentSlug ? `${siteDomain}/c/${currentSlug}` : siteDomain;
+  const bookingPageUrl = currentSlug ? `${siteDomain}/c/${currentSlug}?book=1` : `${siteDomain}/patient/book-appointment`;
 
   // -------------------------------------------------------------
   // 🔍 SEO SCORE EVALUATION ENGINE (0 to 100)
@@ -439,7 +439,10 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
         ogImageUrl: ogImageUrl.trim(),
         googleBusinessUrl: googleBusinessUrl.trim(),
         noindex: Boolean(noindex),
-        city: city.trim()
+        city: city.trim(),
+        slug: slug.trim().toLowerCase(),
+        confirmSlugChange: true,
+        publicListingConsent: publicConsent
       };
 
       const res = await axios.put(`${API_URL}/api/clinic/seo`, payload, {
@@ -989,9 +992,68 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
 
           {/* Card: Share & 1-Click Booking Links + QR Code */}
           <div className="bg-white border border-sandstone rounded-3xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-sandstone/60 pb-3">
-              <Share2 size={18} className="text-teal-600" />
-              <h4 className="font-heading text-lg text-teak">Public Links & 1-Click Booking</h4>
+            <div className="flex items-center justify-between border-b border-sandstone/60 pb-3">
+              <div className="flex items-center gap-2">
+                <Share2 size={18} className="text-teal-600" />
+                <h4 className="font-heading text-lg text-teak">Public Links &amp; 1-Click Booking</h4>
+              </div>
+              <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
+                publicConsent 
+                  ? 'bg-teal-50 text-teal-800 border-teal-200' 
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
+              }`}>
+                {publicConsent ? '● Live & Active' : '○ Private / Needs Consent'}
+              </span>
+            </div>
+
+            {!publicConsent && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span>⚠️ Public Directory Consent is inactive. Enable it so patients can access your public booking link.</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await axios.patch(`${API_URL}/api/clinic/settings`, { publicListingConsent: true }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                      setPublicConsent(true);
+                      if (onConsentUpdated) onConsentUpdated(true);
+                      Swal.fire({
+                        icon: 'success',
+                        title: 'Public Profile Activated!',
+                        text: 'Your clinic is now publicly accessible at your link.',
+                        timer: 1800,
+                        showConfirmButton: false
+                      });
+                    } catch (err) {
+                      Swal.fire('Error', err.response?.data?.message || 'Could not activate consent.', 'error');
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer text-center"
+                >
+                  Enable Now
+                </button>
+              </div>
+            )}
+
+            {/* Editable Slug Input */}
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-[10.5px] font-black uppercase tracking-wider text-khaki">Clinic URL Handle (Slug)</span>
+                <span className="text-[10px] text-slate-400 font-mono">Unique profile path</span>
+              </div>
+              <div className="flex items-center bg-parchment rounded-xl border border-sandstone overflow-hidden">
+                <span className="px-3 py-2 text-xs font-mono text-slate-500 bg-sandstone/20 border-r border-sandstone shrink-0">
+                  /c/
+                </span>
+                <input
+                  type="text"
+                  value={slug}
+                  placeholder={serverState?.slug || 'clinic-name'}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'))}
+                  className="w-full px-3 py-2 bg-transparent text-xs font-mono font-bold text-teak outline-none"
+                />
+              </div>
             </div>
 
             {/* Main Public URL */}
@@ -999,10 +1061,19 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               <span className="text-[10.5px] font-black uppercase tracking-wider text-khaki">Public Clinic Profile</span>
               <div className="flex items-center gap-2 bg-parchment p-2.5 rounded-xl border border-sandstone">
                 <span className="text-xs font-mono text-teak truncate flex-grow">{publicPageUrl}</span>
+                <a
+                  href={publicPageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer"
+                  title="Open in new tab"
+                >
+                  <ExternalLink size={12} /> Open
+                </a>
                 <button
                   type="button"
                   onClick={() => handleCopy(publicPageUrl, 'public')}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-teak border border-sandstone rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1"
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-teak border border-sandstone rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 cursor-pointer"
                 >
                   <Copy size={12} /> {copiedLink === 'public' ? 'Copied!' : 'Copy'}
                 </button>
@@ -1014,10 +1085,19 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               <span className="text-[10.5px] font-black uppercase tracking-wider text-khaki">Instant 1-Click Booking URL (?book=1)</span>
               <div className="flex items-center gap-2 bg-parchment p-2.5 rounded-xl border border-sandstone">
                 <span className="text-xs font-mono text-teal-800 font-bold truncate flex-grow">{bookingPageUrl}</span>
+                <a
+                  href={bookingPageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-sm cursor-pointer"
+                  title="Open in new tab"
+                >
+                  <ExternalLink size={12} /> Test
+                </a>
                 <button
                   type="button"
                   onClick={() => handleCopy(bookingPageUrl, 'booking')}
-                  className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-sm"
+                  className="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-sm cursor-pointer"
                 >
                   <Copy size={12} /> {copiedLink === 'booking' ? 'Copied!' : 'Copy'}
                 </button>
@@ -1037,7 +1117,7 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               <button
                 type="button"
                 onClick={handleDownloadQr}
-                className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1.5 transition-colors"
+                className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download size={13} /> Download Booking QR Code (PNG)
               </button>

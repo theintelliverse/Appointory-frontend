@@ -82,8 +82,8 @@ const Contact = () => {
                 <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto w-full" aria-label="Main Navigation">
                     <div className="flex items-center gap-3">
                         <Link to="/" className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#1F7A56] rounded-xl p-1">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md shadow-[#2D9B6F]/10 overflow-hidden border border-[#D4E4DF]">
-                                <img src="/Appointory_logo.jpg" alt="Appointory Logo" className="w-full h-full object-cover" />
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md shadow-[#2D9B6F]/10 overflow-hidden border border-[#D4E4DF] p-1.5 bg-white">
+                                <img src="/appointory-logo-mark.png" alt="Appointory Logo" className="w-full h-full object-contain" />
                             </div>
                             <div>
                                 <span className="font-heading text-xl font-black tracking-tight text-[#1A3C34] block">
