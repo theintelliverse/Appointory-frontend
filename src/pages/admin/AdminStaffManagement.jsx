@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { io } from 'socket.io-client'; // 🔑 Added Socket Client
@@ -16,7 +15,6 @@ import { API_URL } from '../../config/runtime';
 const socket = SOCKET_URL ? io(SOCKET_URL) : { on: () => { }, off: () => { }, emit: () => { } };
 
 const AdminStaffManagement = () => {
-  const navigate = useNavigate();
   const [staffList, setStaffList] = useState([]);
   const [labsList, setLabsList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +34,7 @@ const AdminStaffManagement = () => {
   const token = localStorage.getItem('token');
   const clinicId = localStorage.getItem('clinicId');
 
-  const fetchStaff = async (showLoading = true) => {
+  const fetchStaff = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/staff/all`, {
@@ -48,9 +46,9 @@ const AdminStaffManagement = () => {
       console.error(err);
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const fetchLabs = async () => {
+  const fetchLabs = useCallback(async () => {
     try {
       const res = await axios.get(`${API_URL}/api/lab-connect/clinic/labs`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -59,7 +57,7 @@ const AdminStaffManagement = () => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [token]);
 
   const handleConnectLab = async (labId) => {
     try {
@@ -168,7 +166,7 @@ const AdminStaffManagement = () => {
       socket.off('staffListUpdated');
       socket.off('doctorStatusChanged');
     };
-  }, [token, clinicId]);
+  }, [clinicId, fetchStaff, fetchLabs]);
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
@@ -218,7 +216,7 @@ const AdminStaffManagement = () => {
           Swal.fire('Removed!', 'Staff access has been revoked.', 'success');
           // fetchStaff() is now handled by socket
         } catch (err) {
-          Swal.fire('Error', 'Action failed.', 'error');
+          Swal.fire('Error', err.response?.data?.message || 'Action failed.', 'error');
         }
       }
     });
@@ -292,17 +290,19 @@ const AdminStaffManagement = () => {
             <div>
               <h1 className="text-5xl font-heading mb-2">Staff Roster</h1>
               <div className="flex gap-4 mt-4 flex-wrap">
-                <button onClick={() => setActiveView('active')} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all ${activeView === 'active' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}>Current Team</button>
-                <button onClick={() => setActiveView('archived')} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all ${activeView === 'archived' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}>Past Staff</button>
-                <button onClick={() => { setActiveView('labs'); fetchLabs(); }} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all flex items-center gap-2 ${activeView === 'labs' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}><FlaskConical size={14} /> Lab Partners</button>
+                <button onClick={() => setActiveView('active')} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all cursor-pointer ${activeView === 'active' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}>Current Team</button>
+                <button onClick={() => { setActiveView('archived'); setShowAddForm(false); }} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all cursor-pointer ${activeView === 'archived' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}>Past Staff</button>
+                <button onClick={() => { setActiveView('labs'); setShowAddForm(false); fetchLabs(); }} className={`text-[14px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${activeView === 'labs' ? 'bg-teak text-white shadow-lg' : 'bg-white border border-sandstone text-khaki'}`}><FlaskConical size={14} /> Lab Partners</button>
               </div>
             </div>
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 px-8 py-4 bg-marigold text-white rounded-2xl font-bold shadow-xl hover:bg-teak transition-all"
-            >
-              {showAddForm ? 'Close Portal' : <><UserPlus size={18} /> Add New Professional</>}
-            </button>
+            {activeView === 'active' && (
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="flex items-center gap-2 px-8 py-4 bg-marigold text-white rounded-2xl font-bold shadow-xl hover:bg-teak transition-all cursor-pointer"
+              >
+                {showAddForm ? 'Close Portal' : <><UserPlus size={18} /> Add New Professional</>}
+              </button>
+            )}
           </header>
 
           <div className="flex md:grid overflow-x-auto hide-scrollbar gap-3 pb-2 md:pb-0 snap-x snap-mandatory md:grid-cols-4 mb-8 md:mb-12">
@@ -320,7 +320,7 @@ const AdminStaffManagement = () => {
             </div>
           </div>
 
-          {showAddForm && (
+          {activeView === 'active' && showAddForm && (
             <div className="bg-white border border-sandstone p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl mb-12 animate-in fade-in slide-in-from-top-4">
               <h2 className="font-heading text-2xl mb-8">Clinical Credentialing</h2>
               <form onSubmit={handleAddStaff} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

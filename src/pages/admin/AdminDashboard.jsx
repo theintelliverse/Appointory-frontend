@@ -191,6 +191,7 @@ const AdminDashboard = () => {
 
   const syncInventory = async (newInventory) => {
     try {
+      localStorage.setItem('SM_inventory', JSON.stringify(newInventory));
       await axios.patch(`${API_URL}/api/clinic/inventory`, { inventory: newInventory }, { headers: { Authorization: `Bearer ${token}` } });
     } catch (err) {
       console.error("Failed to sync inventory", err);
@@ -198,32 +199,77 @@ const AdminDashboard = () => {
   };
 
   const restockMed = (index) => {
-    const updated = [...inventory];
-    updated[index].stock += 50;
-    setInventory(updated);
-    syncInventory(updated);
+    if (index < 0 || index >= inventory.length) return;
+    const item = inventory[index];
     Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: `${updated[index].name} Restocked (+50)`,
-      showConfirmButton: false,
-      timer: 2000,
-      background: '#EEF6FA'
+      title: `Restock ${item.name}`,
+      html: `Current Stock: <strong class="text-teal-600 font-bold">${item.stock} Units</strong>`,
+      input: 'number',
+      inputLabel: 'Enter quantity to add to stock:',
+      inputPlaceholder: 'e.g. 50',
+      inputValue: 50,
+      inputAttributes: {
+        min: '1',
+        step: '1'
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Add to Stock',
+      confirmButtonColor: '#0D9488',
+      cancelButtonColor: '#94A3B8',
+      background: '#FFFFFF',
+      inputValidator: (value) => {
+        if (!value || Number(value) <= 0) {
+          return 'Please enter a valid positive number';
+        }
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const qty = Number(result.value);
+        const updated = [...inventory];
+        updated[index].stock += qty;
+        setInventory(updated);
+        syncInventory(updated);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: `${item.name} Restocked (+${qty})`,
+          showConfirmButton: false,
+          timer: 2000,
+          background: '#EEF6FA'
+        });
+      }
     });
   };
 
   const resetInventory = () => {
-    setInventory(defaultInventory);
-    syncInventory(defaultInventory);
     Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'info',
-      title: 'Inventory Stock Reset',
-      showConfirmButton: false,
-      timer: 2000,
-      background: '#EEF6FA'
+      title: 'Reset Inventory Stock to 0?',
+      text: 'All medicine stock counts will be reset to 0. Medicine names and unit prices will be kept intact.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#0D9488',
+      cancelButtonColor: '#94A3B8',
+      confirmButtonText: 'Yes, Reset Stock to 0',
+      background: '#FFFFFF'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updated = inventory.map(item => ({
+          ...item,
+          stock: 0
+        }));
+        setInventory(updated);
+        syncInventory(updated);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'All Inventory Stock Reset to 0',
+          showConfirmButton: false,
+          timer: 2000,
+          background: '#EEF6FA'
+        });
+      }
     });
   };
 
@@ -1198,13 +1244,14 @@ const RevenueModal = ({
 
               {/* Medicines Inventory List */}
               <div className="grid grid-cols-1 gap-4 md:hidden">
-                {filteredInventory.map((item, idx) => {
+                {filteredInventory.map((item) => {
+                  const realIdx = inventory.findIndex(inv => inv.name === item.name);
                   const isLowStock = item.stock <= item.minStock;
                   const stockPct = Math.min(100, Math.max(0, (item.stock / 150) * 100));
                   const stockColor = item.stock <= item.minStock ? 'bg-rose-500' : item.stock <= item.minStock * 2 ? 'bg-amber-500' : 'bg-emerald-500';
 
                   return (
-                    <div key={idx} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm space-y-4">
+                    <div key={item.name} className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm space-y-4">
                       <div className="flex justify-between items-start">
                         <div>
                           <span className="text-sm font-black text-slate-800 block">{item.name}</span>
@@ -1212,7 +1259,7 @@ const RevenueModal = ({
                             <span className="inline-block mt-1 px-1.5 py-0.5 bg-rose-50 border border-rose-100 text-[14px] font-black text-rose-600 rounded uppercase tracking-wider animate-pulse">Low Stock</span>
                           )}
                         </div>
-                        {editingIndex === idx ? (
+                        {editingIndex === realIdx ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[14px] font-bold text-slate-500">₹</span>
                             <input 
@@ -1222,7 +1269,7 @@ const RevenueModal = ({
                               onChange={(e) => setTempPrice(e.target.value)}
                             />
                             <button 
-                              onClick={() => savePrice(idx)}
+                              onClick={() => savePrice(realIdx)}
                               className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded transition-colors"
                             >
                               <Check size={14} />
@@ -1232,7 +1279,7 @@ const RevenueModal = ({
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-slate-800">₹{item.unitPrice}</span>
                             <button 
-                              onClick={() => startEditing(idx, item.unitPrice)}
+                              onClick={() => startEditing(realIdx, item.unitPrice)}
                               className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
                             >
                               <Edit size={14} />
@@ -1253,17 +1300,17 @@ const RevenueModal = ({
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-50">
                         <button 
-                          onClick={() => deleteMedicine(idx)}
+                          onClick={() => deleteMedicine(realIdx)}
                           className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1.5"
                         >
                           <Trash2 size={16} /> 
                           <span className="text-[14px] font-black uppercase tracking-wider">Remove</span>
                         </button>
                         <button 
-                          onClick={() => restockMed(idx)}
-                          className="px-4 py-2 bg-teal-50 hover:bg-teal-600 border border-teal-100 text-[14px] font-black text-teal-600 hover:text-white uppercase tracking-wider rounded-xl transition-all active:scale-95"
+                          onClick={() => restockMed(realIdx)}
+                          className="px-4 py-2 bg-teal-50 hover:bg-teal-600 border border-teal-100 text-[14px] font-black text-teal-600 hover:text-white uppercase tracking-wider rounded-xl transition-all active:scale-95 cursor-pointer"
                         >
-                          Restock (+50)
+                          Restock
                         </button>
                       </div>
                     </div>
@@ -1288,13 +1335,14 @@ const RevenueModal = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
-                    {filteredInventory.map((item, idx) => {
+                    {filteredInventory.map((item) => {
+                      const realIdx = inventory.findIndex(inv => inv.name === item.name);
                       const isLowStock = item.stock <= item.minStock;
                       const stockPct = Math.min(100, Math.max(0, (item.stock / 150) * 100));
                       const stockColor = item.stock <= item.minStock ? 'bg-rose-500' : item.stock <= item.minStock * 2 ? 'bg-amber-500' : 'bg-emerald-500';
 
                       return (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <tr key={item.name} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-3.5 px-4">
                             <span className="font-black text-slate-800 block text-xs">{item.name}</span>
                             {isLowStock && (
@@ -1311,7 +1359,7 @@ const RevenueModal = ({
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            {editingIndex === idx ? (
+                            {editingIndex === realIdx ? (
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-slate-500">₹</span>
                                 <input 
@@ -1321,7 +1369,7 @@ const RevenueModal = ({
                                   onChange={(e) => setTempPrice(e.target.value)}
                                 />
                                 <button 
-                                  onClick={() => savePrice(idx)}
+                                  onClick={() => savePrice(realIdx)}
                                   className="p-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-md transition-colors cursor-pointer"
                                 >
                                   <Check size={12} />
@@ -1331,7 +1379,7 @@ const RevenueModal = ({
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-black text-slate-800">₹{item.unitPrice}</span>
                                 <button 
-                                  onClick={() => startEditing(idx, item.unitPrice)}
+                                  onClick={() => startEditing(realIdx, item.unitPrice)}
                                   className="p-1 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-md transition-all cursor-pointer"
                                   title="Edit price"
                                 >
@@ -1343,13 +1391,13 @@ const RevenueModal = ({
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button 
-                                onClick={() => restockMed(idx)}
+                                onClick={() => restockMed(realIdx)}
                                 className="px-2.5 py-1 bg-teal-50 hover:bg-teal-600 border border-teal-100 text-[11px] font-black text-teal-600 hover:text-white uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
                               >
-                                Restock (+50)
+                                Restock
                               </button>
                               <button 
-                                onClick={() => deleteMedicine(idx)}
+                                onClick={() => deleteMedicine(realIdx)}
                                 className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
                                 title="Delete item"
                               >
