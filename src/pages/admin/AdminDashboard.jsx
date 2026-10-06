@@ -527,7 +527,7 @@ const AdminDashboard = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-4 flex-wrap md:flex-nowrap w-full md:w-auto">
+            <div className="flex items-center gap-4 flex-wrap xl:flex-nowrap w-full md:w-auto">
               {/* Clinical Revenue Nav Widget */}
               <div 
                 className="flex-grow md:flex-grow-0 flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/70 hover:to-teal-100/70 border-2 border-emerald-100/80 rounded-2xl cursor-pointer hover:shadow-md transition-all active:scale-[0.98] group shrink-0"
@@ -584,12 +584,6 @@ const AdminDashboard = () => {
                   <Share2 size={16} className="text-teal-500 group-hover:rotate-12 transition-transform" />
                 )}
                 {copied ? 'Copied!' : 'Live Monitor Link'}
-              </button>
-              <button 
-                onClick={() => navigate('/admin/settings')}
-                className="p-3.5 bg-teal-600 text-white rounded-2xl hover:bg-teal-700 transition-all shadow-lg shadow-teal-600/20 active:scale-95"
-              >
-                <Settings size={22} />
               </button>
             </div>
           </header>
