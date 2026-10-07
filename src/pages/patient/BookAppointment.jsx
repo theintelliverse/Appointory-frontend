@@ -36,18 +36,18 @@ const BookAppointment = () => {
     const urlDoctorParam = searchParams.get('doctor') || searchParams.get('doctorId');
     const isFromQr = searchParams.get('utm_source') === 'qr' || Boolean(searchParams.get('qr'));
 
-    const initialClinicId = rescheduleApp?.clinicId?._id 
-        || (typeof rescheduleApp?.clinicId === 'string' ? rescheduleApp.clinicId : '') 
-        || rescheduleApp?.clinicId?.toString?.() 
+    const initialClinicId = rescheduleApp?.clinicId?._id
+        || (typeof rescheduleApp?.clinicId === 'string' ? rescheduleApp.clinicId : '')
+        || rescheduleApp?.clinicId?.toString?.()
         || '';
-    const initialDoctorId = rescheduleApp?.doctorId?._id 
-        || (typeof rescheduleApp?.doctorId === 'string' ? rescheduleApp.doctorId : '') 
-        || rescheduleApp?.doctorId?.toString?.() 
+    const initialDoctorId = rescheduleApp?.doctorId?._id
+        || (typeof rescheduleApp?.doctorId === 'string' ? rescheduleApp.doctorId : '')
+        || rescheduleApp?.doctorId?.toString?.()
         || '';
-    const initialQueueId = rescheduleApp?.queueId?._id 
-        || (typeof rescheduleApp?.queueId === 'string' ? rescheduleApp.queueId : '') 
-        || rescheduleApp?.queueId?.toString?.() 
-        || rescheduleApp?._id?.toString?.() 
+    const initialQueueId = rescheduleApp?.queueId?._id
+        || (typeof rescheduleApp?.queueId === 'string' ? rescheduleApp.queueId : '')
+        || rescheduleApp?.queueId?.toString?.()
+        || rescheduleApp?._id?.toString?.()
         || '';
 
     const [step, setStep] = useState(rescheduleApp ? 3 : 1);
@@ -174,7 +174,7 @@ const BookAppointment = () => {
     useEffect(() => {
         if (!rescheduleApp && clinics.length > 0 && urlClinicParam && !formData.clinicId) {
             const queryClean = urlClinicParam.trim().toLowerCase();
-            const matchedClinic = clinics.find(c => 
+            const matchedClinic = clinics.find(c =>
                 c._id?.toString() === urlClinicParam ||
                 c.clinicCode?.toLowerCase() === queryClean ||
                 c.slug?.toLowerCase() === queryClean ||
@@ -192,7 +192,7 @@ const BookAppointment = () => {
     useEffect(() => {
         if (!rescheduleApp && doctors.length > 0 && urlDoctorParam && !formData.doctorId) {
             const docQuery = urlDoctorParam.trim().toLowerCase();
-            const matchedDoc = doctors.find(d => 
+            const matchedDoc = doctors.find(d =>
                 d._id?.toString() === urlDoctorParam ||
                 d.name?.toLowerCase().includes(docQuery)
             );
@@ -382,8 +382,8 @@ const BookAppointment = () => {
             const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
             const checkDay = new Date(date); checkDay.setHours(0, 0, 0, 0);
             const liveEnd = selectedDoc.liveUntilDate
-                ? (() => { const d = new Date(selectedDoc.liveUntilDate); d.setHours(23,59,59,999); return d; })()
-                : (() => { const d = new Date(todayMidnight); d.setHours(23,59,59,999); return d; })();
+                ? (() => { const d = new Date(selectedDoc.liveUntilDate); d.setHours(23, 59, 59, 999); return d; })()
+                : (() => { const d = new Date(todayMidnight); d.setHours(23, 59, 59, 999); return d; })();
             if (checkDay >= todayMidnight && checkDay <= liveEnd) {
                 const untilLabel = selectedDoc.liveUntilDate
                     ? new Date(selectedDoc.liveUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -615,7 +615,7 @@ const BookAppointment = () => {
     useEffect(() => {
         return () => {
             if (holdToken) {
-                axios.post(`${API_URL}/api/slots/release`, { holdToken }).catch(() => {});
+                axios.post(`${API_URL}/api/slots/release`, { holdToken }).catch(() => { });
             }
         };
     }, [holdToken]);
@@ -907,8 +907,8 @@ const BookAppointment = () => {
                     icon: 'success',
                     title: formData.rescheduleAppointmentId ? 'Reschedule Submitted!' : 'Booking Confirmed!',
                     text: formData.rescheduleAppointmentId
-                        ? 'Your reschedule request has been submitted to the receptionist for confirmation.'
-                        : 'Your appointment request has been submitted. The receptionist will verify and confirm shortly.',
+                        ? 'Your reschedule request has been submitted. Confirmation SMS and WhatsApp notification has been dispatched to your registered phone number.'
+                        : 'Your appointment request has been submitted. Confirmation notification has been dispatched to your phone number.',
                     background: '#F8FAFC',
                     confirmButtonColor: '#0D9488',
                     customClass: {
@@ -991,9 +991,9 @@ const BookAppointment = () => {
                                             <p className="text-xs text-teal-700">Pre-selected: <span className="font-semibold">{getSelectedClinic()?.name}</span></p>
                                         </div>
                                     </div>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setStep(2)} 
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep(2)}
                                         className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm self-start sm:self-auto flex items-center gap-1.5"
                                     >
                                         <span>Select Doctor</span>
@@ -1101,9 +1101,9 @@ const BookAppointment = () => {
                                             <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
                                             <span className="text-[10px] md:text-xs font-bold text-teal-300 uppercase tracking-wider">Facility Confirmed</span>
                                         </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setStep(1)} 
+                                        <button
+                                            type="button"
+                                            onClick={() => setStep(1)}
                                             className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl text-white font-semibold text-xs uppercase tracking-wider transition-all border border-white/15 shrink-0 cursor-pointer shadow-xs"
                                         >
                                             Change
@@ -1118,7 +1118,7 @@ const BookAppointment = () => {
                                     {/* Full Address - No truncation */}
                                     {getSelectedClinic()?.address && (
                                         <p className="text-slate-300/80 text-xs md:text-sm font-normal flex items-start gap-1.5 leading-relaxed break-words">
-                                            <MapPin size={13} className="text-teal-400 shrink-0 mt-0.5" /> 
+                                            <MapPin size={13} className="text-teal-400 shrink-0 mt-0.5" />
                                             <span>{getSelectedClinic()?.address}</span>
                                         </p>
                                     )}
@@ -1147,156 +1147,154 @@ const BookAppointment = () => {
                                     const docInitial = getDoctorInitial(doctor.name);
                                     const docTitle = formatDocTitle(doctor.name);
                                     return (
-                                    <div
-                                        key={doctor._id}
-                                        className={`bg-white rounded-2xl md:rounded-[2.5rem] border text-left transition-all group flex flex-col ${onLeave ? 'border-orange-200 opacity-90' : isLiveToday ? 'border-red-200 opacity-90' : 'border-slate-100 hover:border-teal-400 hover:shadow-xl'}`}
-                                    >
-                                        {/* Mobile: compact row */}
-                                        <div className="md:hidden flex items-center gap-3 p-4">
-                                            <div className="relative shrink-0">
-                                                <div className={`w-12 h-12 bg-gradient-to-br rounded-2xl flex items-center justify-center text-xl font-bold transition-all duration-300 shadow-sm ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-600 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white'}`}>
-                                                    {docInitial}
-                                                </div>
-                                                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide truncate">{doctor.specialization || 'General'}</p>
-                                                <h3 className="text-sm font-bold text-slate-900 truncate">{docTitle}</h3>
-                                                <p className="text-xs font-medium text-slate-400 mt-0.5">{doctor.experience || 0} yrs exp</p>
-                                                <div className="flex flex-wrap gap-1 mt-1.5">
-                                                    {WEEK_DAYS.map(d => {
-                                                        const isActive = docAvailableDays.includes(d.key);
-                                                        return (
-                                                            <span
-                                                                key={d.key}
-                                                                title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
-                                                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${
-                                                                    isActive
-                                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                                                        : 'bg-rose-50 text-rose-600 border-rose-200'
-                                                                }`}
-                                                            >
-                                                                {d.label}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                                {onLeave && (
-                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-semibold border border-orange-200">
-                                                        <CalendarOff size={9} /> On Leave Today{doctor.leaveTodayTitle ? `: ${doctor.leaveTodayTitle}` : ''}
-                                                    </span>
-                                                )}
-                                                {isLiveToday && (
-                                                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-[10px] font-semibold border border-red-200">
-                                                        <Zap size={9} className="fill-current" />
-                                                        {liveUntilLabel ? `Live until ${liveUntilLabel}` : 'Live Today'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => { setFormData({ ...formData, doctorId: doctor._id }); setStep(3); }}
-                                                className={`px-3 py-2 rounded-xl font-semibold text-xs tracking-wide transition-all active:scale-95 shrink-0 flex items-center gap-1 ${onLeave ? 'bg-orange-50 text-orange-500 hover:bg-orange-100 border border-orange-200' : isLiveToday ? 'bg-red-50 text-red-500 hover:bg-red-100 border border-red-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white'}`}
-                                            >
-                                                {onLeave ? 'Future >' : isLiveToday ? 'Future >' : <>Pick <ArrowRight size={12} /></>}
-                                            </button>
-                                        </div>
-
-                                        {/* Desktop: full card */}
-                                        <div className="hidden md:flex flex-col flex-1 p-8">
-                                            <div>
-                                                <div className="flex items-start gap-6 mb-6">
-                                                    <div className="relative shrink-0">
-                                                        <div className={`w-20 h-20 bg-gradient-to-br rounded-[2rem] flex items-center justify-center text-2xl font-bold transition-all duration-500 shadow-xl ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-500 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white group-hover:rotate-6'}`}>
-                                                            {docInitial}
-                                                        </div>
-                                                        <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`} />
+                                        <div
+                                            key={doctor._id}
+                                            className={`bg-white rounded-2xl md:rounded-[2.5rem] border text-left transition-all group flex flex-col ${onLeave ? 'border-orange-200 opacity-90' : isLiveToday ? 'border-red-200 opacity-90' : 'border-slate-100 hover:border-teal-400 hover:shadow-xl'}`}
+                                        >
+                                            {/* Mobile: compact row */}
+                                            <div className="md:hidden flex items-center gap-3 p-4">
+                                                <div className="relative shrink-0">
+                                                    <div className={`w-12 h-12 bg-gradient-to-br rounded-2xl flex items-center justify-center text-xl font-bold transition-all duration-300 shadow-sm ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-600 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white'}`}>
+                                                        {docInitial}
                                                     </div>
-                                                    <div className="flex-grow min-w-0">
-                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                            <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider">{doctor.specialization || 'General Practitioner'}</p>
-                                                            {onLeave && (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold border border-orange-200 uppercase tracking-wide">
-                                                                    <CalendarOff size={9} /> On Leave Today
-                                                                </span>
-                                                            )}
-                                                            {isLiveToday && (
-                                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-600 rounded-full text-[10px] font-bold border border-red-200 uppercase tracking-wide">
-                                                                    <Zap size={9} className="fill-current" />
-                                                                    {liveUntilLabel ? `Live until ${liveUntilLabel}` : 'Live Today'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-1.5 mt-2">
-                                                            {WEEK_DAYS.map(d => {
-                                                                const isActive = docAvailableDays.includes(d.key);
-                                                                return (
-                                                                    <span
-                                                                        key={d.key}
-                                                                        title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
-                                                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
-                                                                            isActive
-                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                                                                : 'bg-rose-50 text-rose-600 border-rose-200'
+                                                    <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide truncate">{doctor.specialization || 'General'}</p>
+                                                    <h3 className="text-sm font-bold text-slate-900 truncate">{docTitle}</h3>
+                                                    <p className="text-xs font-medium text-slate-400 mt-0.5">{doctor.experience || 0} yrs exp</p>
+                                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                                        {WEEK_DAYS.map(d => {
+                                                            const isActive = docAvailableDays.includes(d.key);
+                                                            return (
+                                                                <span
+                                                                    key={d.key}
+                                                                    title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
+                                                                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${isActive
+                                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                            : 'bg-rose-50 text-rose-600 border-rose-200'
                                                                         }`}
-                                                                    >
-                                                                        {d.label}
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight truncate">{docTitle}</h3>
-                                                        {doctor.education && (
-                                                            <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
-                                                                <GraduationCap size={14} className="text-teal-500 shrink-0" /> {doctor.education}
-                                                            </p>
-                                                        )}
+                                                                >
+                                                                    {d.label}
+                                                                </span>
+                                                            );
+                                                        })}
                                                     </div>
-                                                </div>
-
-                                                {onLeave && (
-                                                    <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 mb-6 text-sm text-orange-700 font-medium">
-                                                        <CalendarOff size={15} className="shrink-0 text-orange-400" />
-                                                        <span>
-                                                            Not available today{doctor.leaveTodayTitle ? ` — ${doctor.leaveTodayTitle}` : ''}. You can still book for a future date.
+                                                    {onLeave && (
+                                                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-semibold border border-orange-200">
+                                                            <CalendarOff size={9} /> On Leave Today{doctor.leaveTodayTitle ? `: ${doctor.leaveTodayTitle}` : ''}
                                                         </span>
-                                                    </div>
-                                                )}
-                                                {isLiveToday && (
-                                                    <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 mb-6 text-sm text-red-700 font-medium">
-                                                        <Zap size={15} className="shrink-0 text-red-400 fill-current" />
-                                                        <span>
-                                                            {liveUntilLabel
-                                                                ? `On live walk-in queue until ${liveUntilLabel}. Appointments are blocked for this period — book after that date.`
-                                                                : `Currently seeing walk-in patients live today. Today's slots are unavailable — book for a future date.`}
+                                                    )}
+                                                    {isLiveToday && (
+                                                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-[10px] font-semibold border border-red-200">
+                                                            <Zap size={9} className="fill-current" />
+                                                            {liveUntilLabel ? `Live until ${liveUntilLabel}` : 'Live Today'}
                                                         </span>
-                                                    </div>
-                                                )}
-
-                                                {doctor.bio && (
-                                                    <p className="text-sm text-slate-600 italic line-clamp-2 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100/50 mb-6">
-                                                        &ldquo;{doctor.bio}&rdquo;
-                                                    </p>
-                                                )}
-
-                                                <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500 mb-6">
-                                                    <div className="flex items-center gap-1.5 bg-slate-50/50 px-3.5 py-2 rounded-xl border border-slate-100/20">
-                                                        <Briefcase size={13} className="text-teal-500" /> {doctor.experience || 0} Yrs Exp
-                                                    </div>
-                                                    <div className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border ${onLeave ? 'bg-orange-50/50 border-orange-100/20 text-orange-500' : isLiveToday ? 'bg-red-50/50 border-red-100/20 text-red-500' : 'bg-slate-50/50 border-slate-100/20'}`}>
-                                                        <Clock size={13} className={onLeave ? 'text-orange-400' : isLiveToday ? 'text-red-400' : 'text-teal-500'} />
-                                                        {onLeave ? 'On Leave' : isLiveToday ? 'Live Queue' : 'Active'}
-                                                    </div>
+                                                    )}
                                                 </div>
+                                                <button
+                                                    onClick={() => { setFormData({ ...formData, doctorId: doctor._id }); setStep(3); }}
+                                                    className={`px-3 py-2 rounded-xl font-semibold text-xs tracking-wide transition-all active:scale-95 shrink-0 flex items-center gap-1 ${onLeave ? 'bg-orange-50 text-orange-500 hover:bg-orange-100 border border-orange-200' : isLiveToday ? 'bg-red-50 text-red-500 hover:bg-red-100 border border-red-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white'}`}
+                                                >
+                                                    {onLeave ? 'Future >' : isLiveToday ? 'Future >' : <>Pick <ArrowRight size={12} /></>}
+                                                </button>
                                             </div>
 
-                                            <button
-                                                onClick={() => { setFormData({ ...formData, doctorId: doctor._id }); setStep(3); }}
-                                                className={`w-full py-4 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 ${onLeave ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200' : isLiveToday ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white'}`}
-                                            >
-                                                {onLeave ? <><CalendarOff size={15} /> Book for Future Date</> : isLiveToday ? <><Zap size={15} className="fill-current" /> Book for Future Date</> : <>Select Doctor <ArrowRight size={16} /></>}
-                                            </button>
+                                            {/* Desktop: full card */}
+                                            <div className="hidden md:flex flex-col flex-1 p-8">
+                                                <div>
+                                                    <div className="flex items-start gap-6 mb-6">
+                                                        <div className="relative shrink-0">
+                                                            <div className={`w-20 h-20 bg-gradient-to-br rounded-[2rem] flex items-center justify-center text-2xl font-bold transition-all duration-500 shadow-xl ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-500 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white group-hover:rotate-6'}`}>
+                                                                {docInitial}
+                                                            </div>
+                                                            <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`} />
+                                                        </div>
+                                                        <div className="flex-grow min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                                <p className="text-xs font-semibold text-teal-600 uppercase tracking-wider">{doctor.specialization || 'General Practitioner'}</p>
+                                                                {onLeave && (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold border border-orange-200 uppercase tracking-wide">
+                                                                        <CalendarOff size={9} /> On Leave Today
+                                                                    </span>
+                                                                )}
+                                                                {isLiveToday && (
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-50 text-red-600 rounded-full text-[10px] font-bold border border-red-200 uppercase tracking-wide">
+                                                                        <Zap size={9} className="fill-current" />
+                                                                        {liveUntilLabel ? `Live until ${liveUntilLabel}` : 'Live Today'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                {WEEK_DAYS.map(d => {
+                                                                    const isActive = docAvailableDays.includes(d.key);
+                                                                    return (
+                                                                        <span
+                                                                            key={d.key}
+                                                                            title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
+                                                                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${isActive
+                                                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                                    : 'bg-rose-50 text-rose-600 border-rose-200'
+                                                                                }`}
+                                                                        >
+                                                                            {d.label}
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            <h3 className="text-2xl font-bold text-slate-900 tracking-tight truncate">{docTitle}</h3>
+                                                            {doctor.education && (
+                                                                <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
+                                                                    <GraduationCap size={14} className="text-teal-500 shrink-0" /> {doctor.education}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {onLeave && (
+                                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 mb-6 text-sm text-orange-700 font-medium">
+                                                            <CalendarOff size={15} className="shrink-0 text-orange-400" />
+                                                            <span>
+                                                                Not available today{doctor.leaveTodayTitle ? ` — ${doctor.leaveTodayTitle}` : ''}. You can still book for a future date.
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {isLiveToday && (
+                                                        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 mb-6 text-sm text-red-700 font-medium">
+                                                            <Zap size={15} className="shrink-0 text-red-400 fill-current" />
+                                                            <span>
+                                                                {liveUntilLabel
+                                                                    ? `On live walk-in queue until ${liveUntilLabel}. Appointments are blocked for this period — book after that date.`
+                                                                    : `Currently seeing walk-in patients live today. Today's slots are unavailable — book for a future date.`}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {doctor.bio && (
+                                                        <p className="text-sm text-slate-600 italic line-clamp-2 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100/50 mb-6">
+                                                            &ldquo;{doctor.bio}&rdquo;
+                                                        </p>
+                                                    )}
+
+                                                    <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-slate-500 mb-6">
+                                                        <div className="flex items-center gap-1.5 bg-slate-50/50 px-3.5 py-2 rounded-xl border border-slate-100/20">
+                                                            <Briefcase size={13} className="text-teal-500" /> {doctor.experience || 0} Yrs Exp
+                                                        </div>
+                                                        <div className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border ${onLeave ? 'bg-orange-50/50 border-orange-100/20 text-orange-500' : isLiveToday ? 'bg-red-50/50 border-red-100/20 text-red-500' : 'bg-slate-50/50 border-slate-100/20'}`}>
+                                                            <Clock size={13} className={onLeave ? 'text-orange-400' : isLiveToday ? 'text-red-400' : 'text-teal-500'} />
+                                                            {onLeave ? 'On Leave' : isLiveToday ? 'Live Queue' : 'Active'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => { setFormData({ ...formData, doctorId: doctor._id }); setStep(3); }}
+                                                    className={`w-full py-4 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 active:scale-95 ${onLeave ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200' : isLiveToday ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white'}`}
+                                                >
+                                                    {onLeave ? <><CalendarOff size={15} /> Book for Future Date</> : isLiveToday ? <><Zap size={15} className="fill-current" /> Book for Future Date</> : <>Select Doctor <ArrowRight size={16} /></>}
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
                                     );
                                 })}
                             </div>
@@ -1352,7 +1350,7 @@ const BookAppointment = () => {
                             {(() => {
                                 const doc = getSelectedDoctor();
                                 if (!doc || !Array.isArray(doc.availableDays) || doc.availableDays.length === 0 || doc.availableDays.length >= 7) return null;
-                                const ALL_DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+                                const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                                 const DAY_3 = d => d.charAt(0).toUpperCase() + d.slice(1, 3);
                                 return (
                                     <div className="bg-teal-50 border border-teal-100 rounded-2xl px-4 py-3 flex items-center gap-3">
@@ -1365,11 +1363,10 @@ const BookAppointment = () => {
                                                 {ALL_DAYS.map(d => {
                                                     const avail = doc.availableDays.map(x => x.toLowerCase()).includes(d);
                                                     return (
-                                                        <span key={d} className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                                            avail
+                                                        <span key={d} className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${avail
                                                                 ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
                                                                 : 'bg-rose-50 text-rose-600 border-rose-200'
-                                                        }`}>
+                                                            }`}>
                                                             {DAY_3(d)}
                                                         </span>
                                                     );
@@ -1443,9 +1440,8 @@ const BookAppointment = () => {
                                                 </span>
                                                 <span className="text-lg font-bold leading-none">{date.getDate()}</span>
                                                 {!dateAvail.isAvailable && (
-                                                    <span className={`mt-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none whitespace-nowrap ${
-                                                        isSelected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
-                                                    }`}>
+                                                    <span className={`mt-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none whitespace-nowrap ${isSelected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                                                        }`}>
                                                         {dateAvail.badgeText}
                                                     </span>
                                                 )}
@@ -1491,8 +1487,8 @@ const BookAppointment = () => {
                                                 </div>
                                                 <h4 className="text-sm font-bold text-slate-800">
                                                     {selectedAvail.type === 'weekly_off' ? 'Weekly Closed Day' :
-                                                     selectedAvail.type === 'doctor_weekly_off' ? 'Specialist Weekly Off' :
-                                                     selectedAvail.type === 'clinic_holiday' ? 'Clinic Holiday / Festival Closure' : 'Specialist on Leave'}
+                                                        selectedAvail.type === 'doctor_weekly_off' ? 'Specialist Weekly Off' :
+                                                            selectedAvail.type === 'clinic_holiday' ? 'Clinic Holiday / Festival Closure' : 'Specialist on Leave'}
                                                 </h4>
                                                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 leading-relaxed">
                                                     {selectedAvail.reason}. Please select another date from the calendar strip above to view open slots.
@@ -1743,496 +1739,492 @@ const BookAppointment = () => {
                     )}
 
                     {step === 4 && (
-        <div className="max-w-4xl mx-auto">
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl overflow-hidden">
-                <div className="p-6 md:p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <div>
-                        <h3 className="font-bold text-xl md:text-2xl text-slate-900 tracking-tight">Final Confirmation</h3>
-                        <p className="text-xs font-medium text-slate-400 mt-1">Review your visit details, select patient, and confirm</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                releaseSlotHold();
-                                setStep(3);
-                            }}
-                            className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all shadow-2xs"
-                        >
-                            Change Slot
-                        </button>
-                        <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center border border-teal-100 shrink-0"><ShieldCheck size={24} /></div>
-                    </div>
-                </div>
-
-                <div className="p-6 md:p-12 space-y-8 md:space-y-10">
-                    {/* ⏳ 10-Minute Slot Hold Banner */}
-                    {holdToken && holdTimeRemaining > 0 && (
-                        <div className="p-4 bg-teal-50 border border-teal-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-teal-900 shadow-sm animate-in fade-in duration-500">
-                            <div className="flex items-center gap-3">
-                                <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-600"></span>
-                                </span>
-                                <div>
-                                    <p className="text-xs font-bold text-teal-950">Slot Temporarily Reserved For You</p>
-                                    <p className="text-[11px] text-teal-700">Complete verification to lock in this appointment before time runs out.</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">Time Left:</span>
-                                <span className="px-3 py-1 bg-teal-600 text-white rounded-xl font-mono font-bold text-sm tracking-widest shadow-sm">
-                                    {formatRemainingTime(holdTimeRemaining)}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Summary of Facility & Doctor */}
-                    <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-                        <div className="space-y-6 md:space-y-8">
-                            <ReviewItem icon={<Building2 size={18} />} label="Clinic Facility" val={getSelectedClinic()?.name} sub={getSelectedClinic()?.address} />
-                            <ReviewItem icon={<Stethoscope size={18} />} label="Consulting Specialist" val={formatDocTitle(getSelectedDoctor()?.name)} sub={getSelectedDoctor()?.specialization} />
-                            <ReviewItem
-                                icon={<Calendar size={18} />}
-                                label="Appointment Date"
-                                val={formData.appointmentDate ? new Date(formData.appointmentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
-                                sub={formData.appointmentDate ? WEEKDAY_MAP[new Date(formData.appointmentDate).getDay()] : ''}
-                            />
-                            <ReviewItem
-                                icon={<Clock size={18} />}
-                                label="Arrival Window"
-                                val={
-                                    formData.appointmentDate
-                                        ? (formData.slotMode === 'shift'
-                                            ? (formData.appointmentDate.endsWith(getClinicTimingConfig().openingTime) ? 'Morning Shift' : 'Afternoon / Evening Shift')
-                                            : new Date(formData.appointmentDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))
-                                        : ''
-                                }
-                                sub={
-                                    formData.slotMode === 'shift'
-                                        ? `Arrival around start time: ${formData.appointmentDate ? formData.appointmentDate.split('T')[1] : ''}`
-                                        : "Check-in required 10m early"
-                                }
-                            />
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Consultation Type</label>
-                                <div className="flex gap-3">
-                                    {['new', 'followup'].map(type => (
-                                        <button
-                                            key={type}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, appointmentType: type })}
-                                            className={`flex-1 py-3 rounded-2xl border-2 font-semibold text-xs uppercase tracking-wider transition-all ${formData.appointmentType === type ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-500'}`}
-                                        >
-                                            {type} Visit
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Clinical Notes / Reason</label>
-                                <textarea
-                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-teal-500 text-sm font-medium resize-none shadow-sm"
-                                    rows="3"
-                                    placeholder="Briefly describe your symptoms or reason for visit..."
-                                    value={formData.reason}
-                                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 👨‍👩‍👧‍👦 Who is this visit for? ("Konā mate?") */}
-                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-3xl p-5 md:p-8 space-y-5">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-teal-100/60 text-teal-700 flex items-center justify-center shrink-0">
-                                <Users size={20} />
-                            </div>
-                            <div>
-                                <h4 className="text-base font-bold text-slate-900">Who is this visit for? <span className="text-teal-600">(Konā mate?)</span></h4>
-                                <p className="text-xs text-slate-500">Ensure separate, private medical records for each patient</p>
-                            </div>
-                        </div>
-
-                        {/* Selection Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            {/* Myself */}
-                            <button
-                                type="button"
-                                onClick={() => { setSelectedFor('myself'); setSelectedFamilyMemberId(''); }}
-                                className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                                    selectedFor === 'myself'
-                                        ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
-                                        : 'border-slate-200 bg-white/60 text-slate-600 hover:border-slate-300'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Primary Account</span>
-                                    {selectedFor === 'myself' && <CheckCircle size={16} className="text-teal-600" />}
-                                </div>
-                                <p className="text-sm font-bold text-slate-900 truncate">
-                                    {primaryPatient?.name || (isLoggedIn ? 'Myself' : 'Myself (Primary)')}
-                                </p>
-                                <p className="text-xs text-slate-400 mt-0.5">Account holder records</p>
-                            </button>
-
-                            {/* Saved Family Member (if logged in and has members) */}
-                            {familyMembers.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedFor('family');
-                                        if (!selectedFamilyMemberId && familyMembers[0]) {
-                                            setSelectedFamilyMemberId(familyMembers[0]._id);
-                                        }
-                                    }}
-                                    className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                                        selectedFor === 'family'
-                                            ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
-                                            : 'border-slate-200 bg-white/60 text-slate-600 hover:border-slate-300'
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Saved Family</span>
-                                        {selectedFor === 'family' && <CheckCircle size={16} className="text-teal-600" />}
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white border border-slate-100 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl overflow-hidden">
+                                <div className="p-6 md:p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-bold text-xl md:text-2xl text-slate-900 tracking-tight">Final Confirmation</h3>
+                                        <p className="text-xs font-medium text-slate-400 mt-1">Review your visit details, select patient, and confirm</p>
                                     </div>
-                                    <p className="text-sm font-bold text-slate-900 truncate">
-                                        {familyMembers.find(f => f._id === selectedFamilyMemberId)?.name || `${familyMembers.length} Members`}
-                                    </p>
-                                    <p className="text-xs text-slate-400 mt-0.5">Pick existing profile</p>
-                                </button>
-                            )}
-
-                            {/* Add New Family Member */}
-                            <button
-                                type="button"
-                                onClick={() => { setSelectedFor('new_family'); setSelectedFamilyMemberId(''); }}
-                                className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                                    selectedFor === 'new_family'
-                                        ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
-                                        : 'border-dashed border-slate-300 bg-white/40 text-slate-600 hover:border-teal-400'
-                                }`}
-                            >
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">+ Family Member</span>
-                                    {selectedFor === 'new_family' && <CheckCircle size={16} className="text-teal-600" />}
-                                </div>
-                                <p className="text-sm font-bold text-slate-900">Add New Profile</p>
-                                <p className="text-xs text-slate-400 mt-0.5">Child, Spouse, Parent</p>
-                            </button>
-                        </div>
-
-                        {/* If Saved Family Member Selected */}
-                        {selectedFor === 'family' && familyMembers.length > 0 && (
-                            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-300">
-                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Family Member Profile</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    {familyMembers.map((m) => (
+                                    <div className="flex items-center gap-3">
                                         <button
-                                            key={m._id}
                                             type="button"
-                                            onClick={() => setSelectedFamilyMemberId(m._id)}
-                                            className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${
-                                                selectedFamilyMemberId === m._id
-                                                    ? 'border-teal-500 bg-teal-50/50 text-teal-950 font-bold'
-                                                    : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                                            }`}
+                                            onClick={() => {
+                                                releaseSlotHold();
+                                                setStep(3);
+                                            }}
+                                            className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition-all shadow-2xs"
                                         >
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-900">{m.name}</p>
-                                                <p className="text-xs text-slate-500">{m.relationship || 'Family Member'} {m.age ? `• ${m.age} yrs` : ''}</p>
+                                            Change Slot
+                                        </button>
+                                        <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center border border-teal-100 shrink-0"><ShieldCheck size={24} /></div>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 md:p-12 space-y-8 md:space-y-10">
+                                    {/* ⏳ 10-Minute Slot Hold Banner */}
+                                    {holdToken && holdTimeRemaining > 0 && (
+                                        <div className="p-4 bg-teal-50 border border-teal-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-teal-900 shadow-sm animate-in fade-in duration-500">
+                                            <div className="flex items-center gap-3">
+                                                <span className="relative flex h-3 w-3">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-600"></span>
+                                                </span>
+                                                <div>
+                                                    <p className="text-xs font-bold text-teal-950">Slot Temporarily Reserved For You</p>
+                                                    <p className="text-[11px] text-teal-700">Complete verification to lock in this appointment before time runs out.</p>
+                                                </div>
                                             </div>
-                                            <span className="px-2 py-0.5 bg-slate-100 rounded-md text-[11px] font-semibold text-slate-600">
-                                                {m.relationship}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">Time Left:</span>
+                                                <span className="px-3 py-1 bg-teal-600 text-white rounded-xl font-mono font-bold text-sm tracking-widest shadow-sm">
+                                                    {formatRemainingTime(holdTimeRemaining)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
 
-                        {/* If Add New Family Member Selected */}
-                        {selectedFor === 'new_family' && (
-                            <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-4 animate-in fade-in duration-300">
-                                <h5 className="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1.5">
-                                    <UserPlus size={15} /> Family Member Profile Details
-                                </h5>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-slate-600">Full Name *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Patient's full name"
-                                            value={newMember.name}
-                                            onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-slate-600">Relationship *</label>
-                                        <select
-                                            value={newMember.relationship}
-                                            onChange={(e) => setNewMember({ ...newMember, relationship: e.target.value })}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                        >
-                                            <option value="Child">Child (Son / Daughter)</option>
-                                            <option value="Spouse">Spouse (Husband / Wife)</option>
-                                            <option value="Parent">Parent (Mother / Father)</option>
-                                            <option value="Sibling">Sibling (Brother / Sister)</option>
-                                            <option value="Other">Other Family Member</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-slate-600">Age</label>
-                                        <input
-                                            type="number"
-                                            placeholder="e.g. 12"
-                                            value={newMember.age}
-                                            onChange={(e) => setNewMember({ ...newMember, age: e.target.value })}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-slate-600">Gender</label>
-                                        <select
-                                            value={newMember.gender}
-                                            onChange={(e) => setNewMember({ ...newMember, gender: e.target.value })}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                        >
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Lawful Guardian Consent (DPDP Act) */}
-                                {(newMember.relationship === 'Child' || (newMember.age && parseInt(newMember.age) < 18)) && (
-                                    <label className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-3 cursor-pointer text-xs text-amber-950 font-medium">
-                                        <input
-                                            type="checkbox"
-                                            checked={newMember.guardianConsent}
-                                            onChange={(e) => setNewMember({ ...newMember, guardianConsent: e.target.checked })}
-                                            className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
-                                        />
-                                        <span>
-                                            <strong>Lawful Guardian Declaration (DPDP Act 2023):</strong> I confirm that I am the lawful parent or guardian providing lawful consent to book healthcare consultations and maintain medical records for this minor.
-                                        </span>
-                                    </label>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* 🔐 Just-In-Time Authentication (If NOT logged in) */}
-                    {!isLoggedIn && (
-                        <div className="bg-slate-50/70 border border-slate-200/80 rounded-3xl p-5 md:p-8 space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-teal-100/60 text-teal-700 flex items-center justify-center shrink-0">
-                                    <Lock size={20} />
-                                </div>
-                                <div>
-                                    <h4 className="text-base font-bold text-slate-900">Patient Identification &amp; Account</h4>
-                                    <p className="text-xs text-slate-500">Sign in or create your free account to lock in your appointment</p>
-                                </div>
-                            </div>
-
-                            {authError && (
-                                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-700 text-xs font-semibold">
-                                    <AlertCircle size={16} /> {authError}
-                                </div>
-                            )}
-
-                            {authMode === 'phone' && (
-                                <div className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-slate-600">Mobile Number *</label>
-                                        <div className="relative">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">+91</span>
-                                            <input
-                                                type="tel"
-                                                maxLength="10"
-                                                placeholder="9876543210"
-                                                value={authPhone}
-                                                onChange={(e) => setAuthPhone(e.target.value.replace(/\D/g, ''))}
-                                                className="w-full pl-14 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-teal-500"
+                                    {/* Summary of Facility & Doctor */}
+                                    <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+                                        <div className="space-y-6 md:space-y-8">
+                                            <ReviewItem icon={<Building2 size={18} />} label="Clinic Facility" val={getSelectedClinic()?.name} sub={getSelectedClinic()?.address} />
+                                            <ReviewItem icon={<Stethoscope size={18} />} label="Consulting Specialist" val={formatDocTitle(getSelectedDoctor()?.name)} sub={getSelectedDoctor()?.specialization} />
+                                            <ReviewItem
+                                                icon={<Calendar size={18} />}
+                                                label="Appointment Date"
+                                                val={formData.appointmentDate ? new Date(formData.appointmentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                                                sub={formData.appointmentDate ? WEEKDAY_MAP[new Date(formData.appointmentDate).getDay()] : ''}
+                                            />
+                                            <ReviewItem
+                                                icon={<Clock size={18} />}
+                                                label="Arrival Window"
+                                                val={
+                                                    formData.appointmentDate
+                                                        ? (formData.slotMode === 'shift'
+                                                            ? (formData.appointmentDate.endsWith(getClinicTimingConfig().openingTime) ? 'Morning Shift' : 'Afternoon / Evening Shift')
+                                                            : new Date(formData.appointmentDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))
+                                                        : ''
+                                                }
+                                                sub={
+                                                    formData.slotMode === 'shift'
+                                                        ? `Arrival around start time: ${formData.appointmentDate ? formData.appointmentDate.split('T')[1] : ''}`
+                                                        : "Check-in required 10m early"
+                                                }
                                             />
                                         </div>
-                                        <p className="text-[11px] text-slate-400">Appointment updates &amp; receptionist confirmations are sent here.</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleCheckPhone}
-                                        disabled={authLoading || authPhone.length < 10}
-                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
-                                    >
-                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <>Continue with Mobile <ArrowRight size={16} /></>}
-                                    </button>
-                                </div>
-                            )}
 
-                            {authMode === 'login' && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
-                                        <span>Phone: <strong>+91 {authPhone}</strong></span>
-                                        <button type="button" onClick={() => setAuthMode('phone')} className="text-teal-600 font-semibold hover:underline">Change</button>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-slate-600">Account Password *</label>
-                                        <input
-                                            type="password"
-                                            placeholder="Enter your password"
-                                            value={authPassword}
-                                            onChange={(e) => setAuthPassword(e.target.value)}
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-teal-500"
-                                        />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleInlineLogin}
-                                        disabled={authLoading || !authPassword}
-                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
-                                    >
-                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <><CheckCircle size={16} /> Sign In &amp; Continue</>}
-                                    </button>
-                                </div>
-                            )}
-
-                            {authMode === 'signup' && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
-                                        <span>Phone: <strong>+91 {authPhone}</strong> (OTP sent)</span>
-                                        <button type="button" onClick={() => setAuthMode('phone')} className="text-teal-600 font-semibold hover:underline">Change</button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <div className="space-y-1 sm:col-span-1">
-                                            <label className="text-xs font-semibold text-slate-600">Your Full Name *</label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. Ramesh Patel"
-                                                value={authName}
-                                                onChange={(e) => setAuthName(e.target.value)}
-                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                            />
+                                        <div className="space-y-6">
+                                            <div className="space-y-3">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Consultation Type</label>
+                                                <div className="flex gap-3">
+                                                    {['new', 'followup'].map(type => (
+                                                        <button
+                                                            key={type}
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, appointmentType: type })}
+                                                            className={`flex-1 py-3 rounded-2xl border-2 font-semibold text-xs uppercase tracking-wider transition-all ${formData.appointmentType === type ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-sm' : 'border-slate-100 bg-slate-50 text-slate-500'}`}
+                                                        >
+                                                            {type} Visit
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1">Clinical Notes / Reason</label>
+                                                <textarea
+                                                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-teal-500 text-sm font-medium resize-none shadow-sm"
+                                                    rows="3"
+                                                    placeholder="Briefly describe your symptoms or reason for visit..."
+                                                    value={formData.reason}
+                                                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-slate-600">Age</label>
-                                            <input
-                                                type="number"
-                                                placeholder="e.g. 32"
-                                                value={authAge}
-                                                onChange={(e) => setAuthAge(e.target.value)}
-                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                            />
+                                    </div>
+
+                                    {/* 👨‍👩‍👧‍👦 Who is this visit for? ("Konā mate?") */}
+                                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-3xl p-5 md:p-8 space-y-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-teal-100/60 text-teal-700 flex items-center justify-center shrink-0">
+                                                <Users size={20} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-base font-bold text-slate-900">Who is this visit for? <span className="text-teal-600">(Konā mate?)</span></h4>
+                                                <p className="text-xs text-slate-500">Ensure separate, private medical records for each patient</p>
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-slate-600">Gender</label>
-                                            <select
-                                                value={authGender}
-                                                onChange={(e) => setAuthGender(e.target.value)}
-                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+
+                                        {/* Selection Cards */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            {/* Myself */}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setSelectedFor('myself'); setSelectedFamilyMemberId(''); }}
+                                                className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedFor === 'myself'
+                                                        ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
+                                                        : 'border-slate-200 bg-white/60 text-slate-600 hover:border-slate-300'
+                                                    }`}
                                             >
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Primary Account</span>
+                                                    {selectedFor === 'myself' && <CheckCircle size={16} className="text-teal-600" />}
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-900 truncate">
+                                                    {primaryPatient?.name || (isLoggedIn ? 'Myself' : 'Myself (Primary)')}
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-0.5">Account holder records</p>
+                                            </button>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-xs font-semibold text-slate-600">6-Digit SMS OTP *</label>
-                                                {otpCountdown > 0 ? (
-                                                    <span className="text-[11px] text-slate-400 font-mono">Resend in {otpCountdown}s</span>
-                                                ) : (
-                                                    <button type="button" onClick={handleResendOTP} className="text-[11px] font-semibold text-teal-600 hover:underline">Resend OTP</button>
+                                            {/* Saved Family Member (if logged in and has members) */}
+                                            {familyMembers.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedFor('family');
+                                                        if (!selectedFamilyMemberId && familyMembers[0]) {
+                                                            setSelectedFamilyMemberId(familyMembers[0]._id);
+                                                        }
+                                                    }}
+                                                    className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedFor === 'family'
+                                                            ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
+                                                            : 'border-slate-200 bg-white/60 text-slate-600 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Saved Family</span>
+                                                        {selectedFor === 'family' && <CheckCircle size={16} className="text-teal-600" />}
+                                                    </div>
+                                                    <p className="text-sm font-bold text-slate-900 truncate">
+                                                        {familyMembers.find(f => f._id === selectedFamilyMemberId)?.name || `${familyMembers.length} Members`}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400 mt-0.5">Pick existing profile</p>
+                                                </button>
+                                            )}
+
+                                            {/* Add New Family Member */}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setSelectedFor('new_family'); setSelectedFamilyMemberId(''); }}
+                                                className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedFor === 'new_family'
+                                                        ? 'border-teal-500 bg-white text-slate-900 shadow-md ring-2 ring-teal-500/20'
+                                                        : 'border-dashed border-slate-300 bg-white/40 text-slate-600 hover:border-teal-400'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">+ Family Member</span>
+                                                    {selectedFor === 'new_family' && <CheckCircle size={16} className="text-teal-600" />}
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-900">Add New Profile</p>
+                                                <p className="text-xs text-slate-400 mt-0.5">Child, Spouse, Parent</p>
+                                            </button>
+                                        </div>
+
+                                        {/* If Saved Family Member Selected */}
+                                        {selectedFor === 'family' && familyMembers.length > 0 && (
+                                            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3 animate-in fade-in duration-300">
+                                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Family Member Profile</label>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    {familyMembers.map((m) => (
+                                                        <button
+                                                            key={m._id}
+                                                            type="button"
+                                                            onClick={() => setSelectedFamilyMemberId(m._id)}
+                                                            className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all ${selectedFamilyMemberId === m._id
+                                                                    ? 'border-teal-500 bg-teal-50/50 text-teal-950 font-bold'
+                                                                    : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                                                                }`}
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-bold text-slate-900">{m.name}</p>
+                                                                <p className="text-xs text-slate-500">{m.relationship || 'Family Member'} {m.age ? `• ${m.age} yrs` : ''}</p>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 bg-slate-100 rounded-md text-[11px] font-semibold text-slate-600">
+                                                                {m.relationship}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* If Add New Family Member Selected */}
+                                        {selectedFor === 'new_family' && (
+                                            <div className="p-5 bg-white rounded-2xl border border-slate-200 space-y-4 animate-in fade-in duration-300">
+                                                <h5 className="text-xs font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1.5">
+                                                    <UserPlus size={15} /> Family Member Profile Details
+                                                </h5>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="space-y-1">
+                                                        <label className="text-xs font-semibold text-slate-600">Full Name *</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Patient's full name"
+                                                            value={newMember.name}
+                                                            onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-xs font-semibold text-slate-600">Relationship *</label>
+                                                        <select
+                                                            value={newMember.relationship}
+                                                            onChange={(e) => setNewMember({ ...newMember, relationship: e.target.value })}
+                                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                        >
+                                                            <option value="Child">Child (Son / Daughter)</option>
+                                                            <option value="Spouse">Spouse (Husband / Wife)</option>
+                                                            <option value="Parent">Parent (Mother / Father)</option>
+                                                            <option value="Sibling">Sibling (Brother / Sister)</option>
+                                                            <option value="Other">Other Family Member</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-xs font-semibold text-slate-600">Age</label>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="e.g. 12"
+                                                            value={newMember.age}
+                                                            onChange={(e) => setNewMember({ ...newMember, age: e.target.value })}
+                                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-xs font-semibold text-slate-600">Gender</label>
+                                                        <select
+                                                            value={newMember.gender}
+                                                            onChange={(e) => setNewMember({ ...newMember, gender: e.target.value })}
+                                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                        >
+                                                            <option value="Male">Male</option>
+                                                            <option value="Female">Female</option>
+                                                            <option value="Other">Other</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {/* Lawful Guardian Consent (DPDP Act) */}
+                                                {(newMember.relationship === 'Child' || (newMember.age && parseInt(newMember.age) < 18)) && (
+                                                    <label className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl flex items-start gap-3 cursor-pointer text-xs text-amber-950 font-medium">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={newMember.guardianConsent}
+                                                            onChange={(e) => setNewMember({ ...newMember, guardianConsent: e.target.checked })}
+                                                            className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                                        />
+                                                        <span>
+                                                            <strong>Lawful Guardian Declaration (DPDP Act 2023):</strong> I confirm that I am the lawful parent or guardian providing lawful consent to book healthcare consultations and maintain medical records for this minor.
+                                                        </span>
+                                                    </label>
                                                 )}
                                             </div>
-                                            <input
-                                                type="text"
-                                                maxLength="6"
-                                                placeholder="123456"
-                                                value={authOtp}
-                                                onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, ''))}
-                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-widest text-center outline-none focus:border-teal-500"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-semibold text-slate-600">Create Password (min 8 chars) *</label>
-                                            <input
-                                                type="password"
-                                                placeholder="Create secure password"
-                                                value={authPassword}
-                                                onChange={(e) => setAuthPassword(e.target.value)}
-                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
-                                            />
-                                        </div>
+                                        )}
                                     </div>
 
-                                    {/* DPDP Consent Checkboxes */}
-                                    <div className="space-y-2.5 pt-2">
-                                        <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={authConsentAgreed}
-                                                onChange={(e) => setAuthConsentAgreed(e.target.checked)}
-                                                className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
-                                            />
-                                            <span>
-                                                I agree to Appointory's <a href="/terms" target="_blank" className="text-teal-600 underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-teal-600 underline">Privacy Notice</a>, and consent to processing my healthcare appointment information as per the DPDP Act 2023. *
-                                            </span>
-                                        </label>
+                                    {/* 🔐 Just-In-Time Authentication (If NOT logged in) */}
+                                    {!isLoggedIn && (
+                                        <div className="bg-slate-50/70 border border-slate-200/80 rounded-3xl p-5 md:p-8 space-y-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-teal-100/60 text-teal-700 flex items-center justify-center shrink-0">
+                                                    <Lock size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-base font-bold text-slate-900">Patient Identification &amp; Account</h4>
+                                                    <p className="text-xs text-slate-500">Sign in or create your free account to lock in your appointment</p>
+                                                </div>
+                                            </div>
 
-                                        <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={authWhatsappOptIn}
-                                                onChange={(e) => setAuthWhatsappOptIn(e.target.checked)}
-                                                className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
-                                            />
-                                            <span>
-                                                Receive instant appointment booking status, verification tokens, and reminder notifications on WhatsApp. (Optional)
-                                            </span>
-                                        </label>
-                                    </div>
+                                            {authError && (
+                                                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-700 text-xs font-semibold">
+                                                    <AlertCircle size={16} /> {authError}
+                                                </div>
+                                            )}
+
+                                            {authMode === 'phone' && (
+                                                <div className="space-y-4">
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-semibold text-slate-600">Mobile Number *</label>
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">+91</span>
+                                                            <input
+                                                                type="tel"
+                                                                maxLength="10"
+                                                                placeholder="9876543210"
+                                                                value={authPhone}
+                                                                onChange={(e) => setAuthPhone(e.target.value.replace(/\D/g, ''))}
+                                                                className="w-full pl-14 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-teal-500"
+                                                            />
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-400">Appointment updates &amp; receptionist confirmations are sent here.</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleCheckPhone}
+                                                        disabled={authLoading || authPhone.length < 10}
+                                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
+                                                    >
+                                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <>Continue with Mobile <ArrowRight size={16} /></>}
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {authMode === 'login' && (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
+                                                        <span>Phone: <strong>+91 {authPhone}</strong></span>
+                                                        <button type="button" onClick={() => setAuthMode('phone')} className="text-teal-600 font-semibold hover:underline">Change</button>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-semibold text-slate-600">Account Password *</label>
+                                                        <input
+                                                            type="password"
+                                                            placeholder="Enter your password"
+                                                            value={authPassword}
+                                                            onChange={(e) => setAuthPassword(e.target.value)}
+                                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-teal-500"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleInlineLogin}
+                                                        disabled={authLoading || !authPassword}
+                                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
+                                                    >
+                                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <><CheckCircle size={16} /> Sign In &amp; Continue</>}
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {authMode === 'signup' && (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
+                                                        <span>Phone: <strong>+91 {authPhone}</strong> (OTP sent)</span>
+                                                        <button type="button" onClick={() => setAuthMode('phone')} className="text-teal-600 font-semibold hover:underline">Change</button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div className="space-y-1 sm:col-span-1">
+                                                            <label className="text-xs font-semibold text-slate-600">Your Full Name *</label>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="e.g. Ramesh Patel"
+                                                                value={authName}
+                                                                onChange={(e) => setAuthName(e.target.value)}
+                                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-semibold text-slate-600">Age</label>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="e.g. 32"
+                                                                value={authAge}
+                                                                onChange={(e) => setAuthAge(e.target.value)}
+                                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-semibold text-slate-600">Gender</label>
+                                                            <select
+                                                                value={authGender}
+                                                                onChange={(e) => setAuthGender(e.target.value)}
+                                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                            >
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                                <option value="Other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <label className="text-xs font-semibold text-slate-600">6-Digit SMS OTP *</label>
+                                                                {otpCountdown > 0 ? (
+                                                                    <span className="text-[11px] text-slate-400 font-mono">Resend in {otpCountdown}s</span>
+                                                                ) : (
+                                                                    <button type="button" onClick={handleResendOTP} className="text-[11px] font-semibold text-teal-600 hover:underline">Resend OTP</button>
+                                                                )}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                maxLength="6"
+                                                                placeholder="123456"
+                                                                value={authOtp}
+                                                                onChange={(e) => setAuthOtp(e.target.value.replace(/\D/g, ''))}
+                                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-widest text-center outline-none focus:border-teal-500"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-semibold text-slate-600">Create Password (min 8 chars) *</label>
+                                                            <input
+                                                                type="password"
+                                                                placeholder="Create secure password"
+                                                                value={authPassword}
+                                                                onChange={(e) => setAuthPassword(e.target.value)}
+                                                                className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:border-teal-500"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* DPDP Consent Checkboxes */}
+                                                    <div className="space-y-2.5 pt-2">
+                                                        <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={authConsentAgreed}
+                                                                onChange={(e) => setAuthConsentAgreed(e.target.checked)}
+                                                                className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                                            />
+                                                            <span>
+                                                                I agree to Appointory's <a href="/terms" target="_blank" className="text-teal-600 underline">Terms of Service</a> and <a href="/privacy" target="_blank" className="text-teal-600 underline">Privacy Notice</a>, and consent to processing my healthcare appointment information as per the DPDP Act 2023. *
+                                                            </span>
+                                                        </label>
+
+                                                        <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={authWhatsappOptIn}
+                                                                onChange={(e) => setAuthWhatsappOptIn(e.target.checked)}
+                                                                className="mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                                                            />
+                                                            <span>
+                                                                Receive instant appointment booking status, verification tokens, and reminder notifications on WhatsApp. (Optional)
+                                                            </span>
+                                                        </label>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleInlineSignup}
+                                                        disabled={authLoading || !authName || authOtp.length !== 6 || authPassword.length < 8 || !authConsentAgreed}
+                                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
+                                                    >
+                                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <><Sparkles size={16} /> Create Account &amp; Continue</>}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {error && (
+                                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-700 text-xs font-semibold animate-in shake duration-500">
+                                            <AlertCircle size={18} /> {error}
+                                        </div>
+                                    )}
 
                                     <button
-                                        type="button"
-                                        onClick={handleInlineSignup}
-                                        disabled={authLoading || !authName || authOtp.length !== 6 || authPassword.length < 8 || !authConsentAgreed}
-                                        className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md active:scale-98"
+                                        onClick={handleConfirmBooking}
+                                        disabled={loading}
+                                        className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-sm uppercase tracking-wider shadow-lg shadow-teal-600/25 flex items-center justify-center gap-3 transition-all active:scale-98 disabled:opacity-50"
                                     >
-                                        {authLoading ? <Loader size={16} className="animate-spin" /> : <><Sparkles size={16} /> Create Account &amp; Continue</>}
+                                        {loading ? <Loader className="animate-spin" size={20} /> : <><CheckCircle size={20} /> {formData.rescheduleAppointmentId ? 'Confirm Reschedule' : 'Finalize Appointment'}</>}
                                     </button>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     )}
-
-                    {error && (
-                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-700 text-xs font-semibold animate-in shake duration-500">
-                            <AlertCircle size={18} /> {error}
-                        </div>
-                    )}
-
-                    <button
-                        onClick={handleConfirmBooking}
-                        disabled={loading}
-                        className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-sm uppercase tracking-wider shadow-lg shadow-teal-600/25 flex items-center justify-center gap-3 transition-all active:scale-98 disabled:opacity-50"
-                    >
-                        {loading ? <Loader className="animate-spin" size={20} /> : <><CheckCircle size={20} /> {formData.rescheduleAppointmentId ? 'Confirm Reschedule' : 'Finalize Appointment'}</>}
-                    </button>
-                    </div>
-                </div>
-            </div>
-        )}
-    </main>
+                </main>
             </div>
         </div>
     );
