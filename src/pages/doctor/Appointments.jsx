@@ -18,14 +18,23 @@ import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
 import Swal from 'sweetalert2';
 
-import { API_URL } from '../../config/runtime';
+import { io } from 'socket.io-client';
+import { API_URL, SOCKET_URL } from '../../config/runtime';
+
+const getTodayStr = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('Upcoming');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getTodayStr);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
@@ -35,7 +44,7 @@ const Appointments = () => {
       const res = await axios.get(`${API_URL}/api/queue/stats/doctor`, {
         params: { 
           date: selectedDate,
-          allDates: activeTab === 'All'
+          allDates: !selectedDate
         },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -49,7 +58,7 @@ const Appointments = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, activeTab, token]);
+  }, [selectedDate, token]);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +66,22 @@ const Appointments = () => {
       if (active) fetchAppointments();
     });
     return () => { active = false; };
+  }, [fetchAppointments]);
+
+  // Real-time live sync with socket
+  useEffect(() => {
+    const clinicId = localStorage.getItem('clinicId');
+    if (!SOCKET_URL || !clinicId) return;
+
+    const socket = io(SOCKET_URL);
+    socket.emit('joinClinic', clinicId);
+    socket.on('queueUpdate', () => {
+      fetchAppointments();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [fetchAppointments]);
 
   const handleStartSession = async (appointmentId) => {
@@ -92,20 +117,71 @@ const Appointments = () => {
     }
   };
 
+  const isMatchDate = (item) => {
+    if (!selectedDate) return true;
+    const appDateVal = item.appointmentDate || item.createdAt || item.endTime;
+    if (!appDateVal) return selectedDate === getTodayStr();
+
+    // Check direct ISO string format prefix first (e.g. "2026-10-30...")
+    if (typeof appDateVal === 'string' && appDateVal.slice(0, 10) === selectedDate) {
+      return true;
+    }
+
+    const d = new Date(appDateVal);
+    if (isNaN(d.getTime())) return false;
+
+    // Check local date (IST)
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    if (`${y}-${m}-${day}` === selectedDate) return true;
+
+    // Check UTC date (in case server saved UTC midnight)
+    const uy = d.getUTCFullYear();
+    const um = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const uday = String(d.getUTCDate()).padStart(2, '0');
+    return `${uy}-${um}-${uday}` === selectedDate;
+  };
+
+  const counts = {
+    Upcoming: (appointments || []).filter(a => {
+      const s = (a?.status || '').toLowerCase();
+      const isStatusMatch = s === 'waiting' || s === 'scheduled' || s === 'pending-approval' || s === 'pending';
+      return isStatusMatch && isMatchDate(a);
+    }).length,
+    'In Progress': (appointments || []).filter(a => {
+      const s = (a?.status || '').toLowerCase();
+      const isStatusMatch = s === 'in-consultation' || s === 'in consultation';
+      return isStatusMatch && isMatchDate(a);
+    }).length,
+    Completed: (appointments || []).filter(a => {
+      const s = (a?.status || '').toLowerCase();
+      const isStatusMatch = s === 'completed';
+      return isStatusMatch && isMatchDate(a);
+    }).length,
+    All: (appointments || []).filter(a => isMatchDate(a)).length
+  };
+
   const filteredAppointments = (appointments || []).filter(app => {
     if (!app) return false;
     const name = app.patientName || 'Unknown Patient';
     const phone = app.patientPhone || '';
 
-    
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          phone.includes(searchTerm);
+    const status = (app.status || '').toLowerCase();
     const matchesTab = activeTab === 'All' || 
-                       (activeTab === 'Upcoming' && (app.status === 'Waiting' || app.status === 'Scheduled')) ||
-                       (activeTab === 'In Progress' && app.status === 'In-Consultation') ||
-                       (activeTab === 'Completed' && app.status === 'Completed');
-    // If activeTab is 'All', don't filter by search? Wait, search should still apply.
-    return matchesSearch && matchesTab;
+                       (activeTab === 'Upcoming' && (status === 'waiting' || status === 'scheduled' || status === 'pending-approval' || status === 'pending')) ||
+                       (activeTab === 'In Progress' && (status === 'in-consultation' || status === 'in consultation')) ||
+                       (activeTab === 'Completed' && status === 'completed');
+    if (!matchesSearch || !matchesTab) return false;
+
+    // Strict date filtering when selectedDate is chosen
+    if (selectedDate && !isMatchDate(app)) {
+      return false;
+    }
+
+    return true;
   });
 
   return (
@@ -124,14 +200,25 @@ const Appointments = () => {
               </p>
             </div>
              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              <div className="relative w-full sm:w-auto">
-                <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600" size={16} />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-teal-500 text-[14px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition-all w-full sm:w-48 cursor-pointer"
-                />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative w-full sm:w-auto">
+                  <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-600" size={16} />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-teal-500 text-[14px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition-all w-full sm:w-48 cursor-pointer"
+                  />
+                </div>
+                {selectedDate !== getTodayStr() && (
+                  <button
+                    onClick={() => setSelectedDate(getTodayStr())}
+                    className="px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap active:scale-95 shadow-sm"
+                    title="Jump to today"
+                  >
+                    Today
+                  </button>
+                )}
               </div>
               <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -154,19 +241,27 @@ const Appointments = () => {
 
           {/* Tabs */}
           <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-[1.5rem] w-fit shadow-sm overflow-x-auto max-w-full">
-            {['Upcoming', 'In Progress', 'Completed', 'All'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all ${
-                  activeTab === tab 
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/20' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+            {['Upcoming', 'In Progress', 'Completed', 'All'].map((tab) => {
+              const count = counts[tab] ?? 0;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-2.5 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
+                    activeTab === tab 
+                      ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/20' 
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  <span>{tab}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    activeTab === tab ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* List Area */}
@@ -183,7 +278,20 @@ const Appointments = () => {
                   <CalendarIcon size={40} />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">No Appointments Found</h3>
-                <p className="text-slate-500 max-w-xs mx-auto">Your schedule is currently clear for the selected criteria.</p>
+                <p className="text-slate-500 max-w-xs mx-auto">
+                  {selectedDate && selectedDate !== getTodayStr() 
+                    ? `No appointments found for ${selectedDate}.` 
+                    : 'Your schedule is currently clear for the selected criteria.'}
+                </p>
+                {selectedDate && selectedDate !== getTodayStr() && (
+                  <button
+                    onClick={() => setSelectedDate(getTodayStr())}
+                    className="mt-4 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md active:scale-95 inline-flex items-center gap-2"
+                  >
+                    <RefreshCw size={14} />
+                    View Today's Appointments
+                  </button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -195,8 +303,8 @@ const Appointments = () => {
                     {/* Status Badge */}
                     <div className="absolute top-0 right-0 p-4">
                       <div className={`px-3 py-1 rounded-full text-[14px] font-black uppercase tracking-widest ${
-                        app.status === 'In-Consultation' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                        app.status === 'Completed' ? 'bg-green-50 text-green-600 border border-green-100' :
+                        (app.status || '').toLowerCase() === 'in-consultation' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                        (app.status || '').toLowerCase() === 'completed' ? 'bg-green-50 text-green-600 border border-green-100' :
                         app.isEmergency ? 'bg-red-50 text-red-600 border border-red-100 animate-pulse' :
                         'bg-teal-50 text-teal-600 border border-teal-100'
                       }`}>
@@ -214,12 +322,16 @@ const Appointments = () => {
                         <h3 className="text-lg font-black text-slate-900 truncate pr-16">{app.patientName || 'Unknown Patient'}</h3>
                         <p className="text-[14px] font-bold text-slate-400 flex items-center gap-1.5 mt-0.5">
                           <Clock size={12} />
-                          {app.visitType === 'Appointment' ? 'Slot: ' : 'Registered: '}
-                          {app.visitType === 'Appointment' && app.appointmentDate 
-                            ? new Date(app.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-                            : app.createdAt 
-                              ? new Date(app.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-                              : 'N/A'}
+                          {(app.status || '').toLowerCase() === 'completed' 
+                            ? 'Completed: ' 
+                            : (app.visitType === 'Appointment' ? 'Slot: ' : 'Registered: ')}
+                          {(app.status || '').toLowerCase() === 'completed' && app.endTime
+                            ? new Date(app.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                            : (app.visitType === 'Appointment' && app.appointmentDate 
+                              ? new Date(app.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                              : app.createdAt 
+                                ? new Date(app.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+                                : 'N/A')}
                         </p>
                       </div>
                     </div>
@@ -231,7 +343,7 @@ const Appointments = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Reason for Visit</p>
-                          <p className="text-[14px] font-bold text-slate-700 truncate">{app.requiredTest || 'Routine Consultation'}</p>
+                          <p className="text-[14px] font-bold text-slate-700 truncate">{app.diagnosis || app.requiredTest || app.reason || 'Routine Consultation'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
@@ -246,14 +358,14 @@ const Appointments = () => {
                     </div>
 
                     <div className="flex gap-3 pt-4 border-t border-slate-50">
-                      {app.status === 'Completed' ? (
+                      {(app.status || '').toLowerCase() === 'completed' ? (
                         <button 
                           disabled
-                          className="flex-1 py-3 bg-slate-100 text-slate-400 rounded-2xl text-[14px] font-black uppercase tracking-widest cursor-not-allowed"
+                          className="flex-1 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl text-[14px] font-black uppercase tracking-widest cursor-default flex items-center justify-center gap-2"
                         >
-                          Completed
+                          <CheckCircle2 size={16} /> Completed
                         </button>
-                      ) : app.status === 'In-Consultation' ? (
+                      ) : (app.status || '').toLowerCase() === 'in-consultation' ? (
                         <button 
                           onClick={() => navigate('/doctor/dashboard')}
                           className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-600/20"

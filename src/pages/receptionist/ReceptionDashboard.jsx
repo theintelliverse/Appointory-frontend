@@ -82,7 +82,17 @@ const ReceptionDashboard = () => {
         axios.get(`${API_URL}/api/queue/scheduled/next-7-days`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       setQueue(queueRes.data.data);
-      setDoctors(staffRes.data.staff.filter(s => s.role === 'doctor'));
+      const fetchedDoctors = (staffRes.data?.staff || []).filter(s => s.role === 'doctor');
+      setDoctors(prev => {
+        if (
+          prev &&
+          prev.length === fetchedDoctors.length &&
+          prev.every((d, i) => d._id === fetchedDoctors[i]._id && d.isAvailable === fetchedDoctors[i].isAvailable && d.name === fetchedDoctors[i].name)
+        ) {
+          return prev;
+        }
+        return fetchedDoctors;
+      });
       setPendingRequests(pendingRes.data.data);
       setScheduledAppointments(scheduledRes.data.data);
       setLastQueueUpdate(Date.now()); // 🔴 Update timestamp for live indicator
@@ -575,17 +585,17 @@ const ReceptionDashboard = () => {
                     placeholder="Patient Name" 
                     className="w-full bg-white/10 border border-white/15 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40 font-medium" 
                     value={formData.patientName} 
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))} 
                   />
                 </div>
 
-                <select required className="w-full bg-white/10 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold" value={formData.doctorId} onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}>
+                <select required className="w-full bg-white/10 border border-white/10 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold" value={formData.doctorId} onChange={(e) => setFormData(prev => ({ ...prev, doctorId: e.target.value }))}>
                   <option value="" className="text-black">Assign Doctor</option>
                   {doctors.map(d => <option key={d._id} value={d._id} className="text-black">Dr. {d.name} {!d.isAvailable ? '(Break)' : ''}</option>)}
                 </select>
                 <div className="flex items-center justify-between p-2 md:p-3 bg-white/5 rounded-xl md:rounded-2xl border border-white/10">
                   <span className="text-[14px] md:text-[14px] font-black uppercase text-white tracking-widest truncate">Emergency?</span>
-                  <button type="button" onClick={() => setFormData({ ...formData, isEmergency: !formData.isEmergency })} className={`w-10 md:w-12 h-5 md:h-6 rounded-full relative transition-all flex-shrink-0 ${formData.isEmergency ? 'bg-red-500' : 'bg-white/20'}`}><div className={`absolute top-0.5 md:top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isEmergency ? 'left-5 md:left-7' : 'left-0.5 md:left-1'}`}></div></button>
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, isEmergency: !prev.isEmergency }))} className={`w-10 md:w-12 h-5 md:h-6 rounded-full relative transition-all flex-shrink-0 ${formData.isEmergency ? 'bg-red-500' : 'bg-white/20'}`}><div className={`absolute top-0.5 md:top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isEmergency ? 'left-5 md:left-7' : 'left-0.5 md:left-1'}`}></div></button>
                 </div>
                 <button disabled={isProcessing} className={`w-full py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[14px] md:text-[14px] uppercase tracking-[0.2em] shadow-lg transition-all ${formData.isEmergency ? 'bg-white text-red-600' : 'bg-marigold text-white'} disabled:opacity-50`}>{isProcessing ? 'Processing...' : formData.isEmergency ? '🚨 Process' : 'Token'}</button>
               </form>

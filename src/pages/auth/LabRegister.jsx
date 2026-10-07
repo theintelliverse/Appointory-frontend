@@ -78,7 +78,7 @@ const LabRegister = () => {
       if (response.data.success) {
         await Swal.fire({
           icon: 'success',
-          title: '🎉 Lab Registered!',
+          title: 'Lab Registered Successfully!',
           html: `<p>Your lab code is: <strong style="color:#1B6CA8;font-size:1.2em">${response.data.labCode}</strong></p><p style="font-size:0.9em;color:#666">Share this code with clinics to connect.</p>`,
           confirmButtonColor: '#1B6CA8',
           confirmButtonText: 'Proceed to Login'

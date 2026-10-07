@@ -22,7 +22,8 @@ import {
   Bell,
   Receipt,
   Home,
-  Stethoscope
+  Stethoscope,
+  Globe
 } from 'lucide-react';
 
 import { API_URL } from '../config/runtime';
@@ -65,6 +66,8 @@ const Sidebar = ({ role = 'lab' }) => {
   const userRole = role || getSafeStorageItem('role', 'staff');
   const userSpecialization = getSafeStorageItem('specialization', '');
   const userEducation = getSafeStorageItem('education', '');
+  const isIndLab = getSafeStorageItem('labRole', '') === 'independent_lab';
+  const labCode = getSafeStorageItem('labCode', 'LAB');
 
   // Accurate active item detection handling both pathnames and search params (e.g. ?tab=appointments)
   const isItemActive = (itemPath) => {
@@ -89,7 +92,6 @@ const Sidebar = ({ role = 'lab' }) => {
   };
 
   const menuItems = useMemo(() => {
-    const isIndLab = getSafeStorageItem('labRole', '') === 'independent_lab';
     const config = {
       admin: [
         { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
@@ -120,6 +122,8 @@ const Sidebar = ({ role = 'lab' }) => {
         { name: 'Billing', path: '/lab/portal/billing', icon: <Receipt size={20} /> },
         { name: 'Past Reports', path: '/lab/portal/reports', icon: <FileCheck size={20} /> },
         { name: 'Analytics', path: '/lab/portal/analytics', icon: <Activity size={20} /> },
+        { name: 'Reviews & SEO', path: '/lab/portal/settings?tab=seo', icon: <Globe size={20} /> },
+        { name: 'Lab Settings', path: '/lab/portal/settings', icon: <Settings size={20} /> },
       ] : [
         { name: 'Dashboard', path: '/lab/dashboard', icon: <LayoutDashboard size={20} /> },
         { name: 'Test Requests', path: '/lab/requests', icon: <ClipboardList size={20} /> },
@@ -161,7 +165,7 @@ const Sidebar = ({ role = 'lab' }) => {
     }
 
     return items;
-  }, [userRole, isSubscriptionEnforced]);
+  }, [userRole, isSubscriptionEnforced, isIndLab]);
 
   const handleLogout = async () => {
     try {
@@ -236,16 +240,25 @@ const Sidebar = ({ role = 'lab' }) => {
         {/* User Card & Logout */}
         <div className="p-6 border-t border-gray-50 bg-gray-50/30">
           <div
-            onClick={() => navigate(userRole === 'patient' ? '/patient/profile' : '/profile')}
+            onClick={() => {
+              if (isIndLab) {
+                navigate('/lab/portal/settings');
+              } else if (userRole === 'patient') {
+                navigate('/patient/profile');
+              } else {
+                navigate('/profile');
+              }
+            }}
             className="bg-white p-4 rounded-[1.5rem] border border-gray-100 shadow-sm mb-4 cursor-pointer hover:border-teal-500 hover:shadow-md transition-all group/card"
+            title={isIndLab ? "Open Laboratory Settings" : "View Profile"}
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 font-bold text-sm border border-teal-100 group-hover/card:bg-teal-600 group-hover/card:text-white transition-colors">
-                {userName.substring(0, 2).toUpperCase() || 'PT'}
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 font-bold text-sm border border-teal-100 group-hover/card:bg-teal-600 group-hover/card:text-white transition-colors shrink-0">
+                {userName.substring(0, 2).toUpperCase() || 'LB'}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-black text-teal-600 uppercase tracking-widest mb-0.5">
-                  {userRole === 'doctor' ? 'Doctor' : userRole === 'lab' ? 'Laboratory' : userRole === 'patient' ? 'Patient' : userRole}
+                <p className="text-[12px] font-black text-teal-600 uppercase tracking-widest mb-0.5">
+                  {userRole === 'doctor' ? 'Doctor' : isIndLab ? 'Laboratory' : userRole === 'lab' ? 'Laboratory' : userRole === 'patient' ? 'Patient' : userRole}
                 </p>
                 <p className="text-sm font-black text-gray-900 truncate tracking-tight leading-tight group-hover/card:text-teal-600 transition-colors">
                   {(() => {
@@ -256,10 +269,12 @@ const Sidebar = ({ role = 'lab' }) => {
                     return name;
                   })()}
                 </p>
-                <p className="text-[14px] font-bold text-gray-400 uppercase mt-0.5 truncate">
-                  {userRole === 'doctor' 
-                    ? (userEducation || userSpecialization || 'Chief Physician')
-                    : (userSpecialization || (userRole === 'lab' ? 'Diagnostics Lead' : userRole === 'patient' ? 'Verified Member' : 'Staff Member'))}
+                <p className="text-[11px] font-bold text-gray-400 uppercase mt-0.5 truncate">
+                  {isIndLab
+                    ? `Diagnostics Lead · ${labCode}`
+                    : (userRole === 'doctor' 
+                      ? (userEducation || userSpecialization || 'Chief Physician')
+                      : (userSpecialization || (userRole === 'lab' ? 'Diagnostics Lead' : userRole === 'patient' ? 'Verified Member' : 'Staff Member')))}
                 </p>
               </div>
             </div>
@@ -267,13 +282,27 @@ const Sidebar = ({ role = 'lab' }) => {
             <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 group-hover/card:bg-teal-50 transition-colors">
               <div className="flex items-center gap-2">
                 <Activity size={14} className="text-teal-600" />
-                <span className="text-[14px] font-bold text-gray-500">Live Sync</span>
+                <span className="text-xs font-bold text-gray-500">Live Sync</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[14px] font-black text-green-600 uppercase">Online</span>
+                <span className="text-xs font-black text-green-600 uppercase">Online</span>
               </div>
             </div>
+
+            {isIndLab && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/lab/portal/settings');
+                }}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl font-bold text-xs uppercase tracking-wider border border-teal-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs group/btn"
+              >
+                <Settings size={14} className="text-teal-600 group-hover/btn:rotate-45 transition-transform" />
+                Lab Settings
+              </button>
+            )}
           </div>
 
           {/* Sign Out Button */}
@@ -341,7 +370,7 @@ const Sidebar = ({ role = 'lab' }) => {
                     active ? 'font-bold text-teal-900 scale-105' : 'font-medium text-slate-500'
                   }`}
                 >
-                  {item.name.split(' ')[0]}
+                  {item.name === 'Lab Settings' ? 'Settings' : item.name.split(' ')[0]}
                 </span>
               </button>
             );

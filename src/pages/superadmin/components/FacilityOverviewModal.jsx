@@ -117,10 +117,10 @@ const FacilityOverviewModal = ({
   </div>
 </div>`);
     } else if (template === 'greeting') {
-      setEmailSubject(`🎉 Welcome to Appointory! Let's get started`);
+      setEmailSubject(`Welcome to Appointory! Let's get started`);
       setEmailBody(`<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
   <div style="background: linear-gradient(135deg, #0f766e 0%, #1f6fb2 100%); padding: 25px 20px; text-align: center; color: white;">
-    <h2 style="margin: 0; font-size: 22px;">🎉 Welcome to Appointory!</h2>
+    <h2 style="margin: 0; font-size: 22px;">Welcome to Appointory!</h2>
     <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Active & Live on our Network</p>
   </div>
   <div style="padding: 25px; color: #334155; line-height: 1.6;">

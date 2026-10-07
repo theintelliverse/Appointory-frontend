@@ -59,6 +59,7 @@ const LabPortalConnections = lazy(() => import('./pages/lab-portal/LabPortalConn
 const LabPortalReports = lazy(() => import('./pages/lab-portal/LabPortalReports'));
 const LabPortalAnalytics = lazy(() => import('./pages/lab-portal/LabPortalAnalytics'));
 const LabPortalBilling = lazy(() => import('./pages/lab-portal/LabPortalBilling'));
+const LabPortalSettings = lazy(() => import('./pages/lab-portal/LabPortalSettings'));
 
 // Public SEO & Profile Pages
 const ClinicPublicProfile = lazy(() => import('./pages/public/ClinicPublicProfile'));
@@ -384,6 +385,14 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['independent_lab']}>
                     <LabPortalBilling />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/lab/portal/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['independent_lab']}>
+                    <LabPortalSettings />
                   </ProtectedRoute>
                 }
               />

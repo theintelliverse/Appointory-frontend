@@ -109,7 +109,7 @@ const PatientCheckIn = () => {
             if (res.data.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Check-in Successful! 🎉',
+                    title: 'Check-in Successful!',
                     text: 'The receptionist has been notified. Please watch the display screen.',
                     confirmButtonColor: '#0D9488',
                     background: '#F8FAFC'
@@ -195,7 +195,8 @@ const PatientCheckIn = () => {
                                     <input
                                         type="text" required placeholder="Enter your name"
                                         className="w-full pl-16 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-teal-500 font-medium text-sm text-slate-900 shadow-sm transition-all"
-                                        onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                                        value={formData.patientName}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
                                     />
                                 </div>
                             </div>
@@ -207,7 +208,8 @@ const PatientCheckIn = () => {
                                     <input
                                         type="tel" required placeholder="10-digit number"
                                         className="w-full pl-16 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-teal-500 font-medium text-sm text-slate-900 shadow-sm transition-all"
-                                        onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
+                                        value={formData.patientPhone}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, patientPhone: e.target.value }))}
                                     />
                                 </div>
                             </div>
@@ -219,7 +221,8 @@ const PatientCheckIn = () => {
                                     <select
                                         required
                                         className="w-full max-w-full truncate pl-16 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-teal-500 font-medium text-sm text-slate-900 appearance-none cursor-pointer relative z-0 transition-all shadow-sm"
-                                        onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}
+                                        value={formData.doctorId}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, doctorId: e.target.value }))}
                                     >
                                         <option value="">Choose Doctor</option>
                                         {doctors.map(doc => (

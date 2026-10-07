@@ -7,7 +7,7 @@ import {
   FileText, Clock, ExternalLink, LogOut,
   ShieldCheck, Activity, Search, Pill, X, Eye, Share2, Copy, Check, ChevronRight, RefreshCcw, FolderHeart, Calendar, Plus, Stethoscope, CheckCircle,
   Home, Users, History, User, Bell, Heart, Zap, Thermometer, Weight, Droplets, ArrowUpRight, QrCode, Upload, ArrowRight, Sparkles, MapPin, AlertCircle, Receipt,
-  Sunrise, Sun, Moon, Utensils, Timer, Star, Edit3, Loader2, FileUp, ChevronLeft
+  Sunrise, Sun, Moon, Utensils, Timer, Star, Edit3, Loader2, FileUp, ChevronLeft, Microscope
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import SEO from '../../components/SEO';
@@ -15,6 +15,8 @@ import AppointmentCard from '../../components/patient/AppointmentCard';
 import AppointmentDetailSheet from '../../components/patient/AppointmentDetailSheet';
 import PatientRatingHubModal from '../../components/patient/PatientRatingHubModal';
 import RatingModal from '../../components/patient/RatingModal';
+import BookLabModal from '../../components/patient/BookLabModal';
+import LabQrPassModal from '../../components/patient/LabQrPassModal';
 import {
   categorizePrescriptions,
   getPrescriptionSchedule
@@ -26,7 +28,7 @@ const socket = SOCKET_URL ? io(SOCKET_URL, {
 }) : { on: () => { }, off: () => { }, emit: () => { } };
 
 // Modern Mobile Patient Summary Header
-const MobileSummary = ({ patientData, displayName, onShowQr }) => {
+const MobileSummary = ({ patientData, displayName, onShowQr, onBookLab, navigate }) => {
   const pulse = patientData?.vitals?.[0]?.pulseRate || patientData?.medicalHistory?.[0]?.vitals?.pulseRate || patientData?.visitHistory?.[0]?.vitals?.pulseRate || '--';
   const temp = patientData?.vitals?.[0]?.temperature || patientData?.medicalHistory?.[0]?.vitals?.temperature || patientData?.visitHistory?.[0]?.vitals?.temperature || '--';
   const weight = patientData?.vitals?.[0]?.weight || patientData?.medicalHistory?.[0]?.vitals?.weight || patientData?.visitHistory?.[0]?.vitals?.weight || '--';
@@ -77,6 +79,24 @@ const MobileSummary = ({ patientData, displayName, onShowQr }) => {
             <p className="font-bold text-white text-xs mt-0.5">{bp}</p>
           </div>
         </div>
+
+        {/* Mobile Quick Action Buttons */}
+        <div className="relative z-10 grid grid-cols-2 gap-2 pt-3 border-t border-white/10">
+          <button
+            type="button"
+            onClick={() => onBookLab && onBookLab()}
+            className="py-2.5 px-3 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/30 text-teal-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <Microscope size={14} /> Book Lab
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/patient/book-appointment')}
+            className="py-2.5 px-3 bg-white/15 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95"
+          >
+            <Plus size={14} /> Book Doctor
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -95,6 +115,42 @@ const PatientDashboard = () => {
   const [showRatingHub, setShowRatingHub] = useState(false);
   const [patientReviews, setPatientReviews] = useState([]);
   const [editingReview, setEditingReview] = useState(null);
+
+  // Direct Lab Booking & QR Pass State
+  const [showBookLabModal, setShowBookLabModal] = useState(false);
+  const [showLabQrPassModal, setShowLabQrPassModal] = useState(false);
+  const [selectedLabPass, setSelectedLabPass] = useState(null);
+  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState('all'); // 'all' | 'clinic' | 'lab'
+  const [ratingTarget, setRatingTarget] = useState(null);
+
+  const handleRateAppointment = (apt) => {
+    if (!apt) return;
+    if (apt.isLabAppointment || apt.labId) {
+      const labId = apt.labId?._id || apt.labId;
+      const labName = apt.labName || apt.labId?.labName || 'Diagnostic Lab';
+      setRatingTarget({
+        targetType: 'lab',
+        targetId: labId,
+        targetName: labName
+      });
+    } else if (apt.doctorId) {
+      const docId = apt.doctorId?._id || apt.doctorId;
+      const docName = apt.doctorId?.name || apt.doctorName || 'Doctor';
+      setRatingTarget({
+        targetType: 'doctor',
+        targetId: docId,
+        targetName: docName.startsWith('Dr.') ? docName : `Dr. ${docName}`
+      });
+    } else if (apt.clinicId) {
+      const cId = apt.clinicId?._id || apt.clinicId;
+      const cName = apt.clinicId?.name || apt.clinicName || 'Clinic';
+      setRatingTarget({
+        targetType: 'clinic',
+        targetId: cId,
+        targetName: cName
+      });
+    }
+  };
 
   // Upload Modal State
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -286,33 +342,42 @@ const PatientDashboard = () => {
     return (storedName && storedName.trim()) || "Patient";
   }, [patientData]);
 
+  const clinicCount = useMemo(() => (appointments || []).filter(a => !a.isLabAppointment).length, [appointments]);
+  const labCount = useMemo(() => (appointments || []).filter(a => a.isLabAppointment).length, [appointments]);
+
   const upcomingAppointments = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     return appointments.filter(app => {
-      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
+      if (appointmentTypeFilter === 'clinic' && app.isLabAppointment) return false;
+      if (appointmentTypeFilter === 'lab' && !app.isLabAppointment) return false;
+
+      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped' || app.status === 'Rejected';
       if (isConcluded) return false;
 
       const appDate = new Date(app.appointmentDate || app.createdAt);
       appDate.setHours(0, 0, 0, 0);
       return appDate.getTime() >= today.getTime();
     }).sort((a, b) => new Date(a.appointmentDate || a.createdAt) - new Date(b.appointmentDate || b.createdAt));
-  }, [appointments]);
+  }, [appointments, appointmentTypeFilter]);
 
   const pastAppointments = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     return appointments.filter(app => {
-      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped';
+      if (appointmentTypeFilter === 'clinic' && app.isLabAppointment) return false;
+      if (appointmentTypeFilter === 'lab' && !app.isLabAppointment) return false;
+
+      const isConcluded = app.status === 'Completed' || app.status === 'Cancelled' || app.status === 'Skipped' || app.status === 'Rejected';
       if (isConcluded) return true;
 
       const appDate = new Date(app.appointmentDate || app.createdAt);
       appDate.setHours(0, 0, 0, 0);
       return appDate.getTime() < today.getTime();
     }).sort((a, b) => new Date(b.appointmentDate || b.createdAt) - new Date(a.appointmentDate || a.createdAt));
-  }, [appointments]);
+  }, [appointments, appointmentTypeFilter]);
 
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
@@ -471,19 +536,26 @@ const PatientDashboard = () => {
             <p className="text-slate-500 text-sm font-normal mt-1">Manage your consultations, digital vault, and instant clinic queue tokens.</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setShowRatingHub(true)}
-              className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-200/90 font-semibold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-all flex items-center gap-1.5 active:scale-95"
+              className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-200/90 font-semibold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-all flex items-center gap-1.5 active:scale-95"
             >
-              <Star size={15} className="fill-amber-500 text-amber-500" />
-              <span>Rate Experience</span>
+              <Star size={14} className="fill-amber-500 text-amber-500" />
+              <span>Rate</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBookLabModal(true)}
+              className="px-4 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 font-bold text-xs uppercase tracking-wider rounded-xl shadow-2xs transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <Microscope size={15} /> Book Lab Test
             </button>
             <button
               onClick={() => navigate('/patient/book-appointment')}
-              className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-semibold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-teal-600/20 transition-all flex items-center gap-2 active:scale-95"
+              className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md shadow-teal-600/20 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
             >
-              <Plus size={16} /> Book Appointment
+              <Plus size={15} /> Book Doctor
             </button>
           </div>
         </div>
@@ -494,6 +566,7 @@ const PatientDashboard = () => {
           displayName={displayName}
           navigate={navigate}
           onShowQr={() => setShowQrModal(true)}
+          onBookLab={() => setShowBookLabModal(true)}
         />
 
         {/* Tab Selector Pill (Home vs Appointments) */}
@@ -981,6 +1054,65 @@ const PatientDashboard = () => {
               </button>
             </div>
 
+            {/* Filter Pills for Consultations vs Lab Tests */}
+            <div className="flex items-center justify-between flex-wrap gap-2 pt-1 pb-1">
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl overflow-x-auto max-w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppointmentTypeFilter('all');
+                    setUpcomingPage(1);
+                    setPastPage(1);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer shrink-0 ${
+                    appointmentTypeFilter === 'all'
+                      ? 'bg-white text-slate-900 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  All ({appointments.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppointmentTypeFilter('clinic');
+                    setUpcomingPage(1);
+                    setPastPage(1);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
+                    appointmentTypeFilter === 'clinic'
+                      ? 'bg-white text-teal-800 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Stethoscope size={13} /> Doctor Consultations ({clinicCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppointmentTypeFilter('lab');
+                    setUpcomingPage(1);
+                    setPastPage(1);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
+                    appointmentTypeFilter === 'lab'
+                      ? 'bg-white text-teal-800 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Microscope size={13} /> Lab Tests ({labCount})
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowBookLabModal(true)}
+                className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <Microscope size={14} /> Book Lab Test
+              </button>
+            </div>
+
             {/* List of Appointment Cards */}
             <div className="space-y-3">
               {appointmentSegment === 'upcoming' ? (
@@ -991,6 +1123,11 @@ const PatientDashboard = () => {
                         key={apt._id || idx}
                         appointment={apt}
                         onClick={(a) => setSelectedAppointment(a)}
+                        onShowQrPass={(a) => {
+                          setSelectedLabPass(a);
+                          setShowLabQrPassModal(true);
+                        }}
+                        onRate={handleRateAppointment}
                       />
                     ))}
 
@@ -1063,6 +1200,11 @@ const PatientDashboard = () => {
                         key={apt._id || idx}
                         appointment={{ ...apt, status: apt.status || 'Completed' }}
                         onClick={(a) => setSelectedAppointment(a)}
+                        onShowQrPass={(a) => {
+                          setSelectedLabPass(a);
+                          setShowLabQrPassModal(true);
+                        }}
+                        onRate={handleRateAppointment}
                       />
                     ))}
 
@@ -1205,6 +1347,21 @@ const PatientDashboard = () => {
           targetName={editingReview.targetName}
           onSuccess={() => {
             setEditingReview(null);
+            fetchProfile();
+          }}
+        />
+      )}
+
+      {/* Direct Rating Modal from Completed Appointment Card (Doctor / Lab) */}
+      {ratingTarget && (
+        <RatingModal
+          isOpen={!!ratingTarget}
+          onClose={() => setRatingTarget(null)}
+          targetType={ratingTarget.targetType}
+          targetId={ratingTarget.targetId}
+          targetName={ratingTarget.targetName}
+          onSuccess={() => {
+            setRatingTarget(null);
             fetchProfile();
           }}
         />
@@ -1365,6 +1522,33 @@ const PatientDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Patient Rating & Review Hub Modal */}
+      <PatientRatingHubModal
+        isOpen={showRatingHub}
+        onClose={() => setShowRatingHub(false)}
+        appointments={appointments}
+        visitedClinics={patientData?.visitHistory?.map(v => v.clinicId).filter(Boolean) || []}
+      />
+
+      {/* Book Diagnostic Lab Modal */}
+      <BookLabModal
+        isOpen={showBookLabModal}
+        onClose={() => setShowBookLabModal(false)}
+        patientData={patientData}
+        onSuccess={() => fetchProfile()}
+        onShowQrPass={(apt) => {
+          setSelectedLabPass(apt);
+          setShowLabQrPassModal(true);
+        }}
+      />
+
+      {/* Diagnostic Lab Appointment QR Pass Modal */}
+      <LabQrPassModal
+        isOpen={showLabQrPassModal}
+        onClose={() => setShowLabQrPassModal(false)}
+        appointment={selectedLabPass}
+      />
     </div>
   );
 };

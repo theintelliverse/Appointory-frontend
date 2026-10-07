@@ -343,11 +343,12 @@ const DoctorDashboard = () => {
       p.tokenNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
 
+    const s = (p.status || '').toLowerCase();
     if (activeTab === 'All') return true;
-    if (activeTab === 'Pending') return !p.isApproved || p.status === 'Pending-Approval';
-    if (activeTab === 'Waiting') return p.status === 'Waiting';
-    if (activeTab === 'In') return p.status === 'In-Consultation';
-    if (activeTab === 'Completed') return p.status === 'Completed';
+    if (activeTab === 'Pending') return !p.isApproved || s === 'pending-approval' || s === 'pending';
+    if (activeTab === 'Waiting') return s === 'waiting';
+    if (activeTab === 'In') return s === 'in-consultation';
+    if (activeTab === 'Completed') return s === 'completed';
     return true;
   });
 

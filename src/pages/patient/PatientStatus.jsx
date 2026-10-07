@@ -7,10 +7,11 @@ import { SOCKET_URL, API_URL } from '../../config/runtime';
 import {
     Clock, ShieldCheck, Lock, XCircle, ArrowRight, UserCheck,
     RefreshCcw, Activity, Zap, AlertCircle, Heart, Wifi, WifiOff,
-    CheckCircle2, Stethoscope, Timer, Users, Sparkles, Hospital
+    CheckCircle2, Stethoscope, Timer, Users, Sparkles, Hospital, Star
 } from 'lucide-react';
 import SEO from '../../components/SEO';
 import PatientBottomNav from '../../components/patient/PatientBottomNav';
+import RatingModal from '../../components/patient/RatingModal';
 
 const socket = SOCKET_URL ? io(SOCKET_URL, {
     transports: ['websocket', 'polling'],
@@ -39,6 +40,7 @@ const PatientStatus = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [socketConnected, setSocketConnected] = useState(false);
+    const [ratingModalTarget, setRatingModalTarget] = useState(null);
     const tickRef = useRef(null);
     const isLoggedInPatient = localStorage.getItem('role') === 'patient' || !!localStorage.getItem('token');
 
@@ -57,6 +59,9 @@ const PatientStatus = () => {
 
             if (res.data.isCompleted || res.data.data?.status === 'Completed' || res.data.data?.status === 'Cancelled' || res.data.data?.isPastDay) {
                 setIsCompleted(true);
+                if (res.data.data) {
+                    setStatus(res.data.data);
+                }
             } else if (res.data.isPendingApproval) {
                 setIsPending(true);
             } else {
@@ -135,12 +140,12 @@ const PatientStatus = () => {
        LOADING SCREEN
     ═══════════════════════════════════════════ */
     if (loading) return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 flex flex-col items-center justify-center gap-6 font-sans relative overflow-hidden">
-            <Blob className="w-96 h-96 bg-teal-500 -top-20 -left-20" />
-            <Blob className="w-80 h-80 bg-cyan-400 bottom-0 right-0" />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-50 flex flex-col items-center justify-center gap-6 font-sans relative overflow-hidden">
+            <Blob className="w-96 h-96 bg-teal-200/40 -top-20 -left-20" />
+            <Blob className="w-80 h-80 bg-cyan-200/30 bottom-0 right-0" />
             <div className="relative z-10 text-center">
-                <div className="w-20 h-20 border-4 border-white/10 border-t-teal-400 rounded-full animate-spin mx-auto mb-6" />
-                <p className="text-white/80 text-sm font-medium">Connecting to live queue...</p>
+                <div className="w-16 h-16 border-4 border-slate-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-5" />
+                <p className="text-slate-600 text-sm font-semibold tracking-wide">Connecting to live queue...</p>
             </div>
         </div>
     );
@@ -208,40 +213,126 @@ const PatientStatus = () => {
        COMPLETED / NOT FOUND SCREEN
     ═══════════════════════════════════════════ */
     if (isCompleted || (!status && !loading)) return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-slate-900 flex items-center justify-center p-5 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-slate-50 flex items-center justify-center p-5 font-sans relative overflow-hidden">
             <SEO 
                 title="Consultation Completed" 
                 description="Your clinic consultation has been completed. View prescriptions and reports in your Health Locker." 
                 url={`/patient/status?id=${queueId}`} 
             />
-            <Blob className="w-96 h-96 bg-teal-500/40 -top-20 -right-20" />
-            <Blob className="w-80 h-80 bg-cyan-400/30 bottom-10 left-0" />
+            <Blob className="w-96 h-96 bg-teal-200/40 -top-20 -right-20" />
+            <Blob className="w-80 h-80 bg-cyan-200/30 bottom-10 left-0" />
 
-            <div className="relative z-10 w-full max-w-sm bg-white/10 backdrop-blur-xl rounded-[2.5rem] border border-white/20 p-10 text-center text-white">
-                <div className="text-7xl mb-6 animate-bounce">🎉</div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-400/20 border border-green-400/30 rounded-full mb-6">
-                    <CheckCircle2 size={14} className="text-green-400" />
-                    <span className="text-green-300 text-xs font-semibold uppercase tracking-wider">Visit Complete</span>
+            <div className="w-full max-w-sm relative z-10">
+                <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100/90 p-8 md:p-10 text-center">
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                        <div className="w-24 h-24 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-3xl flex items-center justify-center shadow-xl shadow-teal-500/25">
+                            <CheckCircle2 size={46} className="text-white" strokeWidth={2.2} />
+                        </div>
+                        <span className="absolute -top-1 -right-1 w-7 h-7 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center shadow-sm text-white">
+                            <Sparkles size={13} />
+                        </span>
+                    </div>
+
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-full mb-4">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        <span className="text-emerald-700 text-xs font-bold uppercase tracking-wider">Visit Complete</span>
+                    </div>
+
+                    <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">All Done!</h1>
+                    <p className="text-slate-500 text-sm leading-relaxed mb-7 font-medium">
+                        Your consultation is finished. Access your prescriptions, lab reports and visit history in your personal Health Locker.
+                    </p>
+
+                    <div className="flex flex-col gap-3">
+                        {/* 🌟 Rate Doctor & Clinic Section */}
+                        {status && (status.doctorId || status.clinicId) && (
+                            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/60 rounded-2xl border border-amber-200/80 text-left space-y-2.5 shadow-2xs">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-amber-400 text-white flex items-center justify-center shadow-xs shrink-0">
+                                        <Star size={14} className="fill-white" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xs font-bold text-slate-900">Rate Your Experience</h4>
+                                        <p className="text-[10px] text-slate-500 font-medium">Share verified feedback for other patients</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-1.5 pt-1">
+                                    {status.doctorId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setRatingModalTarget({
+                                                targetType: 'doctor',
+                                                targetId: status.doctorId,
+                                                targetName: status.doctorName || 'Doctor'
+                                            })}
+                                            className="w-full py-2 px-3 bg-white hover:bg-amber-100/60 text-slate-800 rounded-xl font-semibold text-xs border border-amber-200/80 shadow-2xs transition-all flex items-center justify-between group active:scale-98 cursor-pointer"
+                                        >
+                                            <span className="flex items-center gap-1.5 truncate">
+                                                <Star size={13} className="text-amber-500 fill-amber-500 shrink-0" />
+                                                <span className="truncate">Rate Dr. {status.doctorName || 'Doctor'}</span>
+                                            </span>
+                                            <ArrowRight size={13} className="text-amber-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                                        </button>
+                                    )}
+                                    {status.clinicId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setRatingModalTarget({
+                                                targetType: 'clinic',
+                                                targetId: status.clinicId,
+                                                targetName: status.clinicName || 'Clinic'
+                                            })}
+                                            className="w-full py-2 px-3 bg-white hover:bg-amber-100/60 text-slate-800 rounded-xl font-semibold text-xs border border-amber-200/80 shadow-2xs transition-all flex items-center justify-between group active:scale-98 cursor-pointer"
+                                        >
+                                            <span className="flex items-center gap-1.5 truncate">
+                                                <Star size={13} className="text-amber-500 fill-amber-500 shrink-0" />
+                                                <span className="truncate">Rate {status.clinicName || 'Clinic'}</span>
+                                            </span>
+                                            <ArrowRight size={13} className="text-amber-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => navigate(isLoggedInPatient ? '/patient/health-locker' : '/patient/login')}
+                            className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-teal-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Lock size={16} /> Open Health Locker
+                        </button>
+                        <button
+                            onClick={() => navigate(isLoggedInPatient ? '/patient/dashboard' : '/')}
+                            className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-bold text-xs uppercase tracking-wider border border-slate-200/60 transition-all flex items-center justify-center gap-2"
+                        >
+                            <ArrowRight size={14} /> Back to Dashboard
+                        </button>
+                    </div>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight mb-3">All Done!</h1>
-                <p className="text-white/70 text-sm leading-relaxed mb-8">
-                    Your consultation is finished. Access your prescriptions, lab reports and visit history in your personal Health Locker.
-                </p>
-                <div className="flex flex-col gap-3">
-                    <button
-                        onClick={() => navigate(isLoggedInPatient ? '/patient/health-locker' : '/patient/login')}
-                        className="w-full py-3.5 bg-gradient-to-r from-teal-400 to-cyan-400 text-slate-900 rounded-2xl font-bold text-sm shadow-xl shadow-teal-400/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                        <Lock size={18} /> Open Health Locker
-                    </button>
-                    <button
-                        onClick={() => navigate(isLoggedInPatient ? '/patient/dashboard' : '/')}
-                        className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-semibold text-xs border border-white/20 transition-all flex items-center justify-center gap-2"
-                    >
-                        <ArrowRight size={15} /> Back to Dashboard
-                    </button>
-                </div>
+
+                <p className="text-center text-xs font-medium text-slate-400 mt-6">Powered by Appointory</p>
             </div>
+
+            {/* Rating Modal */}
+            {ratingModalTarget && (
+                <RatingModal
+                    isOpen={!!ratingModalTarget}
+                    onClose={() => setRatingModalTarget(null)}
+                    targetType={ratingModalTarget.targetType}
+                    targetId={ratingModalTarget.targetId}
+                    targetName={ratingModalTarget.targetName}
+                    onSuccess={() => {
+                        setRatingModalTarget(null);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Review Submitted',
+                            text: 'Thank you for your valuable feedback!',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                    }}
+                />
+            )}
         </div>
     );
 

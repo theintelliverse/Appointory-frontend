@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin, Star, Clock, Stethoscope, ChevronRight } from 'lucide-react';
 
 const ClinicCard = ({ clinic, onBook }) => {
-  const name = clinic.name || 'Swasthya Healthcare Clinic';
+  const name = clinic.name || 'Appointory Partner Clinic';
   const specialty = clinic.specialty || clinic.category || 'General Medicine & Care';
   const ratingScore = typeof clinic.rating === 'object' ? clinic.rating?.score : clinic.rating;
   const ratingCount = typeof clinic.rating === 'object' ? clinic.rating?.count : (clinic.rating ? 1 : 0);

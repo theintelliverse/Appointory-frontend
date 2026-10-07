@@ -9,6 +9,15 @@ import {
 import SEO from '../../components/SEO';
 import { API_URL } from '../../config/runtime';
 
+const formatDoctorName = (name) => {
+  if (!name) return 'Doctor';
+  const trimmed = name.trim();
+  if (trimmed.toLowerCase().startsWith('dr.') || trimmed.toLowerCase().startsWith('dr ')) {
+    return trimmed;
+  }
+  return `Dr. ${trimmed}`;
+};
+
 const ClinicTVDisplay = () => {
   const [doctors, setDoctors] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -233,7 +242,7 @@ const ClinicTVDisplay = () => {
                 </div>
               </div>
 
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1 group-hover:text-teal-600 transition-colors">Dr. {doc.name}</h3>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1 group-hover:text-teal-600 transition-colors">{formatDoctorName(doc.name)}</h3>
               <p className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-8">{doc.specialization}</p>
 
               <div className="mt-auto flex justify-between items-center pt-5 border-t border-slate-100">
@@ -263,7 +272,7 @@ const ClinicTVDisplay = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-body overflow-hidden relative">
       <SEO 
-        title={`${selectedDoc ? 'Dr. ' + selectedDoc.name + ' | ' : ''}${clinicName} - Live Clinic TV Display | Appointory`} 
+        title={`${selectedDoc ? formatDoctorName(selectedDoc.name) + ' | ' : ''}${clinicName} - Live Clinic TV Display | Appointory`} 
         description={`Live queue status, doctor availability, and patient tracking for ${clinicName}. Powered by Appointory.`} 
         url={`/display/${clinicCode}`} 
       />
@@ -284,7 +293,7 @@ const ClinicTVDisplay = () => {
             </div>
             <div>
               <h1 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">
-                Dr. {selectedDoc.name}
+                {formatDoctorName(selectedDoc.name)}
               </h1>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-black uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200">
@@ -345,7 +354,7 @@ const ClinicTVDisplay = () => {
               </div>
               
               <h2 className="text-3xl lg:text-5xl font-black text-slate-900 tracking-tight truncate max-w-full px-4 text-center leading-tight">
-                {activePatient.patientName}
+                {activePatient.patientName || `Patient #${activePatient.tokenNumber}`}
               </h2>
 
               {activePatient.isEmergency && (
@@ -412,9 +421,14 @@ const ClinicTVDisplay = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-lg lg:text-xl font-black text-slate-900 tracking-tight truncate leading-tight group-hover:text-teal-700 transition-colors">
-                          {p.patientName}
+                          {p.patientName || `Patient #${p.tokenNumber}`}
                         </p>
                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          {p.visitType && (
+                            <span className="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                              {p.visitType}
+                            </span>
+                          )}
                           <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
                             p.currentStage === 'Lab-Completed' ? 'bg-emerald-100 text-emerald-800' : 
                             (p.currentStage && p.currentStage.includes('Lab') ? 'bg-amber-100 text-amber-800' : 

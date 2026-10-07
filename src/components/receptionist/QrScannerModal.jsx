@@ -48,23 +48,30 @@ const QrScannerModal = ({
   const token = localStorage.getItem('token');
   const clinicId = localStorage.getItem('clinicId');
 
-  // Auto-focus input on open
+  const formatDoctorName = (name) => {
+    if (!name) return 'Doctor';
+    const trimmed = name.trim();
+    return trimmed.startsWith('Dr.') ? trimmed : `Dr. ${trimmed}`;
+  };
+
+  // Auto-focus and reset state ONLY when modal is freshly opened
   useEffect(() => {
     if (isOpen) {
+      setInputVal('');
       setError(null);
       setSearchDone(false);
       setProfiles([]);
       setSelectedProfile(null);
+      setCleanPhone('');
       setNewName('');
       setNewAge('');
       setNewGender('Male');
       setNewBloodGroup('O+');
       setIsEmergency(false);
 
-      // Pre-select first available doctor if exists
       if (doctors && doctors.length > 0) {
         const availableDoc = doctors.find(d => d.isAvailable) || doctors[0];
-        setSelectedDoctorId(availableDoc._id || '');
+        setSelectedDoctorId(availableDoc?._id || '');
       }
 
       const timer = setTimeout(() => {
@@ -73,6 +80,19 @@ const QrScannerModal = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, doctors]);
+
+  // Keep selected doctor valid when doctor list updates, without resetting search results
+  useEffect(() => {
+    if (doctors && doctors.length > 0) {
+      setSelectedDoctorId(prev => {
+        if (prev && doctors.some(d => d._id === prev)) {
+          return prev;
+        }
+        const availableDoc = doctors.find(d => d.isAvailable) || doctors[0];
+        return availableDoc?._id || '';
+      });
+    }
+  }, [doctors]);
 
   const stopCamera = useCallback(() => {
     if (videoRef.current?.srcObject) {
@@ -250,7 +270,7 @@ const QrScannerModal = ({
 
         Swal.fire({
           icon: isEmergency ? 'warning' : 'success',
-          title: isEmergency ? '🚨 Emergency Token Issued' : '🎉 Token Generated Successfully',
+          title: isEmergency ? 'Emergency Token Issued' : 'Token Generated Successfully',
           html: `
             <div style="font-size: 14px; text-align: center;">
               <p style="font-size: 28px; font-weight: 800; color: #0F766E; margin: 8px 0;">${tokenNumber}</p>
@@ -533,7 +553,7 @@ const QrScannerModal = ({
                       <option value="">-- Choose Doctor --</option>
                       {doctors.map(d => (
                         <option key={d._id} value={d._id}>
-                          Dr. {d.name} {!d.isAvailable ? '(On Break)' : '(Available)'}
+                          {formatDoctorName(d.name)} {!d.isAvailable ? '(On Break)' : '(Available)'}
                         </option>
                       ))}
                     </select>
@@ -681,7 +701,7 @@ const QrScannerModal = ({
                       <option value="">-- Choose Doctor --</option>
                       {doctors.map(d => (
                         <option key={d._id} value={d._id}>
-                          Dr. {d.name} {!d.isAvailable ? '(On Break)' : ''}
+                          {formatDoctorName(d.name)} {!d.isAvailable ? '(On Break)' : '(Available)'}
                         </option>
                       ))}
                     </select>

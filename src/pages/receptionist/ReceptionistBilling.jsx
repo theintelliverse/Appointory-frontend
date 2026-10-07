@@ -1432,7 +1432,7 @@ const ReceptionistBilling = () => {
                       required
                       placeholder="e.g. Rahul Sharma"
                       value={formData.patientName}
-                      onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:outline-none"
                     />
                   </div>
@@ -1445,7 +1445,7 @@ const ReceptionistBilling = () => {
                       required
                       placeholder="10-digit phone number"
                       value={formData.patientPhone}
-                      onChange={(e) => setFormData({ ...formData, patientPhone: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, patientPhone: e.target.value }))}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:outline-none"
                     />
                   </div>
@@ -1466,11 +1466,11 @@ const ReceptionistBilling = () => {
                         onChange={(e) => {
                           const selectedId = e.target.value;
                           const doc = doctors.find(d => String(d._id) === String(selectedId));
-                          setFormData({
-                            ...formData,
+                          setFormData(prev => ({
+                            ...prev,
                             doctorId: selectedId,
                             doctorName: doc ? doc.name : ''
-                          });
+                          }));
                         }}
                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:bg-white focus:border-teal-600 focus:outline-none"
                       >
@@ -1795,7 +1795,7 @@ const ReceptionistBilling = () => {
                       required
                       min="0"
                       value={formData.paidAmount}
-                      onChange={(e) => setFormData({ ...formData, paidAmount: Number(e.target.value) })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paidAmount: Number(e.target.value) }))}
                       className="w-full px-3.5 py-2.5 bg-emerald-50/60 border border-emerald-300 rounded-xl text-base font-black text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
@@ -1808,7 +1808,7 @@ const ReceptionistBilling = () => {
                         <button
                           key={mode}
                           type="button"
-                          onClick={() => setFormData({ ...formData, paymentMode: mode })}
+                          onClick={() => setFormData(prev => ({ ...prev, paymentMode: mode }))}
                           className={`py-2 rounded-lg text-xs font-bold transition-all border ${formData.paymentMode === mode
                             ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -1839,7 +1839,7 @@ const ReceptionistBilling = () => {
                     rows={2}
                     placeholder="Optional remarks (e.g. Paid via PhonePe UPI)..."
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none"
                   />
                 </div>

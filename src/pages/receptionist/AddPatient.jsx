@@ -387,7 +387,7 @@ const AddPatient = () => {
                     <span className="text-[14px] font-black text-khaki uppercase tracking-widest">Emergency Priority?</span>
                     <button 
                       type="button" 
-                      onClick={() => setFormData({ ...formData, isEmergency: !formData.isEmergency })}
+                      onClick={() => setFormData(prev => ({ ...prev, isEmergency: !prev.isEmergency }))}
                       className={`w-12 h-6 rounded-full relative transition-all ${formData.isEmergency ? 'bg-red-500' : 'bg-slate-200'}`}
                     >
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isEmergency ? 'left-7' : 'left-1'}`}></div>
@@ -532,7 +532,7 @@ const AddPatient = () => {
                         type="text" required placeholder="e.g. Sameer Dixit"
                         className="w-full pl-10 pr-3 py-2.5 bg-parchment/30 border border-sandstone rounded-xl outline-none focus:border-marigold text-[14px] font-bold text-teak"
                         value={formData.patientName}
-                        onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
                       />
                     </div>
                   </div>
@@ -543,7 +543,7 @@ const AddPatient = () => {
                     <select 
                       className="w-full px-3 py-2.5 bg-parchment/30 border border-sandstone rounded-xl outline-none focus:border-marigold text-[14px] font-bold text-teak"
                       value={formData.visitType}
-                      onChange={(e) => setFormData({ ...formData, visitType: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, visitType: e.target.value }))}
                     >
                       <option value="Walk-in">Walk-in consultation</option>
                       <option value="Appointment">Scheduled Appointment</option>
@@ -558,7 +558,7 @@ const AddPatient = () => {
                       type="number" placeholder="Age in years"
                       className="w-full px-3 py-2.5 bg-parchment/30 border border-sandstone rounded-xl outline-none focus:border-marigold text-[14px] font-bold text-teak"
                       value={formData.patientAge}
-                      onChange={(e) => setFormData({ ...formData, patientAge: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, patientAge: e.target.value }))}
                     />
                   </div>
 
@@ -568,7 +568,7 @@ const AddPatient = () => {
                     <select 
                       className="w-full px-3 py-2.5 bg-parchment/30 border border-sandstone rounded-xl outline-none focus:border-marigold text-[14px] font-bold text-teak"
                       value={formData.patientGender}
-                      onChange={(e) => setFormData({ ...formData, patientGender: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, patientGender: e.target.value }))}
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -582,7 +582,7 @@ const AddPatient = () => {
                     <select 
                       className="w-full px-3 py-2.5 bg-parchment/30 border border-sandstone rounded-xl outline-none focus:border-marigold text-[14px] font-bold text-teak"
                       value={formData.patientBloodGroup}
-                      onChange={(e) => setFormData({ ...formData, patientBloodGroup: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, patientBloodGroup: e.target.value }))}
                     >
                       {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map(bg => (
                         <option key={bg} value={bg}>{bg}</option>
@@ -603,7 +603,7 @@ const AddPatient = () => {
                         type="text" placeholder="120/80"
                         className="px-3 py-2 bg-teal-50/10 border border-teal-100 rounded-lg outline-none focus:border-teal-600 text-[14px] font-bold text-teak placeholder:text-khaki/30"
                         value={formData.vitals.bloodPressure}
-                        onChange={(e) => setFormData({ ...formData, vitals: { ...formData.vitals, bloodPressure: e.target.value } })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, vitals: { ...prev.vitals, bloodPressure: e.target.value } }))}
                       />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -612,7 +612,7 @@ const AddPatient = () => {
                         type="text" placeholder="72"
                         className="px-3 py-2 bg-teal-50/10 border border-teal-100 rounded-lg outline-none focus:border-teal-600 text-[14px] font-bold text-teak placeholder:text-khaki/30"
                         value={formData.vitals.pulseRate}
-                        onChange={(e) => setFormData({ ...formData, vitals: { ...formData.vitals, pulseRate: e.target.value } })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, vitals: { ...prev.vitals, pulseRate: e.target.value } }))}
                       />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -621,7 +621,7 @@ const AddPatient = () => {
                         type="text" placeholder="98.6"
                         className="px-3 py-2 bg-teal-50/10 border border-teal-100 rounded-lg outline-none focus:border-teal-600 text-[14px] font-bold text-teak placeholder:text-khaki/30"
                         value={formData.vitals.temperature}
-                        onChange={(e) => setFormData({ ...formData, vitals: { ...formData.vitals, temperature: e.target.value } })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, vitals: { ...prev.vitals, temperature: e.target.value } }))}
                       />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -630,7 +630,7 @@ const AddPatient = () => {
                         type="text" placeholder="100"
                         className="px-3 py-2 bg-teal-50/10 border border-teal-100 rounded-lg outline-none focus:border-teal-600 text-[14px] font-bold text-teak placeholder:text-khaki/30"
                         value={formData.vitals.sugarLevel}
-                        onChange={(e) => setFormData({ ...formData, vitals: { ...formData.vitals, sugarLevel: e.target.value } })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, vitals: { ...prev.vitals, sugarLevel: e.target.value } }))}
                       />
                     </div>
                   </div>
@@ -659,7 +659,7 @@ const AddPatient = () => {
                         return (
                           <div
                             key={doc._id}
-                            onClick={() => setFormData({ ...formData, doctorId: doc._id })}
+                            onClick={() => setFormData(prev => ({ ...prev, doctorId: doc._id }))}
                             className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
                               isSelected
                                 ? onLeave ? 'border-orange-400 bg-orange-50/30'

@@ -15,7 +15,6 @@ import { API_URL } from '../../config/runtime';
 const ProfilePage = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
-    const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saveLoading, setSaveLoading] = useState(false);
     const token = localStorage.getItem('token');
@@ -69,7 +68,7 @@ const ProfilePage = () => {
     }, [token, fetchProfile, navigate]);
 
     const handleUpdate = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         setSaveLoading(true);
         try {
             const endpoint = role === 'patient'
@@ -96,7 +95,6 @@ const ProfilePage = () => {
                 showConfirmButton: false,
                 background: '#F8FAFC'
             });
-            setIsEditing(false);
             setUser(res.data.data); // Update local state with fresh data from server
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Something went wrong.', confirmButtonColor: '#0D9488' });
@@ -185,12 +183,14 @@ const ProfilePage = () => {
 
                                     <div className="flex flex-col w-full gap-2 relative z-10">
                                         <button 
-                                            onClick={() => setIsEditing(!isEditing)} 
-                                            className={`w-full py-2.5 rounded-xl font-black text-[14px] uppercase tracking-[0.2em] transition-all border flex justify-center items-center gap-2.5 overflow-hidden relative group/btn ${isEditing ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20' : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'}`}
+                                            type="button"
+                                            onClick={handleUpdate} 
+                                            disabled={saveLoading}
+                                            className="w-full py-2.5 rounded-xl font-black text-[14px] uppercase tracking-[0.2em] transition-all border flex justify-center items-center gap-2.5 overflow-hidden relative group/btn bg-teal-500/15 text-teal-300 border-teal-500/30 hover:bg-teal-500/25 active:scale-95 disabled:opacity-50 shadow-lg shadow-teal-500/10"
                                         >
-                                            <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                                            <div className="absolute inset-0 bg-teal-500/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
                                             <span className="relative z-10 flex items-center gap-2.5">
-                                                {isEditing ? <><X size={14} /> Cancel</> : <><Edit3 size={14} /> Edit Profile</>}
+                                                {saveLoading ? <Loader size={14} className="animate-spin text-teal-400" /> : <><Save size={14} /> Save Profile</>}
                                             </span>
                                         </button>
                                         <button 
@@ -238,12 +238,15 @@ const ProfilePage = () => {
                                 <div className="mb-6 pb-6 border-b border-slate-100/50 flex items-center justify-between relative z-10">
                                     <div>
                                         <h3 className="text-xl font-black text-slate-900 tracking-tight">Profile Details</h3>
+                                        <p className="text-xs font-bold text-teal-600 mt-0.5">Directly editable • Click any field to update</p>
                                     </div>
-                                    {isEditing && (
-                                        <button type="submit" disabled={saveLoading} className="hidden sm:flex px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-[14px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all items-center gap-2.5 active:scale-95 disabled:opacity-50">
-                                            {saveLoading ? <Loader size={14} className="animate-spin text-teal-400" /> : <Save size={14} className="text-teal-400" />} Save Changes
-                                        </button>
-                                    )}
+                                    <button 
+                                        type="submit" 
+                                        disabled={saveLoading} 
+                                        className="flex px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-[14px] uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 transition-all items-center gap-2.5 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {saveLoading ? <Loader size={14} className="animate-spin text-teal-400" /> : <Save size={14} className="text-teal-400" />} Save Changes
+                                    </button>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-x-6 gap-y-5 relative z-10">
@@ -251,7 +254,6 @@ const ProfilePage = () => {
                                         icon={<User size={18} />} 
                                         label="Full Identity" 
                                         value={user.name} 
-                                        disabled={!isEditing} 
                                         onChange={(val) => setUser({...user, name: val})} 
                                     />
                                     <ProfileInput 
@@ -274,18 +276,16 @@ const ProfilePage = () => {
                                                 label="Current Age" 
                                                 value={user.age} 
                                                 type="number"
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, age: val})} 
                                             />
                                             <div className="space-y-2 group">
                                                 <label className="text-[14px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em] group-focus-within:text-teal-600 transition-colors">Gender Identity</label>
                                                 <div className="relative">
-                                                    <div className={`absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors ${isEditing && 'group-focus-within:text-teal-600'}`}>
+                                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors">
                                                         <UserCircle size={16} />
                                                     </div>
                                                     <select 
-                                                        disabled={!isEditing}
-                                                        className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200/60 rounded-xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white font-black text-[14px] text-slate-900 shadow-sm appearance-none disabled:opacity-60 disabled:bg-slate-50 transition-all duration-300"
+                                                        className="w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200/60 rounded-xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white font-black text-[14px] text-slate-900 shadow-sm appearance-none transition-all duration-300"
                                                         value={user.gender || ''}
                                                         onChange={(e) => setUser({...user, gender: e.target.value})}
                                                     >
@@ -300,7 +300,6 @@ const ProfilePage = () => {
                                                 icon={<Droplet size={18} />} 
                                                 label="Blood Group" 
                                                 value={user.bloodGroup} 
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, bloodGroup: val})} 
                                                 placeholder="e.g. O+ve"
                                             />
@@ -311,7 +310,6 @@ const ProfilePage = () => {
                                                 icon={<MapPin size={18} />} 
                                                 label="Clinic Location" 
                                                 value={user.clinicLocation} 
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, clinicLocation: val})} 
                                                 placeholder="e.g. Main Street, New Delhi"
                                             />
@@ -319,7 +317,6 @@ const ProfilePage = () => {
                                                 icon={<Phone size={18} />} 
                                                 label="Clinic Contact" 
                                                 value={user.clinicContact} 
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, clinicContact: val})} 
                                                 placeholder="e.g. +91 98765 43210"
                                             />
@@ -327,7 +324,6 @@ const ProfilePage = () => {
                                                 icon={<GraduationCap size={18} />} 
                                                 label="Clinical Credentials" 
                                                 value={user.education} 
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, education: val})} 
                                                 placeholder="e.g. MBBS, MD"
                                             />
@@ -336,7 +332,6 @@ const ProfilePage = () => {
                                                 label="Years of Experience" 
                                                 value={user.experience} 
                                                 type="number"
-                                                disabled={!isEditing} 
                                                 onChange={(val) => setUser({...user, experience: val})} 
                                             />
                                             {role === 'doctor' && (
@@ -345,7 +340,6 @@ const ProfilePage = () => {
                                                         icon={<Clock size={18} />} 
                                                         label="Session Avg (Mins)" 
                                                         value={user.avgWaitTime} 
-                                                        disabled={!isEditing} 
                                                         onChange={(val) => setUser({...user, avgWaitTime: val})} 
                                                     />
                                                     <ProfileInput 
@@ -353,24 +347,42 @@ const ProfilePage = () => {
                                                         label="Consultation Fee (₹)" 
                                                         type="number"
                                                         value={user.consultationFee} 
-                                                        disabled={!isEditing} 
                                                         onChange={(val) => setUser({...user, consultationFee: val})} 
                                                     />
                                                     <ProfileInput 
                                                         icon={<ShieldCheck size={18} />} 
                                                         label="Medical License #" 
                                                         value={user.medicalLicenseNumber} 
-                                                        disabled={!isEditing} 
                                                         onChange={(val) => setUser({...user, medicalLicenseNumber: val})} 
+                                                        placeholder="e.g. MCI-2023-XXXX"
                                                     />
-                                                    <ProfileInput 
-                                                        icon={<UserCircle size={18} />} 
-                                                        label="Public Profile Slug" 
-                                                        value={user.slug} 
-                                                        disabled={!isEditing} 
-                                                        placeholder="e.g. dr-rahul-sharma"
-                                                        onChange={(val) => setUser({...user, slug: val})} 
-                                                    />
+                                                    <div className="space-y-2 group relative">
+                                                        <label className="text-[14px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em] group-focus-within:text-teal-600 transition-colors flex items-center justify-between">
+                                                            <span>Public Profile Slug</span>
+                                                            <span className="text-[11px] font-bold text-teal-600 normal-case tracking-normal">Editable</span>
+                                                        </label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors">
+                                                                <UserCircle size={18} />
+                                                            </div>
+                                                            <input 
+                                                                type="text"
+                                                                placeholder="e.g. dr-abhishek-rao"
+                                                                className="w-full pl-12 pr-4 py-4 bg-white/50 border border-slate-200/60 rounded-2xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white font-black text-sm text-slate-900 shadow-sm transition-all duration-300"
+                                                                value={user.slug || ''} 
+                                                                onChange={(e) => {
+                                                                    const cleanSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                                                                    setUser({...user, slug: cleanSlug});
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        {user.slug && (
+                                                            <p className="text-[12px] font-bold text-teal-600 pl-1 flex items-center gap-1.5 truncate">
+                                                                <span>🔗 Booking URL:</span>
+                                                                <span className="text-slate-600 font-mono text-[11px]">/doctor/{user.slug}</span>
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </>
                                             )}
                                         </>
@@ -378,30 +390,32 @@ const ProfilePage = () => {
                                 </div>
 
                                 <div className="mt-10 space-y-3 group relative z-10">
-                                    <label className="text-[14px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em] flex items-center gap-2 group-focus-within:text-teal-600 transition-colors">
-                                        <BookOpen size={16} className="text-teal-500" /> 
-                                        {role === 'patient' ? 'Personal Health Bio' : 'Professional Biography'}
-                                    </label>
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-[14px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-2 group-focus-within:text-teal-600 transition-colors">
+                                            <BookOpen size={16} className="text-teal-500" /> 
+                                            {role === 'patient' ? 'Personal Health Bio' : 'Professional Biography'}
+                                        </label>
+                                        <span className="text-xs font-bold text-slate-400">
+                                            {(user.bio || '').length} / 500
+                                        </span>
+                                    </div>
                                     <textarea 
-                                        disabled={!isEditing}
                                         maxLength="500"
-                                        placeholder={role === 'patient' ? "Briefly share your health history or fitness goals..." : "Share your professional journey and clinical expertise..."}
-                                        className="w-full p-6 bg-white/50 border border-slate-200/60 rounded-3xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white h-36 md:h-48 resize-none font-black text-sm text-slate-900 transition-all duration-300 disabled:opacity-60 disabled:bg-slate-50 shadow-inner custom-scrollbar"
+                                        placeholder={role === 'patient' ? "Briefly share your health history or fitness goals..." : "Share your professional journey, clinical expertise, and medical background..."}
+                                        className="w-full p-6 bg-white/50 border border-slate-200/60 rounded-3xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white h-36 md:h-48 resize-none font-medium text-sm text-slate-900 transition-all duration-300 shadow-inner custom-scrollbar"
                                         value={user.bio || ''}
                                         onChange={(e) => setUser({...user, bio: e.target.value})}
                                     />
                                 </div>
 
-                                {isEditing && (
-                                    <button 
-                                        type="submit" 
-                                        disabled={saveLoading}
-                                        className="w-full mt-10 py-5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[14px] uppercase tracking-[0.25em] shadow-[0_15px_30px_rgba(15,23,42,0.2)] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 relative z-10 overflow-hidden group/btn"
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 via-indigo-500/20 to-teal-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
-                                        {saveLoading ? <Loader className="animate-spin text-teal-400" size={20} /> : <><Save size={20} className="text-teal-400" /> Save Clinical Changes</>}
-                                    </button>
-                                )}
+                                <button 
+                                    type="submit" 
+                                    disabled={saveLoading}
+                                    className="w-full mt-10 py-5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[14px] uppercase tracking-[0.25em] shadow-[0_15px_30px_rgba(15,23,42,0.2)] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 relative z-10 overflow-hidden group/btn"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 via-indigo-500/20 to-teal-500/20 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
+                                    {saveLoading ? <Loader className="animate-spin text-teal-400" size={20} /> : <><Save size={20} className="text-teal-400" /> Save Clinical Changes</>}
+                                </button>
                             </form>
                         </div>
                     </div>

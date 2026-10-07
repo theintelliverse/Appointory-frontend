@@ -7,7 +7,6 @@ import {
     Eye, EyeOff, Lock, CheckCircle, Activity, ShieldCheck, Zap
 } from 'lucide-react';
 import SEO from '../../components/SEO';
-import { trackEvent, setAnalyticsUser } from '../../utils/analytics';
 import { API_URL } from '../../config/runtime';
 
 const PatientRegister = () => {
@@ -173,7 +172,7 @@ const PatientRegister = () => {
 
                 Swal.fire({
                     icon: 'success',
-                    title: '🎉 Welcome!',
+                    title: 'Welcome to Appointory!',
                     text: `Account created for ${res.data.patient.name}`,
                     timer: 2000,
                     showConfirmButton: false,

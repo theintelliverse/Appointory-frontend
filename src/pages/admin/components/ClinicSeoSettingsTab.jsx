@@ -85,8 +85,11 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
         setFaqs(seo.faqs && seo.faqs.length > 0 ? seo.faqs : []);
         setOgImageUrl(seo.ogImageUrl || '');
         setGoogleBusinessUrl(seo.googleBusinessUrl || '');
-        setNoindex(Boolean(seo.noindex));
-        setSlug(d.slug || '');
+        const serverSlug = (d.slug || '').trim();
+        const safeSlug = (serverSlug && serverSlug !== 'clinic')
+          ? serverSlug
+          : (d.name ? `${d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}${d.clinicCode ? `-${d.clinicCode.toLowerCase()}` : ''}` : (d.clinicCode ? d.clinicCode.toLowerCase() : ''));
+        setSlug(safeSlug);
         setCity(d.city || '');
         setPublicConsent(Boolean(d.publicConsent));
 
@@ -154,10 +157,37 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
     return `${cName} in ${cCity}.${topServices ? ` Top services: ${topServices}.` : ''} Live token queue, no waiting room.`.slice(0, 170);
   }, [metaDescription, serverState, city, services]);
 
-  const currentSlug = (slug || serverState?.slug || (serverState?.clinicCode ? serverState.clinicCode.toLowerCase() : '') || (serverState?.clinicId ? String(serverState.clinicId) : '')).trim();
+  const clinicId = serverState?.clinicId || '';
+  const clinicCode = (serverState?.clinicCode || '').toLowerCase();
+
+  const currentSlug = useMemo(() => {
+    const s = (slug || serverState?.slug || '').trim();
+    if (s && s !== 'clinic') return s;
+    if (serverState?.name) {
+      const namePart = serverState.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (namePart && namePart !== 'clinic') {
+        return clinicCode ? `${namePart}-${clinicCode}` : namePart;
+      }
+    }
+    if (clinicCode) return clinicCode;
+    return s || (clinicId ? String(clinicId) : 'clinic');
+  }, [slug, serverState, clinicCode, clinicId]);
+
   const siteDomain = typeof window !== 'undefined' ? window.location.origin : 'https://appointory.in';
-  const publicPageUrl = currentSlug ? `${siteDomain}/c/${currentSlug}` : siteDomain;
-  const bookingPageUrl = currentSlug ? `${siteDomain}/c/${currentSlug}?book=1` : `${siteDomain}/patient/book-appointment`;
+  const publicPageUrl = `${siteDomain}/c/${currentSlug}`;
+
+  // 🎯 Direct 1-Click Booking URL: Opens public /book with clinic pre-selected for instant booking!
+  const bookingPageUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (clinicId) params.set('clinicId', clinicId);
+    if (currentSlug && currentSlug !== 'clinic') {
+      params.set('clinic', currentSlug);
+    } else if (clinicCode) {
+      params.set('clinic', clinicCode);
+    }
+    params.set('utm_source', 'qr');
+    return `${siteDomain}/book?${params.toString()}`;
+  }, [siteDomain, clinicId, currentSlug, clinicCode]);
 
   // -------------------------------------------------------------
   // 🔍 SEO SCORE EVALUATION ENGINE (0 to 100)
@@ -533,6 +563,17 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               />
               <div className="w-14 h-7 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-teal-700"></div>
             </label>
+            {isDirty && (
+              <button
+                type="button"
+                disabled={saving || !publicConsent}
+                onClick={handleSave}
+                className="ml-2 px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                <Save size={14} />
+                {saving ? 'Publishing...' : 'Publish'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1080,9 +1121,9 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               </div>
             </div>
 
-            {/* Direct Booking URL (?book=1) */}
+            {/* Direct Booking URL */}
             <div className="space-y-1">
-              <span className="text-[10.5px] font-black uppercase tracking-wider text-khaki">Instant 1-Click Booking URL (?book=1)</span>
+              <span className="text-[10.5px] font-black uppercase tracking-wider text-khaki">Direct 1-Click Booking URL (Pre-selects Clinic)</span>
               <div className="flex items-center gap-2 bg-parchment p-2.5 rounded-xl border border-sandstone">
                 <span className="text-xs font-mono text-teal-800 font-bold truncate flex-grow">{bookingPageUrl}</span>
                 <a
@@ -1109,11 +1150,14 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
               <div ref={qrRef} className="p-3 bg-white border border-sandstone rounded-2xl shadow-sm mb-2">
                 <QRCodeCanvas
                   value={bookingPageUrl}
-                  size={120}
+                  size={130}
                   level="H"
                   includeMargin={false}
                 />
               </div>
+              <p className="text-[11px] text-slate-500 font-medium text-center mb-2 px-2">
+                Patients scan this QR to directly book an appointment at your clinic
+              </p>
               <button
                 type="button"
                 onClick={handleDownloadQr}
@@ -1154,8 +1198,8 @@ export default function ClinicSeoSettingsTab({ onConsentUpdated }) {
         </div>
       </div>
 
-      {/* Floating or Fixed Save Action Bar */}
-      <div className="sticky bottom-4 z-20 bg-white/95 backdrop-blur-md border border-sandstone rounded-3xl p-4 md:p-5 shadow-xl max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* Save Action Bar */}
+      <div className="bg-white border border-sandstone rounded-3xl p-5 md:p-6 shadow-sm max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 mb-6">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-teak">
             {isDirty ? '⚠️ Unsaved Changes Detected' : '✓ All SEO Settings In Sync'}

@@ -53,12 +53,20 @@ const ClinicPublicProfile = () => {
               source: 'url_book_param',
               utm_source: utmSource
             });
-            navigate(`/patient/book-appointment?clinicId=${clinicObj._id}&clinic=${clinicObj.slug || clinicObj.clinicCode}&utm_source=${utmSource}`, { replace: true });
+            navigate(`/book?clinicId=${clinicObj._id}&clinic=${clinicObj.slug || clinicObj.clinicCode}&utm_source=${utmSource}`, { replace: true });
           }
         } else {
+          if (isBookRequested) {
+            navigate(`/book?clinic=${encodeURIComponent(identifier)}&utm_source=${utmSource}`, { replace: true });
+            return;
+          }
           setError(res.data.message || 'Clinic profile not found.');
         }
       } catch (err) {
+        if (isBookRequested) {
+          navigate(`/book?clinic=${encodeURIComponent(identifier)}&utm_source=${utmSource}`, { replace: true });
+          return;
+        }
         setError(err.response?.data?.message || 'Failed to load clinic public profile.');
       } finally {
         setLoading(false);
@@ -76,7 +84,7 @@ const ClinicPublicProfile = () => {
       source: 'sticky_button',
       utm_source: utmSource
     });
-    navigate(`/patient/book-appointment?clinicId=${data.clinic._id}&clinic=${data.clinic.slug || data.clinic.clinicCode}&utm_source=${utmSource}`);
+    navigate(`/book?clinicId=${data.clinic._id}&clinic=${data.clinic.slug || data.clinic.clinicCode}&utm_source=${utmSource}`);
   };
 
   const handleShare = () => {

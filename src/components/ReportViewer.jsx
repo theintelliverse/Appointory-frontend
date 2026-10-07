@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { 
@@ -359,10 +360,10 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
         setError(false);
     };
 
-    return (
+    const content = (
         <div 
             ref={viewerContainerRef}
-            className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[999] flex flex-col overflow-hidden animate-in fade-in duration-200 select-none font-body"
+            className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[99999] flex flex-col overflow-hidden animate-in fade-in duration-200 select-none font-body"
         >
             {/* --- Top Header Bar --- */}
             <header className="flex items-center justify-between px-3 sm:px-6 py-3 bg-slate-900/90 border-b border-slate-800 text-white z-30 shrink-0 gap-2">
@@ -665,6 +666,8 @@ const ReportViewer = ({ documents, initialIndex = 0, onClose, onReportRemoved })
             </footer>
         </div>
     );
+
+    return typeof document !== 'undefined' ? createPortal(content, document.body) : content;
 };
 
 export default ReportViewer;

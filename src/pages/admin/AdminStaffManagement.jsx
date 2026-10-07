@@ -6,7 +6,7 @@ import { SOCKET_URL } from '../../config/runtime'; // Importing runtime socket U
 import {
   Archive, RefreshCw, UserPlus, Search, Users,
   ShieldCheck, Activity, UserCheck, History, AlertCircle, Trash2, Key,
-  FlaskConical, Link2, Unlink, Check, X, Eye, EyeOff
+  FlaskConical, Link2, Unlink, Check, X, Eye, EyeOff, Mail
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -488,21 +488,26 @@ const AdminStaffManagement = () => {
                     {member.role === 'doctor' ? member.specialization : member.role === 'lab' ? 'Diagnostics' : 'Reception'}
                   </p>
 
-                  <div className="pt-6 border-t border-sandstone/50 flex items-center justify-between">
-                    <span className="text-[14px] font-bold text-khaki truncate max-w-[120px]">{member.email}</span>
-                    <div className="flex gap-1">
+                  <div className="pt-4 border-t border-sandstone/50 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <Mail size={13} className="text-sandstone shrink-0" />
+                      <span className="text-xs md:text-[13px] font-bold text-khaki break-all select-all hover:text-teak transition-colors leading-tight" title={member.email}>
+                        {member.email}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
                       {activeView === 'active' && (
                         <>
-                          <button onClick={() => handleUpdateCredentials(member._id, member.name)} className="p-2.5 text-khaki hover:text-marigold hover:bg-parchment rounded-xl transition-all" title="Change Password / Credentials">
-                            <Key size={16} />
+                          <button onClick={() => handleUpdateCredentials(member._id, member.name)} className="p-2 text-khaki hover:text-marigold hover:bg-parchment rounded-xl transition-all" title="Change Password / Credentials">
+                            <Key size={15} />
                           </button>
-                          <button onClick={() => handleRemove(member._id, member.name)} className="p-2.5 text-khaki hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Remove Staff">
-                            <Trash2 size={16} />
+                          <button onClick={() => handleRemove(member._id, member.name)} className="p-2 text-khaki hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Remove Staff">
+                            <Trash2 size={15} />
                           </button>
                         </>
                       )}
-                      <button className="p-2.5 text-khaki hover:text-marigold hover:bg-parchment rounded-xl transition-all" title="View History">
-                        <History size={16} />
+                      <button className="p-2 text-khaki hover:text-marigold hover:bg-parchment rounded-xl transition-all" title="View History">
+                        <History size={15} />
                       </button>
                     </div>
                   </div>

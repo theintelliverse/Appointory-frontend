@@ -107,6 +107,24 @@ const PatientRatingHubModal = ({
     return Array.from(map.values());
   }, [appointments, visitedClinics]);
 
+  const recentLabs = useMemo(() => {
+    const map = new Map();
+    appointments.forEach(apt => {
+      const labId = apt.labId?._id || apt.labId;
+      const labName = apt.labName || apt.labId?.labName;
+      if (labId && labName && !map.has(labId.toString())) {
+        map.set(labId.toString(), {
+          id: labId.toString(),
+          name: labName,
+          type: 'lab',
+          subtitle: apt.labAddress || apt.labId?.address || 'Diagnostic Laboratory',
+          rating: apt.labId?.rating || { score: 0, count: 0 }
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [appointments]);
+
   // Search when activeTab is a directory or when typing query
   useEffect(() => {
     if (activeTab === 'my-reviews') return;
@@ -511,6 +529,46 @@ const PatientRatingHubModal = ({
                   ) : (
                     <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
                       No clinic visits on record yet.
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Diagnostic Labs */}
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+                    <Microscope size={14} className="text-teal-600" />
+                    Diagnostic Labs You Visited ({recentLabs.length})
+                  </h3>
+                  {recentLabs.length > 0 ? (
+                    <div className="grid sm:grid-cols-2 gap-2.5">
+                      {recentLabs.map(lab => {
+                        const existing = myReviews.find(r => r.targetType === 'lab' && r.targetId?.toString() === lab.id?.toString());
+                        return (
+                          <div 
+                            key={lab.id} 
+                            onClick={() => handleSelect(lab)}
+                            className="p-3.5 bg-white border border-slate-200 hover:border-teal-400 hover:bg-teal-50/20 rounded-2xl cursor-pointer transition shadow-2xs group flex items-center justify-between"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <h4 className="font-bold text-slate-900 text-sm truncate">{lab.name}</h4>
+                              <p className="text-xs text-slate-500 truncate">{lab.subtitle}</p>
+                            </div>
+                            <button 
+                              type="button" 
+                              className={`px-3 py-1.5 text-white font-bold text-xs rounded-xl flex items-center gap-1 shrink-0 shadow-2xs ${
+                                existing ? 'bg-teal-600 hover:bg-teal-700' : 'bg-amber-500 group-hover:bg-amber-600'
+                              }`}
+                            >
+                              {existing ? <Edit3 size={12} /> : <Star size={12} className="fill-white" />}
+                              <span>{existing ? 'Edit' : 'Rate'}</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                      No lab visits on record yet.
                     </div>
                   )}
                 </div>
