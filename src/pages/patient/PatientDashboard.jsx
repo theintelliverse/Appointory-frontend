@@ -1142,7 +1142,7 @@ const PatientDashboard = () => {
 
       {/* Modern QR Health Card Modal */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-teal-500/30 rounded-3xl max-w-sm w-full p-6 text-center space-y-5 relative shadow-2xl text-white overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
               <ShieldCheck size={120} />
@@ -1212,9 +1212,9 @@ const PatientDashboard = () => {
 
       {/* Direct Upload Health Document Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+        <div className="fixed inset-0 z-[200] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85dvh] sm:max-h-[88vh] my-auto">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <FileUp className="text-teal-400" size={20} />
                 <h3 className="font-bold text-base tracking-tight">Upload Health Document</h3>
@@ -1231,106 +1231,109 @@ const PatientDashboard = () => {
               </button>
             </div>
 
-            <form onSubmit={handleFileUpload} className="p-5 space-y-4 overflow-y-auto">
-              {uploadError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium flex items-center gap-2">
-                  <AlertCircle size={16} className="shrink-0" />
-                  <span>{uploadError}</span>
-                </div>
-              )}
-
-              {uploadSuccess && (
-                <div className="p-3 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl text-xs font-medium flex items-center gap-2">
-                  <CheckCircle size={16} className="shrink-0" />
-                  <span>Document uploaded successfully!</span>
-                </div>
-              )}
-
-              {/* Target Patient / Account Verification */}
-              {patientData && (
-                <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
-                    <span className="font-extrabold text-teal-950 text-sm">{patientData.name || 'Valued Patient'}</span>
+            <form onSubmit={handleFileUpload} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
+                {uploadError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{uploadError}</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
-                    <span className="font-mono font-bold text-teal-800 text-xs">
-                      {patientData._id ? String(patientData._id).slice(-8).toUpperCase() : 'VERIFIED'}
-                    </span>
+                )}
+
+                {uploadSuccess && (
+                  <div className="p-3 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                    <CheckCircle size={16} className="shrink-0" />
+                    <span>Document uploaded successfully!</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Blood Test, Chest X-Ray, Prescription"
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
-                />
-              </div>
+                {/* Target Patient / Account Verification */}
+                {patientData && (
+                  <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
+                      <span className="font-extrabold text-teal-950 text-sm">{patientData.name || 'Valued Patient'}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
+                      <span className="font-mono font-bold text-teal-800 text-xs">
+                        {patientData._id ? String(patientData._id).slice(-8).toUpperCase() : 'VERIFIED'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Category</label>
-                <select
-                  value={uploadFileType}
-                  onChange={(e) => setUploadFileType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
-                >
-                  <option value="Lab Report">Lab Report</option>
-                  <option value="Prescription">Prescription</option>
-                  <option value="Imaging / X-Ray">Imaging / X-Ray</option>
-                  <option value="Scan Report">Scan Report</option>
-                  <option value="Discharge Summary">Discharge Summary</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Select File (PDF or Image)</label>
-                <div
-                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${selectedFile ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200 hover:border-teal-400 bg-slate-50/50'}`}
-                  onClick={() => document.getElementById('dashboard-file-input').click()}
-                >
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
                   <input
-                    id="dashboard-file-input"
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setSelectedFile(e.target.files[0]);
-                        if (!uploadTitle) setUploadTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
-                      }
-                    }}
+                    type="text"
+                    placeholder="e.g. Blood Test, Chest X-Ray, Prescription"
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
                   />
-                  {selectedFile ? (
-                    <div className="space-y-1">
-                      <FileText size={32} className="mx-auto text-teal-600" />
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{selectedFile.name}</p>
-                      <p className="text-xs font-medium text-teal-600">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
-                        className="text-xs text-rose-600 font-semibold hover:underline pt-1 inline-block cursor-pointer"
-                      >
-                        Choose different file
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload size={32} className="mx-auto text-slate-400" />
-                      <p className="text-sm font-medium text-slate-700">Click to browse or drag & drop</p>
-                      <p className="text-xs text-slate-400 font-normal">Supports PNG, JPG, JPEG, PDF (Max 10MB)</p>
-                    </div>
-                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Category</label>
+                  <select
+                    value={uploadFileType}
+                    onChange={(e) => setUploadFileType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
+                  >
+                    <option value="Lab Report">Lab Report</option>
+                    <option value="Prescription">Prescription</option>
+                    <option value="Imaging / X-Ray">Imaging / X-Ray</option>
+                    <option value="Scan Report">Scan Report</option>
+                    <option value="Discharge Summary">Discharge Summary</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Select File (PDF or Image)</label>
+                  <div
+                    className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all cursor-pointer ${selectedFile ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200 hover:border-teal-400 bg-slate-50/50'}`}
+                    onClick={() => document.getElementById('dashboard-file-input').click()}
+                  >
+                    <input
+                      id="dashboard-file-input"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setSelectedFile(e.target.files[0]);
+                          if (!uploadTitle) setUploadTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
+                        }
+                      }}
+                    />
+                    {selectedFile ? (
+                      <div className="space-y-1">
+                        <FileText size={30} className="mx-auto text-teal-600" />
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{selectedFile.name}</p>
+                        <p className="text-xs font-medium text-teal-600">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                          className="text-xs text-rose-600 font-semibold hover:underline pt-1 inline-block cursor-pointer"
+                        >
+                          Choose different file
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Upload size={28} className="mx-auto text-slate-400" />
+                        <p className="text-sm font-medium text-slate-700">Click to browse or drag & drop</p>
+                        <p className="text-xs text-slate-400 font-normal">Supports PNG, JPG, JPEG, PDF (Max 10MB)</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-2">
+              {/* Pinned Action Buttons Footer */}
+              <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex gap-2.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -1338,14 +1341,14 @@ const PatientDashboard = () => {
                     setUploadError(null);
                     setSelectedFile(null);
                   }}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-all cursor-pointer"
+                  className="flex-1 py-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading || !selectedFile}
-                  className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all cursor-pointer"
+                  className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all active:scale-95 cursor-pointer"
                 >
                   {isUploading ? (
                     <>

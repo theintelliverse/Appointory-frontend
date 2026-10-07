@@ -290,6 +290,18 @@ const BookAppointment = () => {
         return null;
     }, [doctors, formData.doctorId, rescheduleApp]);
 
+    const formatDocTitle = useCallback((name) => {
+        if (!name) return 'Specialist';
+        const clean = name.replace(/^(dr\.?\s*)/i, '').trim();
+        return `Dr. ${clean}`;
+    }, []);
+
+    const getDoctorInitial = useCallback((name) => {
+        if (!name) return 'D';
+        const clean = name.replace(/^(dr\.?\s*)/i, '').trim();
+        return (clean.charAt(0) || name.charAt(0) || 'D').toUpperCase();
+    }, []);
+
     const getDateAvailability = useCallback((date) => {
         if (!date || isNaN(date.getTime())) {
             return { isAvailable: true };
@@ -1077,19 +1089,40 @@ const BookAppointment = () => {
 
                     {step === 2 && (
                         <div className="space-y-4 md:space-y-10">
-                            {/* Selected clinic banner — compact on mobile */}
-                            <div className="bg-slate-900 p-4 md:p-8 rounded-2xl md:rounded-3xl text-white flex items-center md:flex-row justify-between gap-3 md:gap-8 shadow-lg relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-6 md:p-12 opacity-5 rotate-12 hidden md:block"><Activity size={180} /></div>
-                                <div className="relative z-10 flex-1 min-w-0">
-                                    <p className="text-xs font-semibold text-teal-300 uppercase tracking-wider mb-1">Facility Confirmed</p>
-                                    <h3 className="text-base md:text-2xl font-bold tracking-tight truncate">{getSelectedClinic()?.name}</h3>
-                                    <p className="text-slate-400 text-xs md:text-sm font-medium mt-0.5 flex items-center gap-1.5 truncate">
-                                        <MapPin size={12} className="text-teal-500 shrink-0" /> {getSelectedClinic()?.address}
-                                    </p>
+                            {/* Selected clinic banner — fully visible & responsive */}
+                            <div className="bg-slate-900 p-4 sm:p-5 md:p-8 rounded-2xl md:rounded-3xl text-white shadow-lg relative overflow-hidden border border-slate-800">
+                                <div className="absolute top-0 right-0 p-6 md:p-12 opacity-5 rotate-12 hidden md:block pointer-events-none">
+                                    <Activity size={180} />
                                 </div>
-                                <button onClick={() => setStep(1)} className="relative z-10 px-3.5 py-2 bg-white/10 hover:bg-white/15 rounded-xl text-white font-semibold text-xs uppercase tracking-wider transition-all border border-white/10 shrink-0">
-                                    Change
-                                </button>
+                                <div className="relative z-10 flex flex-col gap-2">
+                                    {/* Top Row: Tag + Change Button */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/15 border border-teal-500/30">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                                            <span className="text-[10px] md:text-xs font-bold text-teal-300 uppercase tracking-wider">Facility Confirmed</span>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setStep(1)} 
+                                            className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl text-white font-semibold text-xs uppercase tracking-wider transition-all border border-white/15 shrink-0 cursor-pointer shadow-xs"
+                                        >
+                                            Change
+                                        </button>
+                                    </div>
+
+                                    {/* Full Clinic Name - No truncation */}
+                                    <h3 className="text-base sm:text-lg md:text-2xl font-bold tracking-tight text-white leading-snug break-words mt-0.5">
+                                        {getSelectedClinic()?.name}
+                                    </h3>
+
+                                    {/* Full Address - No truncation */}
+                                    {getSelectedClinic()?.address && (
+                                        <p className="text-slate-300/80 text-xs md:text-sm font-normal flex items-start gap-1.5 leading-relaxed break-words">
+                                            <MapPin size={13} className="text-teal-400 shrink-0 mt-0.5" /> 
+                                            <span>{getSelectedClinic()?.address}</span>
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-8">
@@ -1099,10 +1132,20 @@ const BookAppointment = () => {
                                     const liveUntilLabel = isLiveToday && doctor.liveUntilDate
                                         ? new Date(doctor.liveUntilDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
                                         : null;
-                                    const DAY_SHORT = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' };
-                                    const availDays = Array.isArray(doctor.availableDays) && doctor.availableDays.length > 0 && doctor.availableDays.length < 7
-                                        ? doctor.availableDays.map(d => DAY_SHORT[d.toLowerCase()] || d)
-                                        : null;
+                                    const WEEK_DAYS = [
+                                        { key: 'monday', label: 'Mon' },
+                                        { key: 'tuesday', label: 'Tue' },
+                                        { key: 'wednesday', label: 'Wed' },
+                                        { key: 'thursday', label: 'Thu' },
+                                        { key: 'friday', label: 'Fri' },
+                                        { key: 'saturday', label: 'Sat' },
+                                        { key: 'sunday', label: 'Sun' }
+                                    ];
+                                    const docAvailableDays = Array.isArray(doctor.availableDays) && doctor.availableDays.length > 0
+                                        ? doctor.availableDays.map(d => d.toLowerCase())
+                                        : ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                                    const docInitial = getDoctorInitial(doctor.name);
+                                    const docTitle = formatDocTitle(doctor.name);
                                     return (
                                     <div
                                         key={doctor._id}
@@ -1112,19 +1155,32 @@ const BookAppointment = () => {
                                         <div className="md:hidden flex items-center gap-3 p-4">
                                             <div className="relative shrink-0">
                                                 <div className={`w-12 h-12 bg-gradient-to-br rounded-2xl flex items-center justify-center text-xl font-bold transition-all duration-300 shadow-sm ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-600 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white'}`}>
-                                                    {doctor.name?.charAt(0)}
+                                                    {docInitial}
                                                 </div>
                                                 <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide truncate">{doctor.specialization || 'General'}</p>
-                                                <h3 className="text-sm font-bold text-slate-900 truncate">Dr. {doctor.name}</h3>
+                                                <h3 className="text-sm font-bold text-slate-900 truncate">{docTitle}</h3>
                                                 <p className="text-xs font-medium text-slate-400 mt-0.5">{doctor.experience || 0} yrs exp</p>
-                                                {availDays && (
-                                                    <div className="flex flex-wrap gap-1 mt-1.5">
-                                                        {availDays.map(d => <span key={d} className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-[9px] font-semibold text-slate-500">{d}</span>)}
-                                                    </div>
-                                                )}
+                                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                                    {WEEK_DAYS.map(d => {
+                                                        const isActive = docAvailableDays.includes(d.key);
+                                                        return (
+                                                            <span
+                                                                key={d.key}
+                                                                title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
+                                                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors ${
+                                                                    isActive
+                                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                        : 'bg-rose-50 text-rose-600 border-rose-200'
+                                                                }`}
+                                                            >
+                                                                {d.label}
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
                                                 {onLeave && (
                                                     <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-semibold border border-orange-200">
                                                         <CalendarOff size={9} /> On Leave Today{doctor.leaveTodayTitle ? `: ${doctor.leaveTodayTitle}` : ''}
@@ -1151,7 +1207,7 @@ const BookAppointment = () => {
                                                 <div className="flex items-start gap-6 mb-6">
                                                     <div className="relative shrink-0">
                                                         <div className={`w-20 h-20 bg-gradient-to-br rounded-[2rem] flex items-center justify-center text-2xl font-bold transition-all duration-500 shadow-xl ${onLeave ? 'from-orange-100 to-amber-100 text-orange-400' : isLiveToday ? 'from-red-100 to-rose-100 text-red-500' : 'from-slate-100 to-slate-200 text-slate-500 group-hover:from-teal-500 group-hover:to-indigo-600 group-hover:text-white group-hover:rotate-6'}`}>
-                                                            {doctor.name?.charAt(0)}
+                                                            {docInitial}
                                                         </div>
                                                         <div className={`absolute -bottom-1 -right-1 w-6 h-6 border-4 border-white rounded-full ${onLeave ? 'bg-orange-400' : isLiveToday ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`} />
                                                     </div>
@@ -1170,12 +1226,25 @@ const BookAppointment = () => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        {availDays && (
-                                                            <div className="flex flex-wrap gap-1 mt-1.5">
-                                                                {availDays.map(d => <span key={d} className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-semibold text-slate-500">{d}</span>)}
-                                                            </div>
-                                                        )}
-                                                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight truncate">Dr. {doctor.name}</h3>
+                                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                                            {WEEK_DAYS.map(d => {
+                                                                const isActive = docAvailableDays.includes(d.key);
+                                                                return (
+                                                                    <span
+                                                                        key={d.key}
+                                                                        title={isActive ? `${d.label}: Active / Available` : `${d.label}: Not Active / Off`}
+                                                                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                                                                            isActive
+                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                                                : 'bg-rose-50 text-rose-600 border-rose-200'
+                                                                        }`}
+                                                                    >
+                                                                        {d.label}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <h3 className="text-2xl font-bold text-slate-900 tracking-tight truncate">{docTitle}</h3>
                                                         {doctor.education && (
                                                             <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-1.5">
                                                                 <GraduationCap size={14} className="text-teal-500 shrink-0" /> {doctor.education}
@@ -1254,7 +1323,7 @@ const BookAppointment = () => {
                                                 </h3>
                                                 <p className="text-teal-300 text-sm font-semibold flex items-center gap-1.5 mt-0.5">
                                                     <Stethoscope size={15} />
-                                                    Dr. {getSelectedDoctor()?.name || 'Specialist'}
+                                                    {formatDocTitle(getSelectedDoctor()?.name)}
                                                     {getSelectedDoctor()?.specialization && (
                                                         <span className="text-xs text-slate-400 font-medium">• {getSelectedDoctor()?.specialization}</span>
                                                     )}
@@ -1291,15 +1360,15 @@ const BookAppointment = () => {
                                             <Calendar size={15} className="text-teal-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-teal-800 mb-1.5">Dr. {doc.name}'s Weekly Schedule</p>
+                                            <p className="text-xs font-bold text-teal-800 mb-1.5">{formatDocTitle(doc.name)}'s Weekly Schedule</p>
                                             <div className="flex flex-wrap gap-1">
                                                 {ALL_DAYS.map(d => {
                                                     const avail = doc.availableDays.map(x => x.toLowerCase()).includes(d);
                                                     return (
                                                         <span key={d} className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                                                             avail
-                                                                ? 'bg-teal-600 text-white border-teal-600'
-                                                                : 'bg-white text-slate-400 border-slate-200 line-through'
+                                                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                                                                : 'bg-rose-50 text-rose-600 border-rose-200'
                                                         }`}>
                                                             {DAY_3(d)}
                                                         </span>
@@ -1307,7 +1376,10 @@ const BookAppointment = () => {
                                                 })}
                                             </div>
                                         </div>
-                                        <p className="text-[10px] text-teal-600 font-semibold shrink-0 hidden sm:block">Only green days<br />are bookable</p>
+                                        <p className="text-[10px] text-slate-600 font-semibold shrink-0 hidden sm:block leading-tight">
+                                            <span className="text-emerald-700 font-bold">Green</span>: Available<br />
+                                            <span className="text-rose-600 font-bold">Red</span>: Closed
+                                        </p>
                                     </div>
                                 );
                             })()}
@@ -1720,7 +1792,7 @@ const BookAppointment = () => {
                     <div className="grid md:grid-cols-2 gap-8 md:gap-12">
                         <div className="space-y-6 md:space-y-8">
                             <ReviewItem icon={<Building2 size={18} />} label="Clinic Facility" val={getSelectedClinic()?.name} sub={getSelectedClinic()?.address} />
-                            <ReviewItem icon={<Stethoscope size={18} />} label="Consulting Specialist" val={`Dr. ${getSelectedDoctor()?.name}`} sub={getSelectedDoctor()?.specialization} />
+                            <ReviewItem icon={<Stethoscope size={18} />} label="Consulting Specialist" val={formatDocTitle(getSelectedDoctor()?.name)} sub={getSelectedDoctor()?.specialization} />
                             <ReviewItem
                                 icon={<Calendar size={18} />}
                                 label="Appointment Date"

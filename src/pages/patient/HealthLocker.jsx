@@ -9,7 +9,7 @@ import {
   ShieldCheck, TrendingUp, ArrowLeft, RefreshCcw, Smartphone, Hash,
   Droplet, Heart, Weight, Pill, Zap, Thermometer, Droplets, ArrowUpRight, Search, Database,
   Upload, X, Plus, Trash2, Loader2, FileUp, CheckCircle, AlertCircle,
-  Receipt, DollarSign, Printer, ChevronLeft, ChevronRight, CheckCircle2, Beaker, Stethoscope, Clock, FileDown,
+  Receipt, DollarSign, Printer, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, Beaker, Stethoscope, Clock, FileDown,
   Sunrise, Sun, Moon, Utensils, Timer, Share2, Check, Sparkles, Filter
 } from 'lucide-react';
 import SEO from '../../components/SEO';
@@ -714,11 +714,42 @@ const HealthLocker = () => {
                 </div>
               </div>
 
-              {/* Course Status Filter Tabs */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {/* Mobile View: Dropdown Course Filter */}
+              <div className="relative sm:hidden w-full">
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none text-teal-600">
+                    {prescriptionFilter === 'active' ? (
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                    ) : prescriptionFilter === 'completed' ? (
+                      <Check size={14} className="text-slate-600" />
+                    ) : (
+                      <Pill size={14} className="text-teal-600" />
+                    )}
+                  </div>
+                  <select
+                    value={prescriptionFilter}
+                    onChange={(e) => setPrescriptionFilter(e.target.value)}
+                    className="w-full appearance-none pl-9 pr-9 py-2.5 bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white transition-all shadow-xs cursor-pointer"
+                  >
+                    <option value="all">
+                      All Prescriptions ({prescriptionData.totalCount})
+                    </option>
+                    <option value="active">
+                      🟢 Active Courses Today ({prescriptionData.activeCount})
+                    </option>
+                    <option value="completed">
+                      📁 Completed / Expired History ({prescriptionData.completedCount})
+                    </option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3.5 pointer-events-none text-slate-400" />
+                </div>
+              </div>
+
+              {/* Desktop View: Pill Buttons */}
+              <div className="hidden sm:flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <button
                   onClick={() => setPrescriptionFilter('all')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     prescriptionFilter === 'all'
                       ? 'bg-slate-900 text-white shadow-sm'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
@@ -732,7 +763,7 @@ const HealthLocker = () => {
 
                 <button
                   onClick={() => setPrescriptionFilter('active')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     prescriptionFilter === 'active'
                       ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20'
                       : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50/50'
@@ -747,7 +778,7 @@ const HealthLocker = () => {
 
                 <button
                   onClick={() => setPrescriptionFilter('completed')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
                     prescriptionFilter === 'completed'
                       ? 'bg-slate-800 text-white shadow-sm'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
@@ -1249,11 +1280,40 @@ const HealthLocker = () => {
 
                     {/* Filter and Search Bar */}
                     <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                      <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
+                      {/* Mobile View: Dropdown Filter */}
+                      <div className="relative sm:hidden w-full">
+                        <div className="relative flex items-center">
+                          <div className="absolute left-3.5 pointer-events-none text-teal-600">
+                            {billTypeFilter === 'clinic' ? (
+                              <Stethoscope size={14} />
+                            ) : billTypeFilter === 'lab' ? (
+                              <Beaker size={14} />
+                            ) : billTypeFilter === 'due' ? (
+                              <AlertCircle size={14} className="text-rose-500" />
+                            ) : (
+                              <Filter size={14} />
+                            )}
+                          </div>
+                          <select
+                            value={billTypeFilter}
+                            onChange={(e) => { setBillTypeFilter(e.target.value); setBillPage(1); }}
+                            className="w-full appearance-none pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white transition-all shadow-2xs cursor-pointer"
+                          >
+                            <option value="all">All Invoices &amp; Receipts ({allInvoices.length})</option>
+                            <option value="clinic">🩺 Clinic Consultations</option>
+                            <option value="lab">🧪 Lab Investigations</option>
+                            <option value="due">⚠️ Pending Dues ({allInvoices.filter(i => (i.remainingDue || 0) > 0).length})</option>
+                          </select>
+                          <ChevronDown size={15} className="absolute right-3.5 pointer-events-none text-slate-400" />
+                        </div>
+                      </div>
+
+                      {/* Desktop View: Pill Buttons */}
+                      <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold overflow-x-auto">
                         <button
                           type="button"
                           onClick={() => { setBillTypeFilter('all'); setBillPage(1); }}
-                          className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap ${
+                          className={`px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer ${
                             billTypeFilter === 'all'
                               ? 'bg-white text-slate-900 shadow-xs font-black'
                               : 'text-slate-600 hover:text-slate-900'
@@ -1264,7 +1324,7 @@ const HealthLocker = () => {
                         <button
                           type="button"
                           onClick={() => { setBillTypeFilter('clinic'); setBillPage(1); }}
-                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap ${
+                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                             billTypeFilter === 'clinic'
                               ? 'bg-teal-700 text-white shadow-xs font-black'
                               : 'text-slate-600 hover:text-slate-900'
@@ -1275,7 +1335,7 @@ const HealthLocker = () => {
                         <button
                           type="button"
                           onClick={() => { setBillTypeFilter('lab'); setBillPage(1); }}
-                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap ${
+                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                             billTypeFilter === 'lab'
                               ? 'bg-indigo-600 text-white shadow-xs font-black'
                               : 'text-slate-600 hover:text-slate-900'
@@ -1286,7 +1346,7 @@ const HealthLocker = () => {
                         <button
                           type="button"
                           onClick={() => { setBillTypeFilter('due'); setBillPage(1); }}
-                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap ${
+                          className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 whitespace-nowrap cursor-pointer ${
                             billTypeFilter === 'due'
                               ? 'bg-rose-600 text-white shadow-xs font-black'
                               : 'text-slate-600 hover:text-slate-900'
@@ -1310,7 +1370,26 @@ const HealthLocker = () => {
 
                     {/* Bills List */}
                     {filteredInvoices.length === 0 ? (
-                      <EmptyState message="No medical bills or invoices found matching your search." />
+                      <EmptyState
+                        message={
+                          billSearch.trim()
+                            ? `No bills found matching "${billSearch}"`
+                            : billTypeFilter !== 'all'
+                            ? `No ${billTypeFilter === 'clinic' ? 'clinic' : billTypeFilter === 'lab' ? 'lab' : 'pending due'} invoices found`
+                            : "No medical bills or invoices found"
+                        }
+                        subMessage={
+                          billSearch.trim() || billTypeFilter !== 'all'
+                            ? "Try resetting your search query or selecting a different filter."
+                            : "Digital receipts and bills issued by your healthcare provider will appear here automatically."
+                        }
+                        onAction={
+                          (billSearch.trim() || billTypeFilter !== 'all')
+                            ? () => { setBillSearch(''); setBillTypeFilter('all'); }
+                            : undefined
+                        }
+                        actionLabel="Reset Filters"
+                      />
                     ) : (
                       <div className="space-y-3">
                         {paginatedInvoices.map((inv) => {
@@ -1494,147 +1573,150 @@ const HealthLocker = () => {
 
       {/* --- Upload Document Modal --- */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+        <div className="fixed inset-0 z-[200] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85dvh] sm:max-h-[88vh] my-auto">
+            <div className="p-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <FileUp className="text-teal-400" size={20} />
                 <h3 className="font-bold text-base tracking-tight">Upload Health Document</h3>
               </div>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleFileUpload} className="p-5 space-y-4 overflow-y-auto">
-              {uploadError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium flex items-center gap-2">
-                  <AlertCircle size={16} className="shrink-0" />
-                  <span>{uploadError}</span>
-                </div>
-              )}
+            <form onSubmit={handleFileUpload} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="p-4 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
+                {uploadError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                    <AlertCircle size={16} className="shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
 
-              {uploadSuccess && (
-                <div className="p-3 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl text-xs font-medium flex items-center gap-2">
-                  <CheckCircle size={16} className="shrink-0" />
-                  <span>Document uploaded successfully!</span>
-                </div>
-              )}
+                {uploadSuccess && (
+                  <div className="p-3 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl text-xs font-medium flex items-center gap-2">
+                    <CheckCircle size={16} className="shrink-0" />
+                    <span>Document uploaded successfully!</span>
+                  </div>
+                )}
 
-              {/* Target Patient / Account Verification */}
-              {data.familyMembers && data.familyMembers.length > 1 ? (
+                {/* Target Patient / Account Verification */}
+                {data.familyMembers && data.familyMembers.length > 1 ? (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Patient / Member for Document</label>
+                    <select
+                      value={selectedMemberId || data._id}
+                      onChange={(e) => setSelectedMemberId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-teal-50/60 border border-teal-200 rounded-xl text-sm font-bold text-teal-950 focus:outline-none focus:border-teal-500"
+                    >
+                      {data.familyMembers.map((m) => (
+                        <option key={m._id} value={m._id}>
+                          {m.name} ({m.relationship || (m.isPrimaryAccount ? 'Self' : 'Family')}) - ID: {String(m._id).slice(-6).toUpperCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
+                      <span className="font-extrabold text-teal-950 text-sm">{data.name || 'Valued Patient'}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
+                      <span className="font-mono font-bold text-teal-800 text-xs">
+                        {data._id ? String(data._id).slice(-8).toUpperCase() : 'VERIFIED'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Patient / Member for Document</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Blood Test, Chest X-Ray, Prescription"
+                    value={uploadTitle}
+                    onChange={(e) => setUploadTitle(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Category</label>
                   <select
-                    value={selectedMemberId || data._id}
-                    onChange={(e) => setSelectedMemberId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-teal-50/60 border border-teal-200 rounded-xl text-sm font-bold text-teal-950 focus:outline-none focus:border-teal-500"
+                    value={uploadFileType}
+                    onChange={(e) => setUploadFileType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
                   >
-                    {data.familyMembers.map((m) => (
-                      <option key={m._id} value={m._id}>
-                        {m.name} ({m.relationship || (m.isPrimaryAccount ? 'Self' : 'Family')}) - ID: {String(m._id).slice(-6).toUpperCase()}
-                      </option>
-                    ))}
+                    <option value="Lab Report">Lab Report</option>
+                    <option value="Prescription">Prescription</option>
+                    <option value="Imaging / X-Ray">Imaging / X-Ray</option>
+                    <option value="Scan Report">Scan Report</option>
+                    <option value="Discharge Summary">Discharge Summary</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
-              ) : (
-                <div className="p-3 bg-teal-50/70 border border-teal-200/80 rounded-xl flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-teal-800 tracking-wider block">Uploading for Patient</span>
-                    <span className="font-extrabold text-teal-950 text-sm">{data.name || 'Valued Patient'}</span>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Select File (PDF or Image)</label>
+                  <div
+                    className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all cursor-pointer ${selectedFile ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200 hover:border-teal-400 bg-slate-50/50'}`}
+                    onClick={() => document.getElementById('locker-file-input').click()}
+                  >
+                    <input
+                      id="locker-file-input"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          setSelectedFile(e.target.files[0]);
+                          if (!uploadTitle) setUploadTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
+                        }
+                      }}
+                    />
+                    {selectedFile ? (
+                      <div className="space-y-1">
+                        <FileText size={30} className="mx-auto text-teal-600" />
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{selectedFile.name}</p>
+                        <p className="text-xs font-medium text-teal-600">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
+                          className="text-xs text-rose-600 font-semibold hover:underline pt-1 inline-block cursor-pointer"
+                        >
+                          Choose different file
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Upload size={28} className="mx-auto text-slate-400" />
+                        <p className="text-sm font-medium text-slate-700">Click to browse or drag & drop</p>
+                        <p className="text-xs text-slate-400 font-normal">Supports PNG, JPG, JPEG, PDF (Max 10MB)</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Patient ID</span>
-                    <span className="font-mono font-bold text-teal-800 text-xs">
-                      {data._id ? String(data._id).slice(-8).toUpperCase() : 'VERIFIED'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Blood Test, Chest X-Ray, Prescription"
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Document Category</label>
-                <select
-                  value={uploadFileType}
-                  onChange={(e) => setUploadFileType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-teal-500 focus:bg-white transition-all"
-                >
-                  <option value="Lab Report">Lab Report</option>
-                  <option value="Prescription">Prescription</option>
-                  <option value="Imaging / X-Ray">Imaging / X-Ray</option>
-                  <option value="Scan Report">Scan Report</option>
-                  <option value="Discharge Summary">Discharge Summary</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Select File (PDF or Image)</label>
-                <div
-                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${selectedFile ? 'border-teal-500 bg-teal-50/30' : 'border-slate-200 hover:border-teal-400 bg-slate-50/50'}`}
-                  onClick={() => document.getElementById('locker-file-input').click()}
-                >
-                  <input
-                    id="locker-file-input"
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setSelectedFile(e.target.files[0]);
-                        if (!uploadTitle) setUploadTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
-                      }
-                    }}
-                  />
-                  {selectedFile ? (
-                    <div className="space-y-1">
-                      <FileText size={32} className="mx-auto text-teal-600" />
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-1">{selectedFile.name}</p>
-                      <p className="text-xs font-medium text-teal-600">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
-                        className="text-xs text-rose-600 font-semibold hover:underline pt-1 inline-block"
-                      >
-                        Choose different file
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Upload size={32} className="mx-auto text-slate-400" />
-                      <p className="text-sm font-medium text-slate-700">Click to browse or drag & drop</p>
-                      <p className="text-xs text-slate-400 font-normal">Supports PNG, JPG, JPEG, PDF (Max 10MB)</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-2">
+              {/* Pinned Action Buttons Footer */}
+              <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex gap-2.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-all"
+                  className="flex-1 py-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs transition-all active:scale-95 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading || !selectedFile}
-                  className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all"
+                  className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-teal-600/20 transition-all active:scale-95 cursor-pointer"
                 >
                   {isUploading ? (
                     <>
@@ -1654,7 +1736,7 @@ const HealthLocker = () => {
 
       {/* --- Digital Receipt Modal --- */}
       {showBillModal && selectedBillInvoice && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 space-y-4 my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-4 bg-slate-900 text-white flex justify-between items-center print:hidden">
@@ -1877,17 +1959,17 @@ const VitalCard = ({ icon, label, val, unit, color }) => {
   );
 };
 
-const EmptyState = ({ message, onAction, actionLabel }) => (
-  <div className="flex flex-col items-center justify-center py-16 bg-white border border-slate-100 rounded-2xl shadow-sm">
-    <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
-      <Database size={28} className="text-slate-200" />
+const EmptyState = ({ message, subMessage, onAction, actionLabel }) => (
+  <div className="flex flex-col items-center justify-center py-10 sm:py-14 px-4 text-center bg-white border border-slate-100 rounded-2xl shadow-sm">
+    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-3 sm:mb-4 border border-slate-100 shadow-2xs">
+      <Database size={24} className="text-slate-300" />
     </div>
-    <p className="text-sm font-semibold text-slate-900 tracking-tight mb-1">{message}</p>
-    <p className="text-xs text-slate-400 mb-4">No active records in this section</p>
+    <p className="text-sm font-bold text-slate-900 tracking-tight mb-1">{message}</p>
+    <p className="text-xs text-slate-400 mb-3 max-w-sm">{subMessage || 'No active records in this section'}</p>
     {onAction && (
       <button
         onClick={onAction}
-        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-teal-600/20 active:scale-95 transition-all"
+        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-teal-600/20 active:scale-95 transition-all cursor-pointer"
       >
         {actionLabel || 'Action'}
       </button>

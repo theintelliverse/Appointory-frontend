@@ -65,7 +65,7 @@ const AppointmentDetailSheet = ({ appointment, onClose, onReschedule, onCancel }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
       <div 
         className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl p-6 overflow-hidden max-h-[90vh] overflow-y-auto transform transition-all duration-300"
         onClick={(e) => e.stopPropagation()}

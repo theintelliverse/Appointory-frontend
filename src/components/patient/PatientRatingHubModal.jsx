@@ -197,7 +197,7 @@ const PatientRatingHubModal = ({
       <div 
         role="dialog" 
         aria-modal="true" 
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
       >
         <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full max-h-[90vh] shadow-2xl overflow-hidden flex flex-col">
           {/* Header */}

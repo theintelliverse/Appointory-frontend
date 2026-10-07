@@ -373,27 +373,20 @@ const Sidebar = ({ role = 'lab' }) => {
               icon={<FolderHeart size={20} />} 
               label="Digital Locker" 
               color="bg-blue-50 text-blue-600 border-blue-100/50" 
-              onClick={() => { navigate('/patient/locker'); setShowQuickActions(false); }} 
+              onClick={() => { navigate('/patient/health-locker'); setShowQuickActions(false); }} 
             />
             <QuickActionTile 
               icon={<FileText size={20} />} 
               label="Health History" 
               color="bg-orange-50 text-orange-600 border-orange-100/50" 
-              onClick={() => { navigate('/patient/locker'); setShowQuickActions(false); }} 
+              onClick={() => { navigate('/patient/health-locker'); setShowQuickActions(false); }} 
             />
             <QuickActionTile 
               icon={<UserCircle size={20} />} 
               label="My Profile" 
               color="bg-rose-50 text-rose-600 border-rose-100/50" 
-              onClick={() => { navigate('/profile'); setShowQuickActions(false); }} 
+              onClick={() => { navigate('/patient/profile'); setShowQuickActions(false); }} 
             />
-
-            <button 
-              className="col-span-2 mt-2 w-full flex items-center justify-center gap-2.5 px-4 py-4 bg-red-50 text-red-600 rounded-xl font-black text-[14px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all active:scale-95 text-center cursor-pointer"
-            >
-              <Bell size={14} className="animate-bounce" />
-              Emergency Support
-            </button>
           </div>
         </div>
       )}

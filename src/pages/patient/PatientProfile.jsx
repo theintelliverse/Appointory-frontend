@@ -391,18 +391,18 @@ const PatientProfile = () => {
 
       <main className="max-w-xl mx-auto px-4 py-5 space-y-4">
         {/* User Card */}
-        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm relative overflow-hidden">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-2xl flex items-center justify-center shadow-md shadow-teal-600/20 shrink-0">
+        <div className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm relative overflow-hidden">
+          <div className="flex items-start justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-bold text-xl sm:text-2xl flex items-center justify-center shadow-md shadow-teal-600/20 shrink-0">
                 {name.charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-bold text-slate-900 truncate leading-snug">{name}</h2>
-                <div className="text-xs text-slate-500 font-medium mt-0.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 truncate">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate leading-snug">{name}</h2>
+                <div className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+                  <span className="flex items-center gap-1 truncate min-w-0">
                     <Phone size={13} className="text-slate-400 shrink-0" />
-                    <span>{phone}</span>
+                    <span className="truncate">{phone}</span>
                   </span>
                   <button
                     type="button"
@@ -428,7 +428,7 @@ const PatientProfile = () => {
 
             <button
               onClick={handleOpenEdit}
-              className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-xs rounded-xl border border-teal-200/70 transition-all flex items-center gap-1.5 shrink-0 active:scale-95"
+              className="px-2.5 sm:px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold text-xs rounded-xl border border-teal-200/70 transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 active:scale-95 cursor-pointer"
             >
               <Edit3 size={13} />
               <span>Edit</span>
@@ -455,37 +455,37 @@ const PatientProfile = () => {
         </div>
 
         {/* Quick Health Hub Links */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           <button
             onClick={() => navigate('/patient/health-locker')}
-            className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm text-left transition-all group flex items-center justify-between"
+            className="p-3.5 sm:p-4 bg-white hover:bg-teal-50/20 border border-slate-200/90 hover:border-teal-200/80 rounded-2xl shadow-xs text-left transition-all group flex flex-col justify-between active:scale-[0.98] cursor-pointer"
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold shrink-0">
+            <div className="flex items-center justify-between w-full mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
                 <FolderHeart size={18} />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-900 truncate">Health Locker</p>
-                <p className="text-[11px] text-slate-400 font-medium">{recordsCount} Records</p>
-              </div>
+              <ChevronRight size={16} className="text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
             </div>
-            <ChevronRight size={15} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            <div className="w-full min-w-0">
+              <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Health Locker</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{recordsCount} Records</p>
+            </div>
           </button>
 
           <button
             onClick={() => navigate('/patient/dashboard?tab=appointments')}
-            className="p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm text-left transition-all group flex items-center justify-between"
+            className="p-3.5 sm:p-4 bg-white hover:bg-indigo-50/20 border border-slate-200/90 hover:border-indigo-200/80 rounded-2xl shadow-xs text-left transition-all group flex flex-col justify-between active:scale-[0.98] cursor-pointer"
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+            <div className="flex items-center justify-between w-full mb-2">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0 shadow-2xs">
                 <Calendar size={18} />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-900 truncate">Consultations</p>
-                <p className="text-[11px] text-slate-400 font-medium">{visitsCount} Visits</p>
-              </div>
+              <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
             </div>
-            <ChevronRight size={15} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+            <div className="w-full min-w-0">
+              <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Consultations</p>
+              <p className="text-[11px] text-slate-400 font-medium mt-0.5">{visitsCount} Visits</p>
+            </div>
           </button>
         </div>
 
@@ -495,63 +495,71 @@ const PatientProfile = () => {
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-sm">
             <button 
               onClick={handleOpenEdit}
-              className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+              className="w-full px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <User size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">Personal Information</span>
-                  <span className="text-xs text-slate-400 font-normal">Name, age, blood group &amp; address</span>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <User size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">Personal Information</span>
+                  <span className="text-xs text-slate-400 font-normal truncate block">Name, age, blood group &amp; address</span>
                 </div>
               </div>
-              <ChevronRight size={16} className="text-slate-400" />
+              <ChevronRight size={16} className="text-slate-400 shrink-0 ml-2" />
             </button>
 
             <button 
               onClick={() => navigate('/patient/book-appointment')}
-              className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+              className="w-full px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <Stethoscope size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">Book New Consultation</span>
-                  <span className="text-xs text-slate-400 font-normal">Search clinics &amp; doctors near you</span>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <Stethoscope size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">Book New Consultation</span>
+                  <span className="text-xs text-slate-400 font-normal truncate block">Search clinics &amp; doctors near you</span>
                 </div>
               </div>
-              <ChevronRight size={16} className="text-slate-400" />
+              <ChevronRight size={16} className="text-slate-400 shrink-0 ml-2" />
             </button>
 
-            <div className="px-4 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MapPin size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">Residential Address</span>
-                  <span className="text-xs text-slate-500 font-normal">
+            <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <MapPin size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">Residential Address</span>
+                  <span className="text-xs text-slate-500 font-normal truncate block">
                     {profile?.address || 'No address added yet'}
                   </span>
                 </div>
               </div>
               <button 
                 onClick={handleOpenEdit}
-                className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 shrink-0 ml-2 cursor-pointer"
               >
                 Change
               </button>
             </div>
 
-            <div className="px-4 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">Allergies / Conditions</span>
-                  <span className="text-xs text-slate-500 font-normal">
+            <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <AlertCircle size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">Allergies / Conditions</span>
+                  <span className="text-xs text-slate-500 font-normal truncate block">
                     {profile?.allergies || 'None reported'}
                   </span>
                 </div>
               </div>
               <button 
                 onClick={handleOpenEdit}
-                className="text-xs font-semibold text-teal-600 hover:text-teal-700"
+                className="text-xs font-semibold text-teal-600 hover:text-teal-700 shrink-0 ml-2 cursor-pointer"
               >
                 Edit
               </button>
@@ -563,17 +571,19 @@ const PatientProfile = () => {
         <div className="space-y-1.5">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">Alerts &amp; Support</p>
           <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden divide-y divide-slate-100 shadow-sm">
-            <div className="px-4 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">SMS &amp; Digital Queue Alerts</span>
-                  <span className="text-xs text-slate-400 font-normal">Queue live tokens &amp; appointment reminders</span>
+            <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <Bell size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">SMS &amp; Digital Queue Alerts</span>
+                  <span className="text-xs text-slate-400 font-normal truncate block">Queue live tokens &amp; appointment reminders</span>
                 </div>
               </div>
               <button
                 onClick={toggleSmsAlerts}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ml-2 ${
                   smsAlerts ? 'bg-teal-600' : 'bg-slate-200'
                 }`}
               >
@@ -587,16 +597,18 @@ const PatientProfile = () => {
 
             <button 
               onClick={handleSupportModal}
-              className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left"
+              className="w-full px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors text-left cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <HelpCircle size={18} className="text-teal-600" />
-                <div>
-                  <span className="text-sm font-semibold text-slate-900 block">Help &amp; Support Hotline</span>
-                  <span className="text-xs text-slate-400 font-normal">24x7 Customer assistance &amp; clinical support</span>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <HelpCircle size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-slate-900 block leading-snug">Help &amp; Support Hotline</span>
+                  <span className="text-xs text-slate-400 font-normal truncate block">24x7 Customer assistance &amp; clinical support</span>
                 </div>
               </div>
-              <ChevronRight size={16} className="text-slate-400" />
+              <ChevronRight size={16} className="text-slate-400 shrink-0 ml-2" />
             </button>
           </div>
         </div>
@@ -615,7 +627,7 @@ const PatientProfile = () => {
 
       {/* Edit Profile Modal Sheet */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 animate-fade-in">
           <div 
             className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl border border-slate-200 shadow-2xl p-6 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
@@ -794,7 +806,7 @@ const PatientProfile = () => {
       )}
       {/* Change Phone Number Modal */}
       {showPhoneModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4 relative">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
