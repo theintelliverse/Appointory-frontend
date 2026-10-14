@@ -5,7 +5,8 @@ import {
     ArrowLeft, User, Mail, Award, Clock, BookOpen, Save, 
     ShieldCheck, Activity, Phone, Briefcase, GraduationCap, 
     Calendar, Check, Edit3, X, Loader, CheckCircle, MapPin, 
-    Droplet, UserCircle, Hash, LogOut
+    Droplet, UserCircle, Hash, LogOut, Copy, ExternalLink,
+    Sparkles, Globe
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
@@ -19,6 +20,36 @@ const ProfilePage = () => {
     const [saveLoading, setSaveLoading] = useState(false);
     const token = localStorage.getItem('token');
     const role = (localStorage.getItem('role') || 'staff').toLowerCase();
+    const [copiedSlug, setCopiedSlug] = useState(false);
+
+    const handleAutoGenerateSlug = () => {
+        if (!user) return;
+        const rawName = user.name || '';
+        const clean = rawName
+            .toLowerCase()
+            .replace(/^dr\.?\s*/i, 'dr-')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        const finalSlug = clean.startsWith('dr-') ? clean : `dr-${clean}`;
+        setUser({ ...user, slug: finalSlug, publicListingConsent: true });
+    };
+
+    const handleCopyBookingUrl = () => {
+        if (!user?.slug) return;
+        const fullUrl = `${window.location.origin}/d/${user.slug}`;
+        navigator.clipboard.writeText(fullUrl);
+        setCopiedSlug(true);
+        setTimeout(() => setCopiedSlug(false), 2000);
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Booking Link Copied!',
+            text: fullUrl,
+            showConfirmButton: false,
+            timer: 2500
+        });
+    };
 
     const fetchProfile = useCallback(async () => {
         setLoading(true);
@@ -357,31 +388,100 @@ const ProfilePage = () => {
                                                         placeholder="e.g. MCI-2023-XXXX"
                                                     />
                                                     <div className="space-y-2 group relative">
-                                                        <label className="text-[14px] font-black uppercase text-slate-400 ml-1 tracking-[0.2em] group-focus-within:text-teal-600 transition-colors flex items-center justify-between">
-                                                            <span>Public Profile Slug</span>
-                                                            <span className="text-[11px] font-bold text-teal-600 normal-case tracking-normal">Editable</span>
-                                                        </label>
-                                                        <div className="relative">
-                                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-teal-600 transition-colors">
+                                                        <div className="flex items-center justify-between ml-1">
+                                                            <label className="text-[14px] font-black uppercase text-slate-400 tracking-[0.2em] group-focus-within:text-teal-600 transition-colors flex items-center gap-1.5">
+                                                                <Globe size={14} className="text-teal-500" />
+                                                                <span>Public Profile Slug</span>
+                                                            </label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleAutoGenerateSlug}
+                                                                className="text-[11px] font-bold text-teal-600 hover:text-teal-700 flex items-center gap-1 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded-lg transition-all active:scale-95 border border-teal-100 cursor-pointer"
+                                                                title="Auto generate slug from your name"
+                                                            >
+                                                                <Sparkles size={11} /> Auto Generate
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Integrated Input with /d/ prefix */}
+                                                        <div className="flex items-center bg-white/60 border border-slate-200/80 rounded-2xl overflow-hidden focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/10 focus-within:bg-white transition-all shadow-sm">
+                                                            <div className="pl-4 pr-2 text-slate-400">
                                                                 <UserCircle size={18} />
                                                             </div>
+                                                            <span className="text-slate-400 font-mono text-xs font-bold select-none pr-1">/d/</span>
                                                             <input 
                                                                 type="text"
                                                                 placeholder="e.g. dr-abhishek-rao"
-                                                                className="w-full pl-12 pr-4 py-4 bg-white/50 border border-slate-200/60 rounded-2xl outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white font-black text-sm text-slate-900 shadow-sm transition-all duration-300"
+                                                                className="w-full py-4 pr-4 bg-transparent outline-none font-black text-sm text-slate-900"
                                                                 value={user.slug || ''} 
                                                                 onChange={(e) => {
-                                                                    const cleanSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-                                                                    setUser({...user, slug: cleanSlug});
+                                                                    const cleanSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+                                                                    setUser({ ...user, slug: cleanSlug, publicListingConsent: true });
                                                                 }}
                                                             />
+                                                            {user.slug && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setUser({ ...user, slug: '' })}
+                                                                    className="pr-4 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                                    title="Clear slug"
+                                                                >
+                                                                    <X size={16} />
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        {user.slug && (
-                                                            <p className="text-[12px] font-bold text-teal-600 pl-1 flex items-center gap-1.5 truncate">
-                                                                <span>🔗 Booking URL:</span>
-                                                                <span className="text-slate-600 font-mono text-[11px]">/doctor/{user.slug}</span>
+
+                                                        {/* Live Action Bar: Link, Copy & Test Preview */}
+                                                        {user.slug ? (
+                                                            <div className="mt-2 p-3 bg-gradient-to-r from-teal-50/80 to-slate-50 border border-teal-100 rounded-xl flex flex-wrap items-center justify-between gap-2">
+                                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                                    <span className="text-[11px] font-black text-teal-700 uppercase tracking-wider shrink-0">Live URL:</span>
+                                                                    <span className="text-slate-700 font-mono text-[12px] font-bold truncate">
+                                                                        {window.location.host}/d/{user.slug}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleCopyBookingUrl}
+                                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${copiedSlug ? 'bg-green-600 text-white' : 'bg-white border border-teal-200 text-teal-700 hover:bg-teal-50'}`}
+                                                                    >
+                                                                        {copiedSlug ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy Link</>}
+                                                                    </button>
+                                                                    <a
+                                                                        href={`/d/${user.slug}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="px-3 py-1.5 bg-teal-600 text-white hover:bg-teal-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-all active:scale-95 shadow-sm"
+                                                                        title="Open your public profile in a new tab"
+                                                                    >
+                                                                        <ExternalLink size={12} /> Test Page
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-[11px] text-slate-400 font-medium pl-1">
+                                                                Create a custom short URL to share with patients so they can book appointments directly.
                                                             </p>
                                                         )}
+
+                                                        {/* DPDP Act Public Directory Consent Checkbox */}
+                                                        <div className="pt-2">
+                                                            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/60 hover:bg-slate-50 cursor-pointer transition-colors">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={user.publicListingConsent !== false}
+                                                                    onChange={(e) => setUser({ ...user, publicListingConsent: e.target.checked })}
+                                                                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer accent-teal-600"
+                                                                />
+                                                                <div className="text-xs">
+                                                                    <span className="font-bold text-slate-800">Enable Public Online Booking & Profile Listing</span>
+                                                                    <p className="text-[11px] text-slate-400 leading-normal mt-0.5">
+                                                                        Allows patients to search and access your profile at <code className="text-teal-700">/d/{user.slug || 'your-slug'}</code> in compliance with India's DPDP Act 2023.
+                                                                    </p>
+                                                                </div>
+                                                            </label>
+                                                        </div>
                                                     </div>
                                                 </>
                                             )}

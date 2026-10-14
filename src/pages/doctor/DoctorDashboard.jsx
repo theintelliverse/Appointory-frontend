@@ -116,6 +116,7 @@ const DoctorDashboard = () => {
   const [stats, setStats] = useState({
     scheduled: 0,
     inConsultation: 0,
+    completed: 0,
     avgWaitTime: formatWaitTime(localStorage.getItem('avgWaitTime')),
     pendingFollowUps: 0
   });
@@ -163,6 +164,9 @@ const DoctorDashboard = () => {
   const [diagnosis, setDiagnosis] = useState("");
   const [medicines, setMedicines] = useState([{ name: '', time: '', amount: '', total: '' }]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState("");
   const [patientData, setPatientData] = useState(null);
   const [showHistoryLocker, setShowHistoryLocker] = useState(false);
   const [showPreviousNotesModal, setShowPreviousNotesModal] = useState(false);
@@ -344,7 +348,7 @@ const DoctorDashboard = () => {
     if (!matchesSearch) return false;
 
     const s = (p.status || '').toLowerCase();
-    if (activeTab === 'All') return true;
+    if (activeTab === 'All') return s !== 'completed';
     if (activeTab === 'Pending') return !p.isApproved || s === 'pending-approval' || s === 'pending';
     if (activeTab === 'Waiting') return s === 'waiting';
     if (activeTab === 'In') return s === 'in-consultation';
@@ -360,12 +364,20 @@ const DoctorDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success && res.data.data) {
-        const backendStats = res.data.data.stats || { scheduled: 0, inConsultation: 0, avgWaitTime: '0 mins', pendingFollowUps: 0 };
+        const queueList = res.data.data.queue || [];
+        const backendStats = res.data.data.stats || { scheduled: 0, inConsultation: 0, completed: 0, avgWaitTime: '0 mins', pendingFollowUps: 0 };
+        
+        const completedFromQueue = queueList.filter(p => (p.status || '').toLowerCase() === 'completed').length;
+        const totalAppointments = queueList.length;
+
         setStats({
           ...backendStats,
+          scheduled: totalAppointments > 0 ? totalAppointments : (backendStats.scheduled || 0),
+          completed: backendStats.completed !== undefined ? backendStats.completed : completedFromQueue,
+          inConsultation: queueList.filter(p => (p.status || '').toLowerCase() === 'in-consultation').length,
           avgWaitTime: formatWaitTime(localStorage.getItem('avgWaitTime') || backendStats.avgWaitTime)
         });
-        setQueue(res.data.data.queue || []);
+        setQueue(queueList);
         setReminders(res.data.data.reminders || []);
 
         const queueData = res.data.data.queue || [];
@@ -536,17 +548,51 @@ const DoctorDashboard = () => {
         }
 
         // --- 💾 LOAD CONSULTATION DRAFT OR PREVIOUS PRESCRIPTION ---
-        const savedDraft = localStorage.getItem(`consultation_draft_${activePatient._id}`);
-        if (savedDraft) {
-          try {
-            const { diagnosis: draftDiag, medicines: draftMeds, notes: draftNotes } = JSON.parse(savedDraft);
-            setDiagnosis(draftDiag || "");
-            setMedicines(draftMeds || []);
-            setNotes(draftNotes || "");
-          } catch (e) {
-            console.error("Draft load error:", e);
-          }
+        let draftFound = false;
+
+        // 1. Check server draft first
+        if (activePatient?.consultationDraft?.savedAt) {
+          const sDraft = activePatient.consultationDraft;
+          setDiagnosis(sDraft.diagnosis || "");
+          setMedicines(sDraft.medicines && sDraft.medicines.length > 0 ? sDraft.medicines : [{ name: '', strength: '', whenToTake: '', beforeAfter: '', duration: '', instructions: '' }]);
+          setNotes(sDraft.notes || "");
+          if (sDraft.followUpDate) setFollowUpDate(sDraft.followUpDate.split('T')[0]);
+          const dTime = new Date(sDraft.savedAt);
+          setDraftSavedAt(dTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          draftFound = true;
         } else {
+          // 2. Check localStorage draft
+          const savedDraft = localStorage.getItem(`consultation_draft_${activePatient._id}`);
+          if (savedDraft) {
+            try {
+              const parsed = JSON.parse(savedDraft);
+              setDiagnosis(parsed.diagnosis || "");
+              setMedicines(parsed.medicines && parsed.medicines.length > 0 ? parsed.medicines : [{ name: '', strength: '', whenToTake: '', beforeAfter: '', duration: '', instructions: '' }]);
+              setNotes(parsed.notes || "");
+              if (parsed.followUpDate) setFollowUpDate(parsed.followUpDate);
+              setDraftSavedAt(parsed.savedAt ? new Date(parsed.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Saved Locally');
+              draftFound = true;
+            } catch (e) {
+              console.error("Draft load error:", e);
+            }
+          }
+        }
+
+        if (draftFound) {
+          const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+          });
+          Toast.fire({
+            icon: 'info',
+            title: 'Resumed saved consultation draft.'
+          });
+        } else {
+          setDraftSavedAt(null);
+          setFollowUpDate("");
           // Fetch latest private note
           let privateNoteLoaded = false;
           try {
@@ -605,7 +651,7 @@ const DoctorDashboard = () => {
               });
             }
           } else {
-            setMedicines([]);
+            setMedicines([{ name: '', strength: '', whenToTake: '', beforeAfter: '', duration: '', instructions: '' }]);
             setNotes("");
           }
           setDiagnosis("");
@@ -615,6 +661,33 @@ const DoctorDashboard = () => {
       loadConsultationData();
     }
   }, [activePatient, isConsultationMode, token]);
+
+  // --- 🔄 AUTO-SAVE DRAFT (Debounced local storage persistence) ---
+  useEffect(() => {
+    if (!isConsultationMode || !activePatient?._id) return;
+    
+    const hasContent = (diagnosis && diagnosis.trim()) || 
+      (notes && notes.trim()) || 
+      followUpDate || 
+      (medicines && medicines.length > 0 && medicines.some(m => m.name && m.name.trim()));
+      
+    if (!hasContent) return;
+
+    const timer = setTimeout(() => {
+      const now = new Date();
+      const draftData = {
+        notes: notes || '',
+        diagnosis: diagnosis || '',
+        medicines: medicines || [],
+        followUpDate: followUpDate || null,
+        savedAt: now.toISOString()
+      };
+      localStorage.setItem(`consultation_draft_${activePatient._id}`, JSON.stringify(draftData));
+      setDraftSavedAt(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [diagnosis, notes, medicines, followUpDate, isConsultationMode, activePatient]);
 
   const handleApprovePatient = async (patient) => {
     try {
@@ -653,14 +726,15 @@ const DoctorDashboard = () => {
   };
 
   const handleCompleteVisit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setIsProcessing(true);
     setIsSyncing(true);
     try {
       const payload = {
         notes,
         diagnosis,
-        medicines
+        medicines,
+        followUpDate: followUpDate || null
       };
 
       const res = await axios.patch(`${API_URL}/api/queue/complete/${activePatient._id}`, payload, {
@@ -670,13 +744,15 @@ const DoctorDashboard = () => {
       if (res.data.success) {
         // Clear local storage draft
         localStorage.removeItem(`consultation_draft_${activePatient._id}`);
+        setDraftSavedAt(null);
 
         setIsConsultationMode(false);
         setActivePatient(null);
         setNotes("");
         setDiagnosis("");
-        setMedicines([]);
-        Swal.fire('Success', 'Consultation record locked and saved.', 'success');
+        setFollowUpDate("");
+        setMedicines([{ name: '', strength: '', whenToTake: '', beforeAfter: '', duration: '', instructions: '' }]);
+        Swal.fire('Success', 'Consultation record locked and saved permanently.', 'success');
         fetchDashboardData(false);
       }
     } catch (err) {
@@ -685,6 +761,99 @@ const DoctorDashboard = () => {
     } finally {
       setIsProcessing(false);
       setIsSyncing(false);
+    }
+  };
+
+  const handleSaveDraft = async (silent = false) => {
+    if (!activePatient?._id) return;
+    setIsSavingDraft(true);
+    const now = new Date();
+    const timeFormatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const draftData = {
+      notes: notes || '',
+      diagnosis: diagnosis || '',
+      medicines: medicines || [],
+      followUpDate: followUpDate || null,
+      savedAt: now.toISOString()
+    };
+
+    // 1. Immediately save to localStorage for offline safety
+    localStorage.setItem(`consultation_draft_${activePatient._id}`, JSON.stringify(draftData));
+    setDraftSavedAt(timeFormatted);
+
+    // 2. Sync to Backend
+    try {
+      const res = await axios.patch(`${API_URL}/api/queue/draft/${activePatient._id}`, draftData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) {
+        setActivePatient(prev => prev ? { ...prev, consultationDraft: draftData } : prev);
+        if (!silent) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `Draft saved successfully (${timeFormatted})`,
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to save draft to server:", err);
+      if (!silent) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: `Draft saved locally (${timeFormatted})`,
+          showConfirmButton: false,
+          timer: 2500
+        });
+      }
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleDiscardDraft = async () => {
+    if (!activePatient?._id) return;
+    const confirm = await Swal.fire({
+      title: 'Discard Draft?',
+      text: 'Are you sure you want to discard this consultation draft? All unsaved inputs will be cleared.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, Discard Draft'
+    });
+
+    if (confirm.isConfirmed) {
+      localStorage.removeItem(`consultation_draft_${activePatient._id}`);
+      try {
+        await axios.delete(`${API_URL}/api/queue/draft/${activePatient._id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        console.error("Discard draft API error:", err);
+      }
+      setActivePatient(prev => prev ? { ...prev, consultationDraft: null } : prev);
+      setDiagnosis("");
+      setNotes("");
+      setFollowUpDate("");
+      setMedicines([{ name: '', strength: '', whenToTake: '', beforeAfter: '', duration: '', instructions: '' }]);
+      setDraftSavedAt(null);
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Draft discarded. Form cleared.',
+        showConfirmButton: false,
+        timer: 2500
+      });
+      fetchDashboardData(false);
     }
   };
 
@@ -841,25 +1010,6 @@ const DoctorDashboard = () => {
     } finally {
       setIsSyncing(false);
     }
-  };
-
-  const handleSaveDraft = () => {
-    if (!activePatient?._id) return;
-    const draftData = {
-      diagnosis,
-      medicines,
-      notes
-    };
-    localStorage.setItem(`consultation_draft_${activePatient._id}`, JSON.stringify(draftData));
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: 'Draft Saved Locally',
-      showConfirmButton: false,
-      timer: 2000
-    });
-    setIsConsultationMode(false);
   };
 
   const handleSaveNote = async () => {
@@ -1121,13 +1271,52 @@ const DoctorDashboard = () => {
                   {/* Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setIsConsultationMode(false)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors">
+                      <button onClick={() => setIsConsultationMode(false)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors" title="Back to Queue">
                         <ArrowLeft size={18} />
                       </button>
-                      <h1 className="text-lg font-bold text-gray-900">Patient Overview</h1>
-                      <span className="hidden md:block text-[14px] text-gray-400">Dashboard &gt; Patients &gt; {activePatient?.patientName}</span>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h1 className="text-lg font-bold text-gray-900">Patient Consultation</h1>
+                          {draftSavedAt ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                              Draft Saved · {draftSavedAt}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-50 text-gray-500 border border-gray-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                              Active Session
+                            </span>
+                          )}
+                        </div>
+                        <span className="hidden md:block text-[13px] text-gray-400">Queue &gt; Patients &gt; {activePatient?.patientName} (Token: {activePatient?.tokenNumber || 'N/A'})</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSaveDraft(false)}
+                        disabled={isSavingDraft}
+                        className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl font-bold text-xs hover:bg-amber-100 transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Save size={13} className="text-amber-600" />
+                        {isSavingDraft ? 'Saving...' : draftSavedAt ? 'Update Draft' : 'Save Draft'}
+                      </button>
+                      {draftSavedAt && (
+                        <button
+                          onClick={handleDiscardDraft}
+                          className="px-2.5 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl font-bold text-xs border border-transparent hover:border-red-100 transition-all"
+                          title="Discard current draft"
+                        >
+                          Discard
+                        </button>
+                      )}
+                      <button
+                        onClick={handleCompleteVisit}
+                        disabled={isProcessing}
+                        className="px-4 py-1.5 bg-teal-600 text-white rounded-xl font-bold text-xs hover:bg-teal-700 transition-all shadow-sm shadow-teal-600/20 disabled:opacity-50"
+                      >
+                        {isProcessing ? 'Finalizing...' : 'Complete Visit'}
+                      </button>
                     </div>
                   </div>
 
@@ -1189,6 +1378,19 @@ const DoctorDashboard = () => {
                           )}
                           <button className="text-[14px] font-bold text-gray-500 hover:text-teal-600 flex items-center gap-1"><Edit3 size={12} /> Edit Notes</button>
                         </div>
+                      </div>
+                      <div className="mb-2">
+                        <label className="text-[12px] font-bold text-gray-700 mb-1 flex items-center justify-between">
+                          <span>Clinical Diagnosis</span>
+                          <span className="text-[11px] text-teal-600 font-medium">Included in Prescription & Locker</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={diagnosis}
+                          onChange={(e) => setDiagnosis(e.target.value)}
+                          placeholder="e.g. Acute Viral Bronchitis, Type 2 Diabetes"
+                          className="w-full bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-800 outline-none focus:border-teal-500 focus:bg-white transition-all shadow-sm"
+                        />
                       </div>
                       <div className="flex items-start gap-1.5 mb-2">
                         <Lock size={10} className="text-orange-400 mt-0.5" />
@@ -1520,23 +1722,81 @@ const DoctorDashboard = () => {
                     <div className="w-full xl:w-[30%] flex flex-col gap-4">
                       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex-grow">
                         <div className="flex justify-between items-center mb-3">
-                          <h3 className="text-sm font-bold text-gray-900">Follow Up</h3>
-                          <button className="text-[14px] font-bold text-teal-600 hover:underline">Schedule</button>
+                          <h3 className="text-sm font-bold text-gray-900">Follow Up Schedule</h3>
+                          {followUpDate && (
+                            <button onClick={() => setFollowUpDate("")} className="text-[12px] font-bold text-red-500 hover:underline">Clear</button>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-xl border border-gray-100">
-                          <p className="text-[14px] text-gray-400 w-full text-center py-1">No follow-up scheduled.</p>
+                        <div className="space-y-2.5">
+                          <input
+                            type="date"
+                            value={followUpDate}
+                            min={new Date().toISOString().split('T')[0]}
+                            onChange={(e) => setFollowUpDate(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all"
+                          />
+                          <div className="flex gap-1.5 flex-wrap">
+                            {[
+                              { label: '+3 Days', days: 3 },
+                              { label: '+1 Wk', days: 7 },
+                              { label: '+2 Wks', days: 14 },
+                              { label: '+1 Mo', days: 30 }
+                            ].map(f => (
+                              <button
+                                key={f.label}
+                                type="button"
+                                onClick={() => {
+                                  const d = new Date();
+                                  d.setDate(d.getDate() + f.days);
+                                  setFollowUpDate(d.toISOString().split('T')[0]);
+                                }}
+                                className="px-2 py-1 bg-teal-50 hover:bg-teal-100 text-teal-700 text-[11px] font-bold rounded-lg border border-teal-100 transition-colors"
+                              >
+                                {f.label}
+                              </button>
+                            ))}
+                          </div>
+                          {followUpDate ? (
+                            <p className="text-[12px] font-bold text-teal-700 bg-teal-50/80 p-2 rounded-xl border border-teal-100 text-center">
+                              Scheduled: {new Date(followUpDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          ) : (
+                            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-xl border border-gray-100">
+                              <p className="text-[13px] text-gray-400 w-full text-center py-0.5">No follow-up scheduled.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Completion Buttons */}
-                      <div className="flex flex-col gap-3">
-                        <button onClick={handleCompleteVisit} disabled={isProcessing} className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold text-sm hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 disabled:opacity-50">
-                          {isProcessing ? 'Saving...' : 'Complete Consultation'}
+                      {/* Completion & Draft Buttons */}
+                      <div className="flex flex-col gap-2.5">
+                        <button onClick={handleCompleteVisit} disabled={isProcessing} className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold text-sm hover:bg-teal-700 transition-all shadow-md shadow-teal-600/20 disabled:opacity-50 flex items-center justify-center gap-2">
+                          {isProcessing ? 'Saving & Finalizing...' : 'Complete Consultation'}
                         </button>
-                        <div className="flex gap-3">
-                          <button onClick={handleReferToLab} className="flex-1 py-2.5 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl font-bold text-[14px] hover:bg-teal-100 transition-all shadow-sm flex items-center justify-center gap-1.5"><Plus size={14} /> New Test</button>
-                          <button onClick={handleSaveDraft} className="flex-1 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-[14px] hover:bg-gray-50 transition-all shadow-sm">Save Draft</button>
+                        <div className="flex gap-2">
+                          <button onClick={handleReferToLab} className="flex-1 py-2.5 bg-teal-50 border border-teal-200 text-teal-700 rounded-xl font-bold text-[13px] hover:bg-teal-100 transition-all shadow-sm flex items-center justify-center gap-1.5">
+                            <Plus size={14} /> New Test
+                          </button>
+                          <button
+                            onClick={() => handleSaveDraft(false)}
+                            disabled={isSavingDraft}
+                            className="flex-1 py-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl font-bold text-[13px] hover:bg-amber-100 transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Save size={14} className="text-amber-600" />
+                            {isSavingDraft ? 'Saving...' : draftSavedAt ? 'Update Draft' : 'Save Draft'}
+                          </button>
                         </div>
+                        {draftSavedAt && (
+                          <div className="flex items-center justify-between px-2 pt-0.5">
+                            <span className="text-[11.5px] text-emerald-600 font-semibold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                              Draft saved: {draftSavedAt}
+                            </span>
+                            <button onClick={handleDiscardDraft} className="text-[11.5px] text-red-500 hover:text-red-700 font-bold hover:underline">
+                              Discard Draft
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1549,7 +1809,7 @@ const DoctorDashboard = () => {
                   <div className="grid grid-cols-4 gap-1.5 md:gap-3">
                     {[
                       { label: 'Appts', full: 'Appointments', value: stats.scheduled, grad: 'from-teal-500 to-cyan-500', icon: <Calendar size={12} />, desktopIcon: <Calendar size={16} /> },
-                      { label: 'Consult', full: 'In Consult', value: stats.inConsultation, grad: 'from-blue-500 to-indigo-500', icon: <Stethoscope size={12} />, desktopIcon: <Stethoscope size={16} /> },
+                      { label: 'Consult', full: 'Consulted', value: stats.completed, grad: 'from-blue-500 to-indigo-500', icon: <Stethoscope size={12} />, desktopIcon: <Stethoscope size={16} /> },
                       { label: 'Wait', full: 'Avg. Wait', value: stats.avgWaitTime, grad: 'from-violet-500 to-purple-500', icon: <Clock size={12} />, desktopIcon: <Clock size={16} /> },
                       { label: 'Follow', full: 'Follow-ups', value: stats.pendingFollowUps, grad: 'from-orange-500 to-amber-500', icon: <ClipboardList size={12} />, desktopIcon: <ClipboardList size={16} /> }
                     ].map((c) => (
@@ -1597,7 +1857,7 @@ const DoctorDashboard = () => {
 
                       <div className="px-4 pt-1.5 flex gap-0.5 border-b border-gray-100">
                         {[
-                          { id: 'All', label: 'All', count: queue.length },
+                          { id: 'All', label: 'All', count: queue.filter(p => (p.status || '').toLowerCase() !== 'completed').length },
                           { id: 'Pending', label: 'Pending', count: queue.filter(p => !p.isApproved || p.status === 'Pending-Approval').length },
                           { id: 'Waiting', label: 'Waiting', count: queue.filter(p => p.status === 'Waiting').length },
                           { id: 'In', label: 'Active', count: queue.filter(p => p.status === 'In-Consultation').length },
@@ -1620,72 +1880,100 @@ const DoctorDashboard = () => {
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-50">
-                            {filteredQueue.map((patient, idx) => (
-                              <div key={patient._id}
-                                onClick={() => {
-                                  if (patient.status === 'Waiting') {
-                                    if (patient.currentStage === 'Lab-Pending') { Swal.fire({ icon: 'info', title: 'Lab Pending', text: 'Patient is at the lab.', confirmButtonColor: '#0d9488' }); return; }
-                                    handleStartConsultation(patient);
-                                  } else if (patient.status === 'In-Consultation') { setActivePatient(patient); setIsConsultationMode(true); }
-                                }}
-                                className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-teal-50/30 transition-all cursor-pointer group">
-                                <span className="text-[14px] font-bold text-gray-300 w-4 text-center shrink-0">{idx + 1}</span>
-                                <span className="text-[14px] font-semibold text-gray-400 w-14 shrink-0 hidden sm:block">
-                                  {new Date(patient.appointmentDate || patient.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-teal-50 to-cyan-50 flex items-center justify-center text-teal-600 font-bold text-[14px] border border-teal-100 shrink-0 group-hover:from-teal-500 group-hover:to-cyan-500 group-hover:text-white transition-all">
-                                    {(patient.patientName || 'UP').substring(0, 2).toUpperCase()}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <p className="text-[14px] font-semibold text-gray-900 leading-tight truncate">{patient.patientName}</p>
-                                      {(patient.currentStage === 'Lab-Pending' || patient.currentStage === 'Lab-Processing') && (
-                                        <FlaskConical size={11} className="text-blue-500 animate-pulse shrink-0" title="Patient in Lab" />
-                                      )}
+                            {filteredQueue.map((patient, idx) => {
+                              const hasDraft = !!(patient.consultationDraft?.savedAt || localStorage.getItem(`consultation_draft_${patient._id}`));
+                              return (
+                                <div key={patient._id}
+                                  onClick={() => {
+                                    if (patient.status === 'Waiting') {
+                                      if (patient.currentStage === 'Lab-Pending') { Swal.fire({ icon: 'info', title: 'Lab Pending', text: 'Patient is at the lab.', confirmButtonColor: '#0d9488' }); return; }
+                                      if (hasDraft) {
+                                        setActivePatient(patient);
+                                        setIsConsultationMode(true);
+                                      } else {
+                                        handleStartConsultation(patient);
+                                      }
+                                    } else if (patient.status === 'In-Consultation') {
+                                      setActivePatient(patient);
+                                      setIsConsultationMode(true);
+                                    }
+                                  }}
+                                  className={`flex items-center gap-2.5 px-4 py-2.5 transition-all cursor-pointer group ${hasDraft ? 'bg-amber-50/30 hover:bg-amber-50/60' : 'hover:bg-teal-50/30'}`}>
+                                  <span className="text-[14px] font-bold text-gray-300 w-4 text-center shrink-0">{idx + 1}</span>
+                                  <span className="text-[14px] font-semibold text-gray-400 w-14 shrink-0 hidden sm:block">
+                                    {new Date(patient.appointmentDate || patient.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[14px] border shrink-0 transition-all ${
+                                      hasDraft 
+                                        ? 'bg-amber-100 text-amber-700 border-amber-200 group-hover:bg-amber-500 group-hover:text-white' 
+                                        : 'bg-gradient-to-br from-teal-50 to-cyan-50 text-teal-600 border-teal-100 group-hover:from-teal-500 group-hover:to-cyan-500 group-hover:text-white'
+                                    }`}>
+                                      {(patient.patientName || 'UP').substring(0, 2).toUpperCase()}
                                     </div>
-                                    <p className="text-[14px] text-gray-400 truncate">
-                                      {patient.reason || 'General'} - {patient.tokenNumber}
-                                      {patient.estimatedWait !== undefined && ` · Est: ${patient.estimatedWait}m`}
-                                    </p>
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="text-[14px] font-semibold text-gray-900 leading-tight truncate">{patient.patientName}</p>
+                                        {(patient.currentStage === 'Lab-Pending' || patient.currentStage === 'Lab-Processing') && (
+                                          <FlaskConical size={11} className="text-blue-500 animate-pulse shrink-0" title="Patient in Lab" />
+                                        )}
+                                        {hasDraft && (
+                                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Draft Saved
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[14px] text-gray-400 truncate">
+                                        {patient.reason || 'General'} - {patient.tokenNumber}
+                                        {patient.estimatedWait !== undefined && ` · Est: ${patient.estimatedWait}m`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className={`shrink-0 px-2 py-0.5 rounded text-[14px] font-bold uppercase tracking-wider hidden md:block ${patient.status === 'In-Consultation' ? 'bg-green-50 text-green-600 border border-green-100' :
+                                      patient.currentStage === 'Lab-Pending' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                        patient.currentStage === 'Lab-Completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
+                                          patient.status === 'Waiting' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
+                                            patient.status === 'Completed' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-gray-50 text-gray-400'
+                                    }`}>
+                                    {patient.currentStage === 'Lab-Pending' ? 'At Lab' : patient.currentStage === 'Lab-Completed' ? 'Lab Done' : patient.status}
+                                  </span>
+                                  <div className="shrink-0">
+                                    {patient.status === 'Waiting' ? (
+                                      patient.currentStage === 'Lab-Pending' ? (
+                                        <span className="px-2 py-1 bg-gray-50 text-gray-400 border border-gray-200 rounded-lg text-[14px] font-bold">At Lab</span>
+                                      ) : hasDraft ? (
+                                        <button onClick={(e) => { e.stopPropagation(); setActivePatient(patient); setIsConsultationMode(true); }}
+                                          className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1">
+                                          Resume Draft
+                                        </button>
+                                      ) : (
+                                        <button onClick={(e) => { e.stopPropagation(); handleStartConsultation(patient); }}
+                                          className={`px-3 py-1 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95 ${patient.currentStage === 'Lab-Completed' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-teal-600 hover:bg-teal-700'}`}>
+                                          {patient.currentStage === 'Lab-Completed' ? 'Resume' : 'Start'}
+                                        </button>
+                                      )
+                                    ) : patient.status === 'In-Consultation' ? (
+                                      <button onClick={(e) => { e.stopPropagation(); setActivePatient(patient); setIsConsultationMode(true); }}
+                                        className={`px-3 py-1 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95 ${hasDraft ? 'bg-amber-500 hover:bg-amber-600' : 'bg-orange-500 hover:bg-orange-600 animate-pulse'}`}>
+                                        {hasDraft ? 'Resume Draft' : 'Resume'}
+                                      </button>
+                                    ) : (patient.status === 'Pending-Approval' || !patient.isApproved) ? (
+                                      <button onClick={(e) => { e.stopPropagation(); handleApprovePatient(patient); }}
+                                        className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95">Approve</button>
+                                    ) : patient.status === 'Completed' ? null : (
+                                      <span className="text-[14px] text-gray-300">{patient.status}</span>
+                                    )}
                                   </div>
                                 </div>
-                                <span className={`shrink-0 px-2 py-0.5 rounded text-[14px] font-bold uppercase tracking-wider hidden md:block ${patient.status === 'In-Consultation' ? 'bg-green-50 text-green-600 border border-green-100' :
-                                    patient.currentStage === 'Lab-Pending' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                                      patient.currentStage === 'Lab-Completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' :
-                                        patient.status === 'Waiting' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                                          patient.status === 'Completed' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-gray-50 text-gray-400'
-                                  }`}>
-                                  {patient.currentStage === 'Lab-Pending' ? 'At Lab' : patient.currentStage === 'Lab-Completed' ? 'Lab Done' : patient.status}
-                                </span>
-                                <div className="shrink-0">
-                                  {patient.status === 'Waiting' ? (
-                                    patient.currentStage === 'Lab-Pending' ? (
-                                      <span className="px-2 py-1 bg-gray-50 text-gray-400 border border-gray-200 rounded-lg text-[14px] font-bold">At Lab</span>
-                                    ) : (
-                                      <button onClick={(e) => { e.stopPropagation(); handleStartConsultation(patient); }}
-                                        className={`px-3 py-1 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95 ${patient.currentStage === 'Lab-Completed' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-teal-600 hover:bg-teal-700'}`}>
-                                        {patient.currentStage === 'Lab-Completed' ? 'Resume' : 'Start'}
-                                      </button>
-                                    )
-                                  ) : patient.status === 'In-Consultation' ? (
-                                    <button onClick={(e) => { e.stopPropagation(); setActivePatient(patient); setIsConsultationMode(true); }}
-                                      className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95 animate-pulse">Resume</button>
-                                  ) : (patient.status === 'Pending-Approval' || !patient.isApproved) ? (
-                                    <button onClick={(e) => { e.stopPropagation(); handleApprovePatient(patient); }}
-                                      className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-[14px] font-bold shadow-sm transition-all active:scale-95">Approve</button>
-                                  ) : (
-                                    <span className="text-[14px] text-gray-300">{patient.status}</span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
 
                       <div className="px-4 py-2 border-t border-gray-100 flex justify-between items-center bg-gray-50/50">
-                        <span className="text-[14px] font-bold text-gray-400">{queue.length} in queue</span>
+                        <span className="text-[14px] font-bold text-gray-400">{filteredQueue.length} in queue</span>
                         <span className="text-[14px] font-bold text-gray-400">{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                       </div>
                     </div>

@@ -16,11 +16,16 @@ import {
   Pill,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  MessageCircle,
+  User,
+  ShieldCheck
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
 import Swal from 'sweetalert2';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import { API_URL } from '../../config/runtime';
 
@@ -158,6 +163,241 @@ const Prescriptions = () => {
     }
   };
 
+  const generatePrescriptionPdf = (p) => {
+    try {
+      const doc = new jsPDF();
+      const clinicName = localStorage.getItem('clinicName') || 'Appointory Healthcare';
+      const doctorName = localStorage.getItem('userName') || 'Doctor';
+      const formattedDoctor = doctorName.toLowerCase().startsWith('dr') ? doctorName : `Dr. ${doctorName}`;
+      const specialization = localStorage.getItem('specialization') || 'Consultant Physician';
+      const patientName = p.patientName || 'Valued Patient';
+      const patientPhone = p.patientPhone || 'N/A';
+      const dateStr = p.createdAt
+        ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const timeStr = p.createdAt
+        ? new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Top Header Banner
+      doc.setFillColor(13, 148, 136); // Teal #0d9488
+      doc.rect(0, 0, 210, 36, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text(clinicName.toUpperCase(), 14, 16);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`${formattedDoctor} · ${specialization}`, 14, 23);
+      doc.setFontSize(8.5);
+      doc.text('Smart Healthcare & Clinical Consultation Center', 14, 29);
+
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MEDICAL PRESCRIPTION', 196, 16, { align: 'right' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${dateStr}`, 196, 23, { align: 'right' });
+      doc.text(`Time: ${timeStr}`, 196, 29, { align: 'right' });
+
+      // Patient Information Block
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('PATIENT DETAILS', 14, 46);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Patient Name: ${patientName}`, 14, 53);
+      doc.text(`Mobile Number: ${patientPhone}`, 14, 59);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(13, 148, 136);
+      doc.text(`Diagnosis: ${p.diagnosis || 'General Consultation'}`, 110, 53);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Prescription ID: #${(p._id || '').slice(-6).toUpperCase() || 'RX-001'}`, 110, 59);
+
+      // Divider Line
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(14, 65, 196, 65);
+
+      // Medicines Table
+      const medsList = p.medicines || [];
+      const tableRows = medsList.length > 0 ? medsList.map((m, idx) => [
+        idx + 1,
+        m.name || 'Medicine',
+        m.amount || '-',
+        m.time || 'As Directed',
+        m.total || '-'
+      ]) : [
+        ['1', 'No specific medicines recorded', '-', '-', '-']
+      ];
+
+      autoTable(doc, {
+        startY: 70,
+        head: [['#', 'Medicine Name', 'Dosage / Amount', 'Timing / Frequency', 'Duration / Total']],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [13, 148, 136],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9.5
+        },
+        bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 }
+      });
+
+      const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 12 : 130;
+
+      // Doctor Notes / Clinical Advice
+      if (p.notes) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        doc.text('DOCTOR ADVICE / CLINICAL INSTRUCTIONS:', 14, finalY);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105);
+        const splitNotes = doc.splitTextToSize(`"${p.notes}"`, 180);
+        doc.text(splitNotes, 14, finalY + 6);
+      }
+
+      // Signature Area
+      const sigY = Math.max(finalY + (p.notes ? 30 : 20), 240);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`${formattedDoctor}`, 196, sigY, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Authorized Medical Practitioner', 196, sigY + 5, { align: 'right' });
+      doc.line(140, sigY - 2, 196, sigY - 2);
+
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Verified digital prescription powered by Appointory.', 14, 285);
+      doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, 196, 285, { align: 'right' });
+
+      // Save PDF and open preview in new tab
+      doc.save(`Prescription_${(p.patientName || 'Patient').replace(/\s+/g, '_')}_${dateStr.replace(/\s+/g, '_')}.pdf`);
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      window.open(blobUrl, '_blank');
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Prescription PDF Created & Downloaded',
+        showConfirmButton: false,
+        timer: 2500
+      });
+    } catch (err) {
+      console.error('PDF Generation Error:', err);
+      Swal.fire('Error', 'Failed to generate PDF. Please try again.', 'error');
+    }
+  };
+
+  const sendPrescriptionWhatsApp = async (p) => {
+    let cleanPhone = (p.patientPhone || '').replace(/\D/g, '').slice(-10);
+
+    if (!cleanPhone || cleanPhone.length !== 10) {
+      const { value: enteredPhone } = await Swal.fire({
+        title: 'Enter Patient Phone',
+        input: 'tel',
+        inputLabel: 'Patient 10-digit mobile number for WhatsApp',
+        inputValue: p.patientPhone || '',
+        placeholder: 'e.g. 9876543210',
+        showCancelButton: true,
+        confirmButtonColor: '#16a34a',
+        confirmButtonText: 'Open WhatsApp',
+        inputValidator: (val) => {
+          const c = (val || '').replace(/\D/g, '').slice(-10);
+          if (!c || c.length !== 10) return 'Please enter a valid 10-digit mobile number';
+        }
+      });
+      if (!enteredPhone) return;
+      cleanPhone = enteredPhone.replace(/\D/g, '').slice(-10);
+    }
+
+    const clinicName = localStorage.getItem('clinicName') || 'Appointory Healthcare';
+    const doctorName = localStorage.getItem('userName') || 'Doctor';
+    const formattedDoctor = doctorName.toLowerCase().startsWith('dr') ? doctorName : `Dr. ${doctorName}`;
+    const dateStr = p.createdAt
+      ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    let medsText = '';
+    if (p.medicines && p.medicines.length > 0) {
+      p.medicines.forEach((m, idx) => {
+        medsText += `\n${idx + 1}. *${m.name}*`;
+        if (m.amount) medsText += ` - Dosage: ${m.amount}`;
+        if (m.time) medsText += ` | Timing: ${m.time}`;
+        if (m.total) medsText += ` | Duration: ${m.total}`;
+      });
+    } else {
+      medsText = '\nNo specific medicines listed.';
+    }
+
+    const adviceText = p.notes ? `\n\n📝 *Doctor Advice / Instructions:*\n${p.notes}` : '';
+
+    const message = `*🏥 ${clinicName.toUpperCase()} - PRESCRIPTION*\n━━━━━━━━━━━━━━━━━━━━\n👨‍⚕️ *Doctor:* ${formattedDoctor}\n📅 *Date:* ${dateStr}\n\n👤 *Patient:* ${p.patientName || 'Patient'}\n📱 *Phone:* ${cleanPhone}\n🩺 *Diagnosis / Condition:* ${p.diagnosis || 'Clinical Consultation'}\n\n💊 *PRESCRIBED MEDICINES:*${medsText}${adviceText}\n\n━━━━━━━━━━━━━━━━━━━━\n_Please follow the dosage as instructed. For queries or appointments, contact ${clinicName}._`;
+
+    const targetUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(targetUrl, '_blank');
+  };
+
+  const handlePrescriptionAction = async (prescription) => {
+    const cleanPhone = (prescription.patientPhone || '').replace(/\D/g, '').slice(-10);
+    const phoneDisplay = cleanPhone ? `+91 ${cleanPhone}` : 'No phone recorded';
+
+    const result = await Swal.fire({
+      title: 'Prescription Action',
+      html: `
+        <div style="text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 14px; margin-bottom: 14px;">
+          <p style="margin: 0 0 6px 0; font-size: 14px; color: #1e293b;">
+            <strong style="color: #0f766e;">Patient:</strong> ${prescription.patientName || 'Valued Patient'}
+          </p>
+          <p style="margin: 0 0 6px 0; font-size: 14px; color: #1e293b;">
+            <strong style="color: #0f766e;">Mobile:</strong> ${phoneDisplay}
+          </p>
+          <p style="margin: 0; font-size: 14px; color: #1e293b;">
+            <strong style="color: #0f766e;">Diagnosis:</strong> ${prescription.diagnosis || 'Clinical Consultation'}
+          </p>
+        </div>
+        <p style="font-size: 13px; font-weight: 700; color: #64748b; margin: 0;">How would you like to proceed?</p>
+      `,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '📄 Generate PDF',
+      denyButtonText: '💬 Send on WhatsApp',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#0d9488',
+      denyButtonColor: '#16a34a',
+      cancelButtonColor: '#94a3b8',
+      customClass: {
+        popup: 'rounded-[2rem] p-6',
+        confirmButton: 'rounded-xl px-4 py-2.5 font-bold text-sm shadow-md',
+        denyButton: 'rounded-xl px-4 py-2.5 font-bold text-sm shadow-md',
+        cancelButton: 'rounded-xl px-4 py-2.5 font-semibold text-sm'
+      }
+    });
+
+    if (result.isConfirmed) {
+      generatePrescriptionPdf(prescription);
+    } else if (result.isDenied) {
+      sendPrescriptionWhatsApp(prescription);
+    }
+  };
+
   // Filter by diagnosis OR phone
   const filteredPrescriptions = (prescriptions || []).filter(p => {
     if (!p) return false;
@@ -239,18 +479,48 @@ const Prescriptions = () => {
                 {filteredPrescriptions.map((p) => (
                   <div key={p._id} className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm hover:shadow-xl transition-all group flex flex-col justify-between">
                     <div>
-                      {/* Top: Icon + Print */}
-                      <div className="flex justify-between items-start mb-5">
+                      {/* Top: Icon + Actions (WhatsApp & Print/PDF) */}
+                      <div className="flex justify-between items-start mb-4">
                         <div className="w-12 h-12 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-600">
                           <Stethoscope size={22} />
                         </div>
-                        <button
-                          onClick={() => window.print()}
-                          className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-teal-600 hover:bg-teal-50 transition-all"
-                          title="Print"
-                        >
-                          <Printer size={16} />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => sendPrescriptionWhatsApp(p)}
+                            className="p-2.5 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer"
+                            title="Send on WhatsApp"
+                          >
+                            <MessageCircle size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePrescriptionAction(p)}
+                            className="p-2.5 bg-slate-50 text-slate-500 rounded-xl hover:text-teal-600 hover:bg-teal-50 transition-all shadow-sm active:scale-95 cursor-pointer"
+                            title="Print / Share Options"
+                          >
+                            <Printer size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Patient Banner (Stored in Patient Locker) */}
+                      <div className="mb-4 pb-3 border-b border-slate-100/90 flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-black uppercase tracking-wider mb-0.5">
+                            <User size={12} className="text-teal-600 shrink-0" />
+                            <span className="truncate">Patient Record</span>
+                          </div>
+                          <h3 className="text-base font-black text-slate-900 tracking-tight truncate">
+                            {p.patientName || 'Valued Patient'}
+                          </h3>
+                          <p className="text-xs font-mono font-bold text-slate-500">
+                            {p.patientPhone ? `+91 ${p.patientPhone.replace(/\D/g, '').slice(-10)}` : 'No phone recorded'}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0" title="This prescription is permanently archived in the patient's personal Health Locker">
+                          <ShieldCheck size={11} /> Stored in Locker
+                        </span>
                       </div>
 
                       {/* Diagnosis / Clinical Condition - Primary */}
@@ -412,6 +682,14 @@ const Prescriptions = () => {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold outline-none focus:border-teal-600 focus:bg-white transition-all text-slate-800"
                   />
                 </div>
+                <div className="col-span-1 md:col-span-2 p-3 bg-teal-50/70 border border-teal-200/60 rounded-xl flex items-center justify-between text-xs text-teal-900">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-teal-600 shrink-0" />
+                    <span>
+                      <strong>Digital Health Locker Sync:</strong> Automatically links & stores this prescription for the patient's phone ({patientPhone ? `+91 ${patientPhone.replace(/\D/g, '').slice(-10)}` : 'entered above'}) in their permanent record.
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Notes */}
@@ -430,12 +708,12 @@ const Prescriptions = () => {
               <div className="space-y-3 pt-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                   <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <Pill size={15} className="text-teal-600" /> Prescribed Medicines & Dosage Instructions
+                    <Pill size={15} className="text-teal-600" /> Prescribed Medicines, Dosage & Course Duration
                   </label>
                   <button
                     type="button"
                     onClick={() => setMedicines([...medicines, emptyMed()])}
-                    className="text-xs font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-3.5 py-1.5 rounded-xl border border-teal-200/80 transition-all flex items-center gap-1.5 uppercase tracking-wider whitespace-nowrap self-start sm:self-auto shadow-xs"
+                    className="text-xs font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-3.5 py-1.5 rounded-xl border border-teal-200/80 transition-all flex items-center gap-1.5 uppercase tracking-wider whitespace-nowrap self-start sm:self-auto shadow-xs cursor-pointer"
                   >
                     <Plus size={14} /> Add Medicine
                   </button>
@@ -443,9 +721,10 @@ const Prescriptions = () => {
 
                 {/* Column Headers for Large Screens */}
                 <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-1 text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  <span className="sm:col-span-5">Medicine Name & Strength</span>
-                  <span className="sm:col-span-3">Dosage / Quantity</span>
-                  <span className="sm:col-span-4">Timing & Clinical Instructions</span>
+                  <span className="sm:col-span-4">Medicine Name & Strength</span>
+                  <span className="sm:col-span-2">Dosage</span>
+                  <span className="sm:col-span-3">Duration / Course</span>
+                  <span className="sm:col-span-3">Timing & Clinical Instructions</span>
                 </div>
 
                 {/* Medicines Input Rows */}
@@ -454,7 +733,7 @@ const Prescriptions = () => {
                     <div key={idx} className="flex flex-col sm:grid sm:grid-cols-12 gap-2.5 sm:gap-3 items-center bg-slate-50/80 p-3 sm:p-2.5 rounded-2xl border border-slate-200/80 group transition-all hover:bg-white hover:border-teal-300 hover:shadow-xs">
                       
                       {/* Medicine Name */}
-                      <div className="w-full sm:col-span-5">
+                      <div className="w-full sm:col-span-4">
                         <label className="block text-[10px] font-bold text-slate-400 sm:hidden mb-1">Medicine Name</label>
                         <input
                           type="text"
@@ -471,7 +750,7 @@ const Prescriptions = () => {
                       </div>
 
                       {/* Dosage */}
-                      <div className="w-full sm:col-span-3">
+                      <div className="w-full sm:col-span-2">
                         <label className="block text-[10px] font-bold text-slate-400 sm:hidden mb-1">Dosage</label>
                         <input
                           type="text"
@@ -482,12 +761,54 @@ const Prescriptions = () => {
                             updated[idx].amount = e.target.value;
                             setMedicines(updated);
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold outline-none focus:border-teal-600 transition-all text-slate-800"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs sm:text-sm font-semibold outline-none focus:border-teal-600 transition-all text-slate-800"
                         />
                       </div>
 
+                      {/* Duration / Course */}
+                      <div className="w-full sm:col-span-3">
+                        <label className="block text-[10px] font-bold text-slate-400 sm:hidden mb-1">Duration / Days</label>
+                        <div className="space-y-1">
+                          <select
+                            value={['3 Days', '5 Days', '7 Days', '10 Days', '14 Days', '30 Days', 'SOS / As Needed'].includes(m.total) ? m.total : (m.total ? 'CUSTOM' : '')}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const updated = [...medicines];
+                              if (val === 'CUSTOM') {
+                                updated[idx].total = '';
+                              } else {
+                                updated[idx].total = val;
+                              }
+                              setMedicines(updated);
+                            }}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-teal-600 mb-1"
+                          >
+                            <option value="">-- Select Course --</option>
+                            <option value="3 Days">3 Days</option>
+                            <option value="5 Days">5 Days</option>
+                            <option value="7 Days">7 Days (1 Wk)</option>
+                            <option value="10 Days">10 Days</option>
+                            <option value="14 Days">14 Days (2 Wks)</option>
+                            <option value="30 Days">30 Days (1 Mo)</option>
+                            <option value="SOS / As Needed">SOS / As Needed</option>
+                            <option value="CUSTOM">✏️ Custom Course...</option>
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="e.g. 5 Days"
+                            value={m.total}
+                            onChange={(e) => {
+                              const updated = [...medicines];
+                              updated[idx].total = e.target.value;
+                              setMedicines(updated);
+                            }}
+                            className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-teal-600 transition-all text-slate-800"
+                          />
+                        </div>
+                      </div>
+
                       {/* Timing / Instructions */}
-                      <div className="w-full sm:col-span-4 flex items-center gap-2">
+                      <div className="w-full sm:col-span-3 flex items-center gap-2">
                         <div className="flex-grow space-y-1">
                           <label className="block text-[10px] font-bold text-slate-400 sm:hidden mb-1">Timing & Instructions</label>
                           <select
@@ -504,7 +825,7 @@ const Prescriptions = () => {
                             }}
                             className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-teal-600 mb-1"
                           >
-                            <option value="">-- Quick Select Timing --</option>
+                            <option value="">-- Quick Timing --</option>
                             <option value="After Food (1-0-1)">After Food (1-0-1)</option>
                             <option value="Before Meals (1-0-0)">Before Meals (1-0-0)</option>
                             <option value="Morning & Night (1-0-1)">Morning & Night (1-0-1)</option>
@@ -513,26 +834,26 @@ const Prescriptions = () => {
                             <option value="After Meals (Post-food)">After Meals (Post-food)</option>
                             <option value="Before Meals (Pre-food)">Before Meals (Pre-food)</option>
                             <option value="As Needed (SOS)">As Needed (SOS)</option>
-                            <option value="CUSTOM">✏️ Custom Text...</option>
+                            <option value="CUSTOM">✏️ Custom...</option>
                           </select>
 
                           <input
                             type="text"
-                            placeholder="Or type custom timing..."
+                            placeholder="e.g. After Food"
                             value={m.time}
                             onChange={(e) => {
                               const updated = [...medicines];
                               updated[idx].time = e.target.value;
                               setMedicines(updated);
                             }}
-                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold outline-none focus:border-teal-600 transition-all text-slate-800"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none focus:border-teal-600 transition-all text-slate-800"
                           />
                         </div>
                         {medicines.length > 1 && (
                           <button
                             type="button"
                             onClick={() => setMedicines(medicines.filter((_, i) => i !== idx))}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shrink-0 mt-4 sm:mt-0"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shrink-0 mt-4 sm:mt-0 cursor-pointer"
                             title="Remove Medicine"
                           >
                             <X size={16} />

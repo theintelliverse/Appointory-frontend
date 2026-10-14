@@ -117,6 +117,51 @@ const Appointments = () => {
     }
   };
 
+  const handleApproveAppointment = async (appointmentId, patientName) => {
+    try {
+      const confirmResult = await Swal.fire({
+        title: 'Approve Appointment?',
+        text: `Assign a queue token and confirm appointment for ${patientName || 'this patient'}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0d9488',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Approve',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!confirmResult.isConfirmed) return;
+
+      Swal.fire({
+        title: 'Approving...',
+        text: 'Generating queue token and updating patient status.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const res = await axios.patch(
+        `${API_URL}/api/queue/approve/${appointmentId}`,
+        { isEmergency: false },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Appointment Approved!',
+          text: `Queue token #${res.data.data?.tokenNumber || 'assigned'} has been issued.`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+        fetchAppointments();
+      }
+    } catch (err) {
+      console.error('Approve Appointment Error:', err);
+      const msg = err.response?.data?.message || 'Failed to approve appointment.';
+      Swal.fire('Error', msg, 'error');
+    }
+  };
+
   const isMatchDate = (item) => {
     if (!selectedDate) return true;
     const appDateVal = item.appointmentDate || item.createdAt || item.endTime;
@@ -143,22 +188,35 @@ const Appointments = () => {
     return `${uy}-${um}-${uday}` === selectedDate;
   };
 
+  const isPendingStatus = (app) => {
+    if (!app) return false;
+    const s = (app.status || '').toLowerCase();
+    return app.isApproved === false || s === 'pending-approval' || s === 'pending';
+  };
+
+  const isUpcomingStatus = (app) => {
+    if (!app) return false;
+    const s = (app.status || '').toLowerCase();
+    return (s === 'waiting' || s === 'scheduled') && !isPendingStatus(app);
+  };
+
+  const isInProgressStatus = (app) => {
+    if (!app) return false;
+    const s = (app.status || '').toLowerCase();
+    return s === 'in-consultation' || s === 'in consultation';
+  };
+
+  const isCompletedStatus = (app) => {
+    if (!app) return false;
+    const s = (app.status || '').toLowerCase();
+    return s === 'completed';
+  };
+
   const counts = {
-    Upcoming: (appointments || []).filter(a => {
-      const s = (a?.status || '').toLowerCase();
-      const isStatusMatch = s === 'waiting' || s === 'scheduled' || s === 'pending-approval' || s === 'pending';
-      return isStatusMatch && isMatchDate(a);
-    }).length,
-    'In Progress': (appointments || []).filter(a => {
-      const s = (a?.status || '').toLowerCase();
-      const isStatusMatch = s === 'in-consultation' || s === 'in consultation';
-      return isStatusMatch && isMatchDate(a);
-    }).length,
-    Completed: (appointments || []).filter(a => {
-      const s = (a?.status || '').toLowerCase();
-      const isStatusMatch = s === 'completed';
-      return isStatusMatch && isMatchDate(a);
-    }).length,
+    Upcoming: (appointments || []).filter(a => isUpcomingStatus(a) && isMatchDate(a)).length,
+    'Pending Approval': (appointments || []).filter(a => isPendingStatus(a) && (activeTab === 'Pending Approval' || !selectedDate || isMatchDate(a))).length,
+    'In Progress': (appointments || []).filter(a => isInProgressStatus(a) && isMatchDate(a)).length,
+    Completed: (appointments || []).filter(a => isCompletedStatus(a) && isMatchDate(a)).length,
     All: (appointments || []).filter(a => isMatchDate(a)).length
   };
 
@@ -169,15 +227,25 @@ const Appointments = () => {
 
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          phone.includes(searchTerm);
-    const status = (app.status || '').toLowerCase();
-    const matchesTab = activeTab === 'All' || 
-                       (activeTab === 'Upcoming' && (status === 'waiting' || status === 'scheduled' || status === 'pending-approval' || status === 'pending')) ||
-                       (activeTab === 'In Progress' && (status === 'in-consultation' || status === 'in consultation')) ||
-                       (activeTab === 'Completed' && status === 'completed');
-    if (!matchesSearch || !matchesTab) return false;
+    if (!matchesSearch) return false;
+
+    let matchesTab = false;
+    if (activeTab === 'All') {
+      matchesTab = true;
+    } else if (activeTab === 'Upcoming') {
+      matchesTab = isUpcomingStatus(app);
+    } else if (activeTab === 'Pending Approval') {
+      matchesTab = isPendingStatus(app);
+    } else if (activeTab === 'In Progress') {
+      matchesTab = isInProgressStatus(app);
+    } else if (activeTab === 'Completed') {
+      matchesTab = isCompletedStatus(app);
+    }
+    if (!matchesTab) return false;
 
     // Strict date filtering when selectedDate is chosen
-    if (selectedDate && !isMatchDate(app)) {
+    // For 'Pending Approval', show pending appointments so doctor can act on them immediately
+    if (selectedDate && activeTab !== 'Pending Approval' && !isMatchDate(app)) {
       return false;
     }
 
@@ -210,10 +278,23 @@ const Appointments = () => {
                     className="pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-teal-500 text-[14px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition-all w-full sm:w-48 cursor-pointer"
                   />
                 </div>
+                {selectedDate ? (
+                  <button
+                    onClick={() => setSelectedDate('')}
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap active:scale-95 shadow-sm cursor-pointer"
+                    title="View all dates without date filter"
+                  >
+                    All Dates
+                  </button>
+                ) : (
+                  <span className="px-3 py-2 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl text-xs font-black uppercase tracking-wider shrink-0 whitespace-nowrap">
+                    All Dates
+                  </span>
+                )}
                 {selectedDate !== getTodayStr() && (
                   <button
                     onClick={() => setSelectedDate(getTodayStr())}
-                    className="px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap active:scale-95 shadow-sm"
+                    className="px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded-xl text-xs font-bold transition-all shrink-0 whitespace-nowrap active:scale-95 shadow-sm cursor-pointer"
                     title="Jump to today"
                   >
                     Today
@@ -232,7 +313,7 @@ const Appointments = () => {
               </div>
               <button 
                 onClick={fetchAppointments}
-                className="p-2.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95 shrink-0"
+                className="p-2.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
               >
                 <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
               </button>
@@ -241,21 +322,30 @@ const Appointments = () => {
 
           {/* Tabs */}
           <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-[1.5rem] w-fit shadow-sm overflow-x-auto max-w-full">
-            {['Upcoming', 'In Progress', 'Completed', 'All'].map((tab) => {
+            {['Upcoming', 'Pending Approval', 'In Progress', 'Completed', 'All'].map((tab) => {
               const count = counts[tab] ?? 0;
+              const isSelected = activeTab === tab;
+              const isPending = tab === 'Pending Approval';
+              
+              let activeBg = 'bg-teal-600 text-white shadow-lg shadow-teal-600/20';
+              if (isPending) activeBg = 'bg-amber-500 text-white shadow-lg shadow-amber-500/20';
+              if (tab === 'In Progress') activeBg = 'bg-orange-500 text-white shadow-lg shadow-orange-500/20';
+              if (tab === 'Completed') activeBg = 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20';
+              if (tab === 'All') activeBg = 'bg-slate-900 text-white shadow-lg shadow-slate-900/20';
+
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2.5 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
-                    activeTab === tab 
-                      ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/20' 
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  className={`px-5 py-2.5 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                    isSelected ? activeBg : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
                   <span>{tab}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === tab ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
+                    isSelected 
+                      ? 'bg-white/25 text-white' 
+                      : (isPending && count > 0 ? 'bg-amber-100 text-amber-800 font-black' : 'bg-slate-100 text-slate-600')
                   }`}>
                     {count}
                   </span>
@@ -283,13 +373,13 @@ const Appointments = () => {
                     ? `No appointments found for ${selectedDate}.` 
                     : 'Your schedule is currently clear for the selected criteria.'}
                 </p>
-                {selectedDate && selectedDate !== getTodayStr() && (
+                {selectedDate && (
                   <button
-                    onClick={() => setSelectedDate(getTodayStr())}
-                    className="mt-4 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md active:scale-95 inline-flex items-center gap-2"
+                    onClick={() => setSelectedDate('')}
+                    className="mt-4 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md active:scale-95 inline-flex items-center gap-2 cursor-pointer"
                   >
                     <RefreshCw size={14} />
-                    View Today's Appointments
+                    View All Appointments Across All Dates
                   </button>
                 )}
               </div>
@@ -301,30 +391,42 @@ const Appointments = () => {
                     className="bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group relative overflow-hidden"
                   >
                     {/* Status Badge */}
-                    <div className="absolute top-0 right-0 p-4">
-                      <div className={`px-3 py-1 rounded-full text-[14px] font-black uppercase tracking-widest ${
+                    <div className="absolute top-0 right-0 p-4 flex items-center gap-1.5">
+                      {app.consultationDraft?.savedAt && (
+                        <div className="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                          Draft
+                        </div>
+                      )}
+                      <div className={`px-3 py-1 rounded-full text-[13px] font-black uppercase tracking-widest ${
+                        isPendingStatus(app) ? 'bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1' :
                         (app.status || '').toLowerCase() === 'in-consultation' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
                         (app.status || '').toLowerCase() === 'completed' ? 'bg-green-50 text-green-600 border border-green-100' :
                         app.isEmergency ? 'bg-red-50 text-red-600 border border-red-100 animate-pulse' :
                         'bg-teal-50 text-teal-600 border border-teal-100'
                       }`}>
-                        {app.status}
+                        {isPendingStatus(app) ? 'Pending Approval' : app.status}
                       </div>
                     </div>
 
                     <div className="flex items-start gap-4 mb-6">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-lg shadow-inner ${
-                        app.isEmergency ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-600'
+                        app.isEmergency ? 'bg-red-50 text-red-600' : isPendingStatus(app) ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
                       }`}>
                         {(app.patientName || 'UP').substring(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
                         <h3 className="text-lg font-black text-slate-900 truncate pr-16">{app.patientName || 'Unknown Patient'}</h3>
-                        <p className="text-[14px] font-bold text-slate-400 flex items-center gap-1.5 mt-0.5">
-                          <Clock size={12} />
+                        <p className="text-[13px] font-bold text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <CalendarIcon size={12} className="text-teal-600 shrink-0" />
+                          <span className="text-slate-600 font-semibold">
+                            {new Date(app.appointmentDate || app.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <Clock size={12} className="shrink-0" />
                           {(app.status || '').toLowerCase() === 'completed' 
                             ? 'Completed: ' 
-                            : (app.visitType === 'Appointment' ? 'Slot: ' : 'Registered: ')}
+                            : isPendingStatus(app) ? 'Requested: ' : (app.visitType === 'Appointment' ? 'Slot: ' : 'Registered: ')}
                           {(app.status || '').toLowerCase() === 'completed' && app.endTime
                             ? new Date(app.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
                             : (app.visitType === 'Appointment' && app.appointmentDate 
@@ -352,36 +454,49 @@ const Appointments = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Queue Token</p>
-                          <p className="text-[14px] font-bold text-slate-700">#{app.tokenNumber}</p>
+                          <p className="text-[14px] font-bold text-slate-700">
+                            {app.tokenNumber ? `#${app.tokenNumber}` : <span className="text-amber-600 font-bold italic">Token not assigned yet</span>}
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex gap-3 pt-4 border-t border-slate-50">
-                      {(app.status || '').toLowerCase() === 'completed' ? (
+                      {isPendingStatus(app) ? (
+                        <button 
+                          onClick={() => handleApproveAppointment(app._id, app.patientName)}
+                          className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <CheckCircle2 size={16} /> Approve Appointment
+                        </button>
+                      ) : (app.status || '').toLowerCase() === 'completed' ? (
                         <button 
                           disabled
                           className="flex-1 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-2xl text-[14px] font-black uppercase tracking-widest cursor-default flex items-center justify-center gap-2"
                         >
                           <CheckCircle2 size={16} /> Completed
                         </button>
-                      ) : (app.status || '').toLowerCase() === 'in-consultation' ? (
+                      ) : ((app.status || '').toLowerCase() === 'in-consultation' || app.consultationDraft?.savedAt) ? (
                         <button 
                           onClick={() => navigate('/doctor/dashboard')}
-                          className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-600/20"
+                          className="flex-1 py-3 bg-amber-500 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-95 shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          Resume Session
+                          Resume Draft
                         </button>
                       ) : (
                         <button 
                           onClick={() => handleStartSession(app._id)}
-                          className="flex-1 py-3 bg-teal-600 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-teal-700 transition-all active:scale-95 shadow-lg shadow-teal-600/20"
+                          className="flex-1 py-3 bg-teal-600 text-white rounded-2xl text-[14px] font-black uppercase tracking-widest hover:bg-teal-700 transition-all active:scale-95 shadow-lg shadow-teal-600/20 cursor-pointer"
                         >
                           Start Session
                         </button>
                       )}
-                      <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 transition-all active:scale-95">
-                        <MoreHorizontal size={18} />
+                      <button 
+                        onClick={() => navigate(`/doctor/records?phone=${app.patientPhone}`)}
+                        className="p-3 bg-slate-50 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-2xl transition-all active:scale-95 cursor-pointer"
+                        title="View Patient File"
+                      >
+                        <User size={18} />
                       </button>
                     </div>
                   </div>

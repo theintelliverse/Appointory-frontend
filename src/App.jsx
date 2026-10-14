@@ -307,6 +307,7 @@ const App = () => {
               <Route path="/c/:identifier" element={<ClinicPublicProfile />} />
               <Route path="/clinic/profile/:identifier" element={<ClinicPublicProfile />} />
               <Route path="/d/:identifier" element={<DoctorPublicProfile />} />
+              <Route path="/doctor/:identifier" element={<DoctorPublicProfile />} />
               <Route path="/doctor/profile/:identifier" element={<DoctorPublicProfile />} />
               <Route path="/l/:identifier" element={<LabPublicProfile />} />
               <Route path="/lab/profile/:identifier" element={<LabPublicProfile />} />
