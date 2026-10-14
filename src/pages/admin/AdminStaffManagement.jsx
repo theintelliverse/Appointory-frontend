@@ -6,7 +6,8 @@ import { SOCKET_URL } from '../../config/runtime'; // Importing runtime socket U
 import {
   Archive, RefreshCw, UserPlus, Search, Users,
   ShieldCheck, Activity, UserCheck, History, AlertCircle, Trash2, Key,
-  FlaskConical, Link2, Unlink, Check, X, Eye, EyeOff, Mail
+  FlaskConical, Link2, Unlink, Check, X, Eye, EyeOff, Mail,
+  Stethoscope, User
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -470,8 +471,8 @@ const AdminStaffManagement = () => {
               filteredStaff.map((member) => (
                 <div key={member._id} className={`bg-white border border-sandstone p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-sm group relative transition-all hover:border-marigold ${activeView === 'archived' ? 'grayscale opacity-80' : ''}`}>
                   <div className="flex justify-between items-start mb-6">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-parchment border border-sandstone">
-                      {member.role === 'doctor' ? '🩺' : member.role === 'lab' ? '🔬' : '👤'}
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-parchment border border-sandstone shadow-xs">
+                      {member.role === 'doctor' ? <Stethoscope size={24} className="text-teal-600" /> : member.role === 'lab' ? <FlaskConical size={24} className="text-cyan-600" /> : <User size={24} className="text-slate-600" />}
                     </div>
                     {member.isActive !== false ? (
                       <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 rounded-lg">

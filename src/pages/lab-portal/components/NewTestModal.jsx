@@ -61,10 +61,10 @@ const NewTestModal = ({
               value={newTestForm.clinicId || ''}
               onChange={(e) => setNewTestForm({ ...newTestForm, clinicId: e.target.value })}
             >
-              <option value="">⭐ Direct Patient / Lab Walk-In (No Clinic)</option>
+              <option value="">Direct Patient / Lab Walk-In (No Clinic)</option>
               {connectedClinics.map(clinic => (
                 <option key={clinic._id} value={clinic._id}>
-                  🏥 {clinic.name} ({clinic.clinicCode})
+                  {clinic.name} ({clinic.clinicCode})
                 </option>
               ))}
             </select>

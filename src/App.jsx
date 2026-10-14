@@ -78,6 +78,7 @@ const ForDoctors = lazy(() => import('./pages/seo/ForDoctors'));
 const ForLabs = lazy(() => import('./pages/seo/ForLabs'));
 const PricingPage = lazy(() => import('./pages/seo/PricingPage'));
 const BlogIndexPage = lazy(() => import('./pages/seo/BlogIndexPage'));
+const BlogPostReduceWaitTimes = lazy(() => import('./pages/seo/BlogPostReduceWaitTimes'));
 const ComparePracto = lazy(() => import('./pages/seo/ComparePracto'));
 const CityLandingPage = lazy(() => import('./pages/seo/CityLandingPage'));
 const AboutPage = lazy(() => import('./pages/seo/AboutPage'));
@@ -328,7 +329,12 @@ const App = () => {
               <Route path="/for/labs" element={<ForLabs />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/blog" element={<BlogIndexPage />} />
+              <Route path="/blog/how-to-reduce-patient-waiting-time-in-clinics" element={<BlogPostReduceWaitTimes />} />
+              <Route path="/blog/how-to-reduce-clinic-waiting-room-times" element={<BlogPostReduceWaitTimes />} />
+              <Route path="/compare" element={<ComparePracto />} />
               <Route path="/compare/appointory-vs-practo" element={<ComparePracto />} />
+              <Route path="/compare/practo-alternative" element={<ComparePracto />} />
+              <Route path="/practo-alternative" element={<ComparePracto />} />
               <Route path="/clinic-software/:city" element={<CityLandingPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/press" element={<PressPage />} />

@@ -21,9 +21,39 @@
   </url>
   <url>
     <loc>https://appointory.in/compare/appointory-vs-practo</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>monthly</changefreq>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://appointory.in/compare/practo-alternative</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://appointory.in/compare</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://appointory.in/practo-alternative</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://appointory.in/blog</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://appointory.in/blog/how-to-reduce-patient-waiting-time-in-clinics</loc>
+    <lastmod>2026-10-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://appointory.in/about</loc>

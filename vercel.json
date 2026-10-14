@@ -128,10 +128,6 @@
       "destination": "https://api.appointory.in/sitemap.xml"
     },
     {
-      "source": "/robots.txt",
-      "destination": "https://api.appointory.in/robots.txt"
-    },
-    {
       "source": "/:route(d|l)/:slug",
       "has": [
         {

@@ -44,7 +44,10 @@ import {
   Maximize2,
   Minimize2,
   X,
-  MessageCircle
+  MessageCircle,
+  Thermometer,
+  Heart,
+  Droplets
 } from 'lucide-react';
 
 import { API_URL } from '../config/runtime';
@@ -149,6 +152,7 @@ const LandingPage = () => {
   const [billingGstRate, setBillingGstRate] = useState(0); // 0% default (Healthcare exempt under Notification No. 12/2017)
   const [billingDiscount, setBillingDiscount] = useState(50);
   const [invoiceDownloaded, setInvoiceDownloaded] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
 
   const billingSubtotal = billingItems.filter(i => i.selected).reduce((acc, curr) => acc + curr.price, 0);
   const billingDiscounted = Math.max(0, billingSubtotal - billingDiscount);
@@ -178,6 +182,207 @@ const LandingPage = () => {
     });
   };
 
+  const handlePrintReceipt = () => {
+    trackEvent('demo_billing_used', { action: 'print_receipt_executed', total: billingGrandTotal });
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (printWindow) {
+      const selectedList = billingItems.filter(i => i.selected);
+      const itemsHtml = selectedList.map(item => `
+        <tr>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">${item.name}</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-align: center; color: #64748b; font-family: monospace;">${item.sac}</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-align: center;">1</td>
+          <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 13px; text-align: right; font-weight: 600;">₹${item.price.toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Appointory Tax Receipt - Sample</title>
+          <style>
+            @media print {
+              @page { margin: 12mm; }
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              color: #1e293b;
+              margin: 0;
+              padding: 24px;
+              background: #fff;
+              font-size: 13px;
+              line-height: 1.5;
+            }
+            .receipt-box {
+              max-width: 650px;
+              margin: 0 auto;
+              border: 1px solid #cbd5e1;
+              border-radius: 12px;
+              padding: 24px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              border-bottom: 2px solid #0d9488;
+              padding-bottom: 16px;
+              margin-bottom: 16px;
+            }
+            .clinic-title {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: -0.5px;
+            }
+            .badge {
+              display: inline-block;
+              background: #ccfbf1;
+              color: #0f766e;
+              font-weight: 700;
+              font-size: 10px;
+              padding: 3px 8px;
+              border-radius: 999px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              background: #f8fafc;
+              padding: 12px 16px;
+              border-radius: 8px;
+              margin-bottom: 16px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 16px;
+            }
+            th {
+              background: #f1f5f9;
+              padding: 10px 8px;
+              text-align: left;
+              font-size: 11px;
+              text-transform: uppercase;
+              color: #475569;
+              font-weight: 700;
+              border-bottom: 2px solid #cbd5e1;
+            }
+            .summary-table {
+              width: 280px;
+              margin-left: auto;
+              margin-bottom: 20px;
+            }
+            .summary-table td {
+              padding: 5px 0;
+              font-size: 13px;
+            }
+            .grand-total {
+              font-size: 16px;
+              font-weight: 800;
+              color: #0f766e;
+              border-top: 2px solid #cbd5e1;
+              border-bottom: 2px solid #cbd5e1;
+              padding: 8px 0 !important;
+            }
+            .footer-note {
+              border-top: 1px dashed #cbd5e1;
+              padding-top: 14px;
+              text-align: center;
+              font-size: 11px;
+              color: #64748b;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-box">
+            <div class="header">
+              <div>
+                <div class="clinic-title">Appointory Smart Health Clinic</div>
+                <div style="font-size: 12px; color: #64748b;">Medical Centre & Diagnostic Center • GSTIN: 24AABCA0000A1Z5</div>
+                <div style="font-size: 11px; color: #94a3b8;">ABDM Health Facility ID (HFR): IN-GJ-109482</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge">OPD Cash Receipt</span>
+                <div style="font-size: 11px; font-weight: 600; margin-top: 6px; color: #334155;">Receipt #: INV-${Date.now().toString().slice(-6)}</div>
+                <div style="font-size: 11px; color: #64748b;">Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+              </div>
+            </div>
+
+            <div class="meta-grid">
+              <div>
+                <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Patient Details</div>
+                <div style="font-weight: 700; color: #1e293b;">Ramesh Sharma (34M)</div>
+                <div style="font-size: 11px; color: #64748b;">ABHA Address: ramesh.sharma@abdm</div>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Attending Doctor</div>
+                <div style="font-weight: 700; color: #1e293b;">Dr. Anita Gupta</div>
+                <div style="font-size: 11px; color: #64748b;">MBBS, MD (General Medicine) • Reg #G-45210</div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th style="text-align: center;">SAC Code</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <table class="summary-table">
+              <tr>
+                <td style="color: #64748b;">Subtotal:</td>
+                <td style="text-align: right; font-weight: 600;">₹${billingSubtotal.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="color: #16a34a;">Discount:</td>
+                <td style="text-align: right; color: #16a34a; font-weight: 600;">-₹${billingDiscount.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="color: #64748b;">GST (${billingGstRate}%):</td>
+                <td style="text-align: right; color: #64748b;">
+                  ${billingGstRate === 0 ? 'Exempt (SAC 999312)' : '₹' + billingGstTotalAmount.toFixed(2)}
+                </td>
+              </tr>
+              ${billingRoundOff !== 0 ? `
+              <tr>
+                <td style="color: #64748b;">Round Off:</td>
+                <td style="text-align: right; color: #64748b;">₹${billingRoundOff > 0 ? '+' : ''}${billingRoundOff.toFixed(2)}</td>
+              </tr>` : ''}
+              <tr class="grand-total">
+                <td>Grand Total:</td>
+                <td style="text-align: right;">₹${billingGrandTotal.toFixed(2)}</td>
+              </tr>
+            </table>
+
+            <div class="footer-note">
+              <p style="margin: 0 0 4px 0; font-weight: 600; color: #0f766e;">✓ Healthcare Services exempt from GST under Notification No. 12/2017 - Central Tax (SAC 999312)</p>
+              <p style="margin: 0; color: #94a3b8;">Digitally authenticated & secured via Appointory Cloud EHR • Visit https://appointory.com</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      window.print();
+    }
+  };
+
   // 3. Lab Connect Handshake Simulator
   const [labConnectCode, setLabConnectCode] = useState('849-210');
   const [labPairSuccess, setLabPairSuccess] = useState(true);
@@ -193,7 +398,6 @@ const LandingPage = () => {
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
   // 7. Modals & Interactive Viewers
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showTvFullscreenModal, setShowTvFullscreenModal] = useState(false);
   const [copiedRx, setCopiedRx] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -397,11 +601,11 @@ const LandingPage = () => {
       const nextVal = prev > 0 ? prev - 1 : 3;
 
       if (nextVal === 1) {
-        setNotificationText(`🚨 Token T-08 is NEXT in line! Please proceed to doctor chamber.`);
+        setNotificationText(`Token T-08 is NEXT in line! Please proceed to doctor chamber.`);
         setShowNotification(true);
         setTimeout(() => setShowNotification(false), 5000);
       } else if (nextVal === 0) {
-        setNotificationText(`🩺 Token T-08: Dr. Anita Gupta is ready to consult ${checkedInPhone ? 'Dhruvil Patel' : 'Rahul Sharma'}.`);
+        setNotificationText(`Token T-08: Dr. Anita Gupta is ready to consult ${checkedInPhone ? 'Dhruvil Patel' : 'Rahul Sharma'}.`);
         setShowNotification(true);
         setTimeout(() => setShowNotification(false), 5000);
       }
@@ -413,10 +617,10 @@ const LandingPage = () => {
     e.stopPropagation();
     let text = '';
     const name = checkedInPhone ? 'Dhruvil' : 'Patient';
-    if (queuePos === 3) text = `💬 SMS & WhatsApp Alert: Hi ${name}, your token T-08 is registered at City Care Clinic. Pos: 3rd in line. Est. Wait: ~15m. Track live: appointory.in/q/t08`;
-    else if (queuePos === 2) text = `💬 SMS & WhatsApp Alert: Hi ${name}, queue moved! Pos: 2nd. Est. Wait: ~10m. Doctor consultation pace is on time.`;
-    else if (queuePos === 1) text = `🚨 SMS & WhatsApp Alert: Hi ${name}, you are NEXT IN LINE! Please be seated near Doctor's cabin.`;
-    else text = `🩺 SMS & WhatsApp Alert: Token T-08 called! Dr. Anita Gupta is ready for consultation in Cabin 02.`;
+    if (queuePos === 3) text = `SMS & WhatsApp Alert: Hi ${name}, your token T-08 is registered at City Care Clinic. Pos: 3rd in line. Est. Wait: ~15m. Track live: appointory.in/q/t08`;
+    else if (queuePos === 2) text = `SMS & WhatsApp Alert: Hi ${name}, queue moved! Pos: 2nd. Est. Wait: ~10m. Doctor consultation pace is on time.`;
+    else if (queuePos === 1) text = `SMS & WhatsApp Alert: Hi ${name}, you are NEXT IN LINE! Please be seated near Doctor's cabin.`;
+    else text = `SMS & WhatsApp Alert: Token T-08 called! Dr. Anita Gupta is ready for consultation in Cabin 02.`;
 
     setNotificationText(text);
     setShowNotification(true);
@@ -813,7 +1017,23 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
     "@context": "https://schema.org",
     "@type": "MedicalOrganization",
     "name": "Appointory",
-    "alternateName": "Appointory Healthcare OS",
+    "alternateName": [
+      "Appointry",
+      "Apointory",
+      "Appointary",
+      "Appointori",
+      "Appoitory",
+      "Appontory",
+      "Appointery",
+      "Apointery",
+      "Apointry",
+      "Appoint-ory",
+      "Appoint ory",
+      "Appointory Healthcare",
+      "Appointory Health OS",
+      "Appointory India"
+    ],
+    "legalName": "Appointory Healthcare Systems",
     "description": "Next-generation healthcare operating system with AI wait-time prediction, smart GST clinical billing, connected pathology lab network, automated queue management, and AES-256 digital health locker.",
     "url": "https://appointory.in",
     "logo": "https://appointory.in/Appointory_logo.jpg",
@@ -836,12 +1056,35 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Appointory Healthcare OS",
+    "alternateName": [
+      "Appointry",
+      "Apointory",
+      "Appointary",
+      "Appointori",
+      "Appoitory",
+      "Appontory",
+      "Appointery",
+      "Apointery",
+      "Apointry",
+      "Appoint-ory",
+      "Appoint ory",
+      "Appointory Clinic Software",
+      "Appointory Health App"
+    ],
     "applicationCategory": "HealthApplication",
-    "applicationSubCategory": "Clinic Management & EMR",
-    "operatingSystem": "Web Browser, Android, iOS, Tablet",
+    "applicationSubCategory": "Clinic Management, OPD Queue Token System, 0% GST Medical Billing & EMR",
+    "operatingSystem": "Web Browser, Android, iOS, Tablet, Smart TV",
     "url": "https://appointory.in/",
     "image": "https://appointory.in/og-image-banner.jpg",
     "description": "Comprehensive clinic management platform featuring real-time OPD queue intelligence, smart medical billing with 0% GST healthcare exemption, anti-fraud QR invoice verification, connected independent diagnostic lab network, live waiting room TV token displays, reusable doctor prescription templates, and DPDP Act 2023 compliant AES-256 digital health lockers.",
+    "isSimilarTo": [
+      "https://www.practo.com",
+      "https://www.cliniko.com",
+      "https://healthplix.com",
+      "https://www.ekacare.com",
+      "https://docpulse.com",
+      "https://www.appointy.com"
+    ],
     "offers": {
       "@type": "Offer",
       "priceCurrency": "INR",
@@ -901,6 +1144,14 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How is Appointory spelled, and are Appointry or Apointory the same platform?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Appointory (officially spelled A-P-P-O-I-N-T-O-R-Y, combining Appointment and Directory) is commonly searched with typo spellings including Appointry, Apointory, Appointary, Appointori, Appontory, or Appointery. All these variant spellings and search queries refer to the official Appointory healthcare operating system accessible at appointory.in."
+        }
+      },
       {
         "@type": "Question",
         "name": "How does Appointory's live wait-time estimation work?",
@@ -1055,8 +1306,9 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
   return (
     <div className="min-h-screen bg-parchment font-body text-teak">
       <SEO
-        title="Appointory | Real-time Clinical OS, Smart Medical Billing & Health Locker"
-        description="Comprehensive healthcare OS featuring real-time OPD queue intelligence, smart medical billing with 0% GST healthcare exemption, anti-fraud QR invoice verification, connected pathology lab network, and DPDP Act 2023 compliant AES-256 digital health lockers."
+        title="Appointory | Clinic OPD Queue, 0% GST Billing & TV Token OS"
+        description="Appointory is India's leading clinic OPD queue management, waiting room TV token display, 0% GST medical billing (SAC 999312) & connected pathology lab software platform. The modern, private Practo & Cliniko alternative."
+        keywords="Appointory, Appointry, Apointory, Appointary, Appointori, Appoitory, Appontory, Appointery, Apointery, Apointry, Appoint-ory, Appoint ory, appointory.in, clinic management software India, Practo alternative, Cliniko alternative, HealthPlix alternative, Eka Care alternative, Docpulse alternative, Ray by Practo alternative, OPD queue management system, token system for clinic, online doctor appointment booking software, clinic appointment software India, patient queue management app, clinic billing software GST, digital prescription software, waiting room TV token display, WhatsApp token alert for clinic, pathology lab management software, lab referral software for clinics, free clinic software India, clinic software Gujarat, Ahmedabad, Surat, Vadodara, Rajkot, Mumbai, Delhi, Bengaluru, Pune, SAC 999312, SAC 999316"
         url="/"
         schemaMarkup={[organizationSchema, softwareAppSchema, breadcrumbSchema, faqSchema, howToSchema, ...serviceSchemas]}
       />
@@ -1091,14 +1343,16 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               aria-label="Patient Health Locker Login"
               className="px-3.5 py-1.5 border border-teal-300 text-teal-800 bg-teal-50/70 hover:bg-teal-600 hover:text-white rounded-full text-xs font-bold tracking-wide transition-all shadow-2xs active:scale-95 cursor-pointer hidden md:flex items-center gap-1.5"
             >
-              <span>🩺</span> Health Locker
+              <FolderHeart size={14} className="text-teal-700" />
+              <span>Health Locker</span>
             </button>
             <button
               onClick={() => navigate('/lab/login')}
               aria-label="Diagnostic Lab Portal Login"
               className="px-3.5 py-1.5 border border-cyan-200 text-cyan-800 bg-cyan-50/70 hover:bg-cyan-700 hover:text-white rounded-full text-xs font-bold tracking-wide transition-all shadow-2xs active:scale-95 cursor-pointer hidden sm:flex items-center gap-1.5"
             >
-              <span>🔬</span> Lab Portal
+              <FlaskConical size={14} className="text-cyan-700" />
+              <span>Lab Portal</span>
             </button>
             <button
               onClick={() => navigate('/login')}
@@ -1132,20 +1386,27 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
             </span>
           </h2>
 
-          <p className="text-[14px] sm:text-[14.5px] text-khaki max-w-md leading-relaxed font-medium">
-            Automated queues, SMS & WhatsApp live queue alerts, and your own
-            <span className="text-teak font-bold"> DPDP Act 2023 Health Locker</span>.
-            Digital healthcare that respects your time.
+          <p className="text-[14px] sm:text-[15px] text-khaki max-w-lg leading-relaxed font-medium">
+            Cut outpatient wait times by 70%. Real-time OPD queue tokens, waiting room Smart TV displays, automated 0% GST billing (SAC 999312), and DPDP Act 2023 encrypted health lockers.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
             {/* PRIMARY CTA: BOOK APPOINTMENT */}
             <button
               onClick={handleBookAppointmentClick}
-              className="px-7 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-[14.5px] shadow-lg shadow-teal-600/30 hover:-translate-y-0.5 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-[14.5px] shadow-lg shadow-teal-600/30 hover:-translate-y-0.5 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
               <Calendar size={17} />
               <span>Book Appointment</span>
+            </button>
+
+            {/* CLINIC SETUP */}
+            <button
+              onClick={() => navigate('/register-clinic')}
+              className="px-5 py-3 bg-parchment hover:bg-sandstone/30 border-2 border-emerald-600 text-emerald-800 rounded-2xl font-bold text-[14.5px] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95 shadow-xs"
+            >
+              <Building2 size={17} className="text-emerald-700" />
+              <span>Register Clinic Free</span>
             </button>
 
             {/* HEALTH LOCKER */}
@@ -1155,19 +1416,19 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                 navigate(token ? '/patient/health-locker' : '/patient/login');
               }}
               aria-label="Patient Health Locker"
-              className="px-5 py-3 bg-teal-50/80 hover:bg-teal-100 border-2 border-teal-200 hover:border-teal-400 rounded-2xl font-bold text-[14.5px] text-teal-800 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95 shadow-xs"
+              className="px-4 py-3 bg-teal-50/80 hover:bg-teal-100 border border-teal-200 rounded-2xl font-bold text-[13.5px] text-teal-800 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
             >
-              <FolderHeart size={17} className="text-teal-600" />
-              <span>Health Locker</span>
+              <FolderHeart size={16} className="text-teal-600" />
+              <span>Vault</span>
             </button>
+          </div>
 
-            {/* STAFF LOGIN */}
-            <button
-              onClick={() => navigate('/login')}
-              className="px-5 py-3 bg-white border-2 border-sandstone rounded-2xl font-bold text-[14.5px] hover:border-marigold transition-all cursor-pointer text-teak"
-            >
-              Staff Portal
-            </button>
+          <div className="flex items-center gap-2.5 pt-0.5 text-[11px] font-bold text-teak/70 flex-wrap">
+            <span className="flex items-center gap-1 text-emerald-800 font-extrabold">✓ Zero Hardware Needed</span>
+            <span className="text-sandstone">•</span>
+            <span className="flex items-center gap-1 text-emerald-800 font-extrabold">✓ 0% Booking Commission</span>
+            <span className="text-sandstone">•</span>
+            <span className="flex items-center gap-1 text-emerald-800 font-extrabold">✓ DPDP Act 2023 Compliant</span>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-2.5 pt-2 max-w-xl">
@@ -1179,7 +1440,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               <div>
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[9.5px] font-black uppercase text-marigold tracking-wider">For Clinics & Staff</span>
-                  <span className="text-[14px] group-hover:scale-110 transition-transform duration-300">🏥</span>
+                  <Building2 size={16} className="text-marigold group-hover:scale-110 transition-transform duration-300" />
                 </div>
                 <p className="text-[9.5px] text-khaki leading-snug font-medium">
                   Login for Clinic Admins, Doctors, and Receptionists: family multi-profile entry, live queues & smart billing.
@@ -1198,7 +1459,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               <div>
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[9.5px] font-black uppercase text-marigold tracking-wider">For Patients</span>
-                  <span className="text-[14px] group-hover:scale-110 transition-transform duration-300">🩺</span>
+                  <Stethoscope size={16} className="text-marigold group-hover:scale-110 transition-transform duration-300" />
                 </div>
                 <p className="text-[9.5px] text-khaki leading-snug font-medium">
                   Book appointments for yourself & family, track live wait times, get SMS & WhatsApp queue alerts, and store health records.
@@ -1217,7 +1478,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               <div>
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-[9.5px] font-black uppercase text-blue-600 tracking-wider">For Labs</span>
-                  <span className="text-[14px] group-hover:scale-110 transition-transform duration-300">🔬</span>
+                  <FlaskConical size={16} className="text-blue-600 group-hover:scale-110 transition-transform duration-300" />
                 </div>
                 <p className="text-[9.5px] text-khaki leading-snug font-medium">
                   Independent diagnostic labs can connect with clinics and receive test requests directly.
@@ -1314,7 +1575,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                 </p>
               </div>
               <div className="h-8.5 w-8.5 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                <span className="text-[11.5px] sm:text-[18px]">📊</span>
+                <BarChart3 size={18} className="text-parchment" />
               </div>
             </div>
           </div>
@@ -1425,7 +1686,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
             {[
               {
                 step: "01",
-                icon: "📸",
+                icon: <QrCode size={18} className="text-teal-600" />,
                 title: "Phone & QR Check-In",
                 desc: "Scan the clinic QR code or enter your 10-digit mobile. Instantly select stored family members (Self, Spouse, Child, Parent) or create a DPDP Act 2023 compliant profile in under 10 seconds with zero manual paperwork.",
                 accent: "bg-teal-50 text-teal-600 border-teal-100/50",
@@ -1433,7 +1694,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               },
               {
                 step: "02",
-                icon: "⏳",
+                icon: <Clock size={18} className="text-indigo-600" />,
                 title: "Live Queue, SMS & WhatsApp Alerts",
                 desc: "Receive an encrypted live token link and automated SMS & WhatsApp queue reminders. Our dynamic queue engine computes doctor velocity, showing your real-time position in line, estimated wait times, and active token callouts.",
                 accent: "bg-indigo-50 text-indigo-600 border-indigo-100/50",
@@ -1441,7 +1702,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               },
               {
                 step: "03",
-                icon: "🩺",
+                icon: <Stethoscope size={18} className="text-emerald-600" />,
                 title: "Doctor EMR & Digital Rx",
                 desc: "Consult with clinicians who record vitals (BP, Pulse, Temp) and generate digitally signed prescriptions with reusable clinical templates, standard dosage guidelines, and instant cloud archiving.",
                 accent: "bg-emerald-50 text-emerald-600 border-emerald-100/50",
@@ -1449,7 +1710,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
               },
               {
                 step: "04",
-                icon: "🔐",
+                icon: <ShieldCheck size={18} className="text-rose-600" />,
                 title: "DPDP 2023 Encrypted Locker",
                 desc: "Access a lifelong personal health locker protected by OTP verification. Safely download prescriptions, verified lab reports, and vitals history, sealed with AES-256 encryption under DPDP Act 2023 privacy standards.",
                 accent: "bg-rose-50 text-rose-600 border-rose-100/50",
@@ -1718,7 +1979,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                                 <span className="text-[6.5px] text-white/60">Now</span>
                               </div>
                               <p className="font-medium text-white/90 leading-tight text-[11.5px]">
-                                {notificationText.replace('💬 Appointory: ', '').replace('🚨 Appointory: ', '').replace('🩺 Appointory: ', '')}
+                                {notificationText.replace('Appointory: ', '')}
                               </p>
                             </div>
                           </motion.div>
@@ -1803,8 +2064,8 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                         <span className="text-[8.5px] text-khaki font-black uppercase tracking-wider block leading-none mt-0.5">
                           {queuePos === 3 && 'Position: 3rd in Line'}
                           {queuePos === 2 && 'Position: 2nd in Line'}
-                          {queuePos === 1 && '🚨 Next in Line!'}
-                          {queuePos === 0 && '🩺 Seeing Doctor'}
+                          {queuePos === 1 && 'Next in Line!'}
+                          {queuePos === 0 && 'Seeing Doctor'}
                         </span>
                       </div>
 
@@ -2919,16 +3180,18 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
 
                   {/* Growth CTAs: Book Demo & WhatsApp Specialist */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    <a
-                      href="#get-started"
-                      onClick={() => trackEvent('demo_billing_used', { action: 'click_book_demo' })}
-                      className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center"
+                    <button
+                      onClick={() => {
+                        trackEvent('demo_billing_used', { action: 'click_book_demo' });
+                        navigate('/register-clinic');
+                      }}
+                      className="py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all text-center cursor-pointer"
                     >
                       <Sparkles size={14} className="text-indigo-600" />
                       <span>Book Live Clinic Demo</span>
-                    </a>
+                    </button>
                     <a
-                      href="https://wa.me/919876543210?text=Hi%20Appointory%20Team,%20I%20just%20tested%20your%20Clinic%20Billing%20Simulator%20and%20want%20to%20see%20how%20it%20works%20for%20my%20clinic."
+                      href="https://api.whatsapp.com/send?text=Hi%20Appointory%20Team,%20I%20just%20tested%20your%20Clinic%20Billing%20Simulator%20and%20want%20to%20see%20how%20it%20works%20for%20my%20clinic."
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => trackEvent('demo_billing_used', { action: 'click_whatsapp_specialist' })}
@@ -3216,9 +3479,9 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                 <div className="space-y-2 bg-sandstone/10 p-4 rounded-2xl border border-sandstone/20">
                   <div className="text-xs font-black uppercase tracking-wider text-khaki mb-2">Select Clinical Condition:</div>
                   {[
-                    { key: 'fever', label: 'Acute Viral Fever & URTI', icon: '🌡️' },
-                    { key: 'hypertension', label: 'Essential Hypertension (Stage 1)', icon: '❤️' },
-                    { key: 'diabetes', label: 'Type 2 Diabetes Mellitus Review', icon: '🩸' }
+                    { key: 'fever', label: 'Acute Viral Fever & URTI', icon: <Thermometer size={16} className="text-amber-500" /> },
+                    { key: 'hypertension', label: 'Essential Hypertension (Stage 1)', icon: <Heart size={16} className="text-rose-500" /> },
+                    { key: 'diabetes', label: 'Type 2 Diabetes Mellitus Review', icon: <Droplets size={16} className="text-red-500" /> }
                   ].map((tpl) => (
                     <button
                       key={tpl.key}
@@ -3229,7 +3492,7 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
                         }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <span>{tpl.icon}</span>
+                        <span className={selectedTemplateKey === tpl.key ? '[&>svg]:text-white' : ''}>{tpl.icon}</span>
                         <span className="text-xs font-bold">{tpl.label}</span>
                       </div>
                       <ArrowRight size={14} className={selectedTemplateKey === tpl.key ? 'text-white' : 'text-sandstone'} />
@@ -3978,6 +4241,161 @@ Doctor: Dr. Anita Gupta (Reg: MCI-49210-A)`;
           >
             <ArrowUp size={20} className="group-hover:-translate-y-0.5 transition-transform" />
           </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Sample Billing Receipt Preview & Print Modal */}
+      <AnimatePresence>
+        {showReceiptModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-sandstone/40 overflow-hidden my-8"
+            >
+              {/* Top Banner & Close Button */}
+              <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <Receipt size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-bold text-sm tracking-wide text-white">Sample OPD Invoice Preview</h3>
+                    <p className="text-[11px] text-slate-400">100% ABHA & GST Exemption (SAC 999312) Compliant</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReceiptModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Receipt Body */}
+              <div className="p-6 text-slate-800 text-xs sm:text-sm space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                {/* Clinic Header */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-dashed border-slate-200">
+                  <div>
+                    <h4 className="font-bold text-base text-slate-900">Appointory Smart Health Clinic</h4>
+                    <p className="text-xs text-slate-500">OPD Medical Tower, Ring Road • GSTIN: 24AABCA0000A1Z5</p>
+                    <p className="text-[11px] text-slate-400">ABDM Health Facility ID (HFR): IN-GJ-109482</p>
+                  </div>
+                  <div className="sm:text-right">
+                    <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold text-[10px] uppercase rounded-full border border-emerald-200">
+                      OPD Cash Receipt
+                    </span>
+                    <p className="text-xs font-mono font-semibold text-slate-700 mt-1">INV-2026-88419</p>
+                    <p className="text-[11px] text-slate-500">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  </div>
+                </div>
+
+                {/* Patient & Doctor Meta */}
+                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Patient Name</span>
+                    <span className="font-bold text-slate-800">Ramesh Sharma (34M)</span>
+                    <span className="block text-[11px] text-slate-500">ABHA: ramesh.sharma@abdm</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Attending Doctor</span>
+                    <span className="font-bold text-slate-800">Dr. Anita Gupta</span>
+                    <span className="block text-[11px] text-slate-500">MBBS, MD • Reg #G-45210</span>
+                  </div>
+                </div>
+
+                {/* Selected Items Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold">
+                        <th className="py-2">Item Description</th>
+                        <th className="py-2 text-center">SAC</th>
+                        <th className="py-2 text-center">Qty</th>
+                        <th className="py-2 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {billingItems.filter(i => i.selected).map(item => (
+                        <tr key={item.id} className="text-slate-700">
+                          <td className="py-2 font-medium">{item.name}</td>
+                          <td className="py-2 text-center font-mono text-[11px] text-slate-400">{item.sac}</td>
+                          <td className="py-2 text-center">1</td>
+                          <td className="py-2 text-right font-semibold">₹{item.price.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Calculation Summary */}
+                <div className="pt-3 border-t border-slate-200 flex justify-end">
+                  <div className="w-64 space-y-1.5 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Subtotal:</span>
+                      <span className="font-semibold text-slate-800">₹{billingSubtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Clinic Discount:</span>
+                      <span className="font-semibold">-₹{billingDiscount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>GST ({billingGstRate}%):</span>
+                      <span className="font-semibold">
+                        {billingGstRate === 0 ? '0% (Exempt SAC 999312)' : `₹${billingGstTotalAmount.toFixed(2)}`}
+                      </span>
+                    </div>
+                    {billingRoundOff !== 0 && (
+                      <div className="flex justify-between text-slate-500 text-[11px]">
+                        <span>Round Off:</span>
+                        <span>₹{billingRoundOff > 0 ? '+' : ''}{billingRoundOff.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-sm text-slate-900">
+                      <span>Grand Total:</span>
+                      <span className="text-emerald-700 font-mono text-base">₹{billingGrandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Notes & ABDM Seal */}
+                <div className="pt-3 border-t border-dashed border-slate-200 text-center space-y-1">
+                  <p className="text-[11px] text-emerald-700 font-semibold flex items-center justify-center gap-1">
+                    <CheckCircle2 size={12} />
+                    Healthcare Services exempt from GST under Notification No. 12/2017 Central Tax
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    Digitally signed & generated via Appointory Cloud EHR System • appointory.com
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Action Bar */}
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs text-slate-500 text-center sm:text-left">
+                  Click below to launch system print or save as PDF.
+                </span>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowReceiptModal(false)}
+                    className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handlePrintReceipt}
+                    className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Printer size={15} />
+                    <span>Print / Save PDF</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

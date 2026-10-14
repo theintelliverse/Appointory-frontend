@@ -110,21 +110,21 @@ const ReceptionDashboard = () => {
       socket.emit('joinClinic', clinicId);
 
       socket.on('connect', () => {
-        console.log("✅ Socket Connected to Server. ID:", socket.id);
+        console.log("Socket Connected to Server. ID:", socket.id);
       });
 
       socket.on('queueUpdate', () => {
-        console.log("♻️ Socket Event: queueUpdate received");
+        console.log("Socket Event: queueUpdate received");
         fetchDashboardData(true);
       });
 
       socket.on('doctorStatusChanged', (data) => {
-        console.log("🩺 Socket Event: doctorStatusChanged received", data);
+        console.log("Socket Event: doctorStatusChanged received", data);
         fetchDashboardData(true);
       });
 
       socket.on('newCheckInRequest', (data) => {
-        console.log("🆕 Socket Event: newCheckInRequest received");
+        console.log("Socket Event: newCheckInRequest received");
         Swal.fire({
           toast: true,
           position: 'top-end',
@@ -136,7 +136,7 @@ const ReceptionDashboard = () => {
         fetchDashboardData(true);
       });
     } else {
-      console.warn("⚠️ clinicId missing from LocalStorage. Socket Room not joined.");
+      console.warn("clinicId missing from LocalStorage. Socket Room not joined.");
     }
 
     // 🔄 Live Queue Polling - Refresh every 5 seconds to ensure real-time updates
@@ -185,7 +185,7 @@ const ReceptionDashboard = () => {
           return;
         }
 
-        console.log('📤 Sent vitals to API:', {
+        console.log('Sent vitals to API:', {
           phone: patientPhone,
           vitals: formValues
         });
@@ -195,7 +195,7 @@ const ReceptionDashboard = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        console.log('✅ Vitals saved successfully:', res.data);
+        console.log('Vitals saved successfully:', res.data);
 
         Swal.fire({
           icon: 'success',
@@ -206,7 +206,7 @@ const ReceptionDashboard = () => {
           background: '#EEF6FA'
         });
       } catch (err) {
-        console.error('❌ Error updating vitals:', {
+        console.error('Error updating vitals:', {
           message: err.message,
           status: err.response?.status,
           data: err.response?.data,
@@ -383,7 +383,7 @@ const ReceptionDashboard = () => {
 
   const handleApprove = async (id) => {
     if (isProcessing) return;
-    const { value: emergencyStatus } = await Swal.fire({ title: 'Assign Priority?', text: "Is this a critical emergency case?", icon: 'question', showCancelButton: true, confirmButtonText: '🚨 Yes, Emergency', cancelButtonText: 'Standard Visit', confirmButtonColor: '#d33', cancelButtonColor: '#1F6FB2', background: '#EEF6FA' });
+    const { value: emergencyStatus } = await Swal.fire({ title: 'Assign Priority?', text: "Is this a critical emergency case?", icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, Emergency', cancelButtonText: 'Standard Visit', confirmButtonColor: '#d33', cancelButtonColor: '#1F6FB2', background: '#EEF6FA' });
     const isEmergency = emergencyStatus === true;
     setIsProcessing(true);
     try {
@@ -456,7 +456,7 @@ const ReceptionDashboard = () => {
                 {pendingRequests.length > 0 && <span className="absolute -top-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[14px] md:text-[14px] border-2 border-white animate-bounce">{pendingRequests.length}</span>}
               </button>
               <button onClick={() => setActiveTab('scheduled')} className={`px-3 md:px-6 py-2 md:py-2.5 rounded-lg md:rounded-xl text-[14px] md:text-[14px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap flex-shrink-0 ${activeTab === 'scheduled' ? 'bg-marigold text-white shadow-md' : 'text-khaki'}`}>
-                📅 Next
+                Next
                 {futureAppointments.length > 0 && <span className="absolute -top-1 -right-1 w-4 md:w-5 h-4 md:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[14px] md:text-[14px] border-2 border-white">{futureAppointments.length}</span>}
               </button>
             </div>
@@ -510,23 +510,23 @@ const ReceptionDashboard = () => {
             </div>
             <div className={`p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl lg:rounded-[3rem] shadow-xl transition-all duration-500 ${formData.isEmergency ? 'bg-red-600 ring-4 ring-red-200' : 'bg-teak'}`}>
               <div className="flex justify-between items-center gap-2 mb-3 md:mb-6">
-                <h3 className="font-heading text-base md:text-xl text-white truncate">{formData.isEmergency ? '🚨 Emergency' : 'Walk-in Entry'}</h3>
+                <h3 className="font-heading text-base md:text-xl text-white truncate">{formData.isEmergency ? 'Emergency' : 'Walk-in Entry'}</h3>
                 {formData.isEmergency && <Siren size={20} className="text-white animate-bounce flex-shrink-0" />}
               </div>
               <form onSubmit={handleManualSubmit} className="space-y-2 md:space-y-3">
                 {/* 1. Mobile Phone Input First */}
                 <div>
-                  <input 
-                    type="tel" 
-                    required 
-                    placeholder="Mobile (10 Digits)" 
-                    className="w-full bg-white/10 border border-white/20 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/50 font-bold" 
-                    value={formData.patientPhone} 
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Mobile (10 Digits)"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/50 font-bold"
+                    value={formData.patientPhone}
                     onChange={(e) => {
                       const val = e.target.value;
                       setFormData(prev => ({ ...prev, patientPhone: val }));
                       handlePhoneLookup(val);
-                    }} 
+                    }}
                   />
                 </div>
 
@@ -552,11 +552,10 @@ const ReceptionDashboard = () => {
                                 patientId: p._id || ''
                               }));
                             }}
-                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all text-left flex items-center gap-1 cursor-pointer ${
-                              isSel
-                                ? 'bg-marigold text-teak font-black shadow-xs ring-1 ring-white/60'
-                                : 'bg-white/15 text-white hover:bg-white/25'
-                            }`}
+                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all text-left flex items-center gap-1 cursor-pointer ${isSel
+                              ? 'bg-marigold text-teak font-black shadow-xs ring-1 ring-white/60'
+                              : 'bg-white/15 text-white hover:bg-white/25'
+                              }`}
                           >
                             <span>{p.name}</span>
                             <span className="text-[10px] opacity-75">({p.relationship || 'Self'})</span>
@@ -579,13 +578,13 @@ const ReceptionDashboard = () => {
 
                 {/* 3. Patient Name */}
                 <div>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="Patient Name" 
-                    className="w-full bg-white/10 border border-white/15 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40 font-medium" 
-                    value={formData.patientName} 
-                    onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))} 
+                  <input
+                    type="text"
+                    required
+                    placeholder="Patient Name"
+                    className="w-full bg-white/10 border border-white/15 rounded-xl md:rounded-2xl px-3 md:px-5 py-2 md:py-3 text-[14px] md:text-sm text-white outline-none focus:border-marigold placeholder:text-white/40 font-medium"
+                    value={formData.patientName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, patientName: e.target.value }))}
                   />
                 </div>
 
@@ -631,7 +630,7 @@ const ReceptionDashboard = () => {
                   </thead>
                   <tbody className="divide-y divide-[#AFC4D8]/30">
                     {activeTab === 'live' ? (
-                      queue.filter(p => 
+                      queue.filter(p =>
                         p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) &&
                         p.status !== 'In-Consultation' && p.status !== 'Completed'
                       ).sort((a, b) => a.isEmergency === b.isEmergency ? 0 : a.isEmergency ? -1 : 1).map((p) => (
@@ -708,27 +707,27 @@ const ReceptionDashboard = () => {
                       futureAppointments
                         .filter(apt => apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()))
                         .map((apt) => (
-                        <tr key={apt._id} className="hover:bg-blue-50/30 transition-colors animate-in">
-                          <td className="px-3 md:px-10 py-3 md:py-6">
-                            <div className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex flex-col items-center justify-center border border-blue-200 shadow-sm bg-blue-50 text-[14px] md:text-base">
-                              <span className="font-heading text-blue-600">{apt.appointmentDate ? new Date(apt.appointmentDate).getDate() : '-'}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-10 py-3 md:py-6 hidden md:table-cell">
-                            <p className="font-bold text-[14px] md:text-sm text-teak truncate">{apt.patientName}</p>
-                            <p className="text-[14px] md:text-[14px] text-khaki font-bold">{apt.patientPhone}</p>
-                          </td>
-                          <td className="px-3 md:px-10 py-3 md:py-6 hidden lg:table-cell">
-                            <p className="text-[14px] md:text-sm font-bold text-teak truncate">Dr. {apt.doctorId?.name}</p>
-                            <p className="text-[14px] md:text-[14px] text-blue-600 font-black mt-1 uppercase">{apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString('en-IN') : 'N/A'}</p>
-                          </td>
-                          <td className="px-3 md:px-10 py-3 md:py-6 text-center">
-                            <span className={`px-2 md:px-4 py-1 md:py-1.5 rounded-full text-[14px] md:text-[14px] font-black uppercase tracking-tighter border inline-block ${apt.status === 'Waiting' ? 'bg-blue-100 text-blue-700 border-blue-200' : apt.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
-                              {apt.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
+                          <tr key={apt._id} className="hover:bg-blue-50/30 transition-colors animate-in">
+                            <td className="px-3 md:px-10 py-3 md:py-6">
+                              <div className="w-10 md:w-14 h-10 md:h-14 rounded-lg md:rounded-2xl flex flex-col items-center justify-center border border-blue-200 shadow-sm bg-blue-50 text-[14px] md:text-base">
+                                <span className="font-heading text-blue-600">{apt.appointmentDate ? new Date(apt.appointmentDate).getDate() : '-'}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 md:px-10 py-3 md:py-6 hidden md:table-cell">
+                              <p className="font-bold text-[14px] md:text-sm text-teak truncate">{apt.patientName}</p>
+                              <p className="text-[14px] md:text-[14px] text-khaki font-bold">{apt.patientPhone}</p>
+                            </td>
+                            <td className="px-3 md:px-10 py-3 md:py-6 hidden lg:table-cell">
+                              <p className="text-[14px] md:text-sm font-bold text-teak truncate">Dr. {apt.doctorId?.name}</p>
+                              <p className="text-[14px] md:text-[14px] text-blue-600 font-black mt-1 uppercase">{apt.appointmentDate ? new Date(apt.appointmentDate).toLocaleDateString('en-IN') : 'N/A'}</p>
+                            </td>
+                            <td className="px-3 md:px-10 py-3 md:py-6 text-center">
+                              <span className={`px-2 md:px-4 py-1 md:py-1.5 rounded-full text-[14px] md:text-[14px] font-black uppercase tracking-tighter border inline-block ${apt.status === 'Waiting' ? 'bg-blue-100 text-blue-700 border-blue-200' : apt.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
+                                {apt.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
                     )}
                   </tbody>
                 </table>

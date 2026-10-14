@@ -464,8 +464,8 @@ const LabPublicProfile = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {connectedClinics.map((c, i) => (
                 <div key={c._id || i} className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-800 font-black flex items-center justify-center text-sm shrink-0">
-                    🏥
+                  <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-800 font-black flex items-center justify-center shrink-0">
+                    <Building2 size={18} className="text-teal-700" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-slate-900 text-xs truncate">{c.name}</p>

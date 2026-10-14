@@ -8,7 +8,7 @@ import {
   CreditCard, DollarSign, Sparkles, FileText, AlertTriangle,
   Beaker, Check, Clock, Eye, Share2, ChevronRight, X, TrendingUp, CalendarCheck, Settings, QrCode,
   Tag, Percent, MessageCircle, FileDown, FlaskConical, Download, Ticket,
-  ChevronLeft, Calendar, Filter, Users
+  ChevronLeft, Calendar, Filter, Users, Building2
 } from 'lucide-react';
 import Sidebar from '../../components/Sidebar';
 import Footer from '../../components/Footer';
@@ -704,7 +704,7 @@ const ReceptionistBilling = () => {
       html: `
         <div style="text-align:left; font-size:13px; margin-top:10px;">
           <p style="margin-bottom:6px;"><strong>Patient:</strong> ${inv.patientName} (${inv.patientPhone})</p>
-          <p style="margin-bottom:12px;"><strong>Invoice:</strong> #${inv.invoiceNumber} (${inv.billingType === 'lab' ? '🔬 Lab' : '🏥 Clinic'})</p>
+          <p style="margin-bottom:12px;"><strong>Invoice:</strong> #${inv.invoiceNumber} (${inv.billingType === 'lab' ? 'Lab' : 'Clinic'})</p>
           <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">Amount to Collect (₹)</label>
           <input id="swal-settle-amount" type="number" class="swal2-input" value="${inv.remainingDue}" style="margin:0 0 12px 0; width:100%;" />
           <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:12px;">Payment Mode</label>
@@ -982,7 +982,7 @@ const ReceptionistBilling = () => {
   // Copy Receipt Text for Share
   const handleShareReceipt = () => {
     if (!selectedInvoice) return;
-    const shareText = `🏥 *HEALTHCARE RECEIPT*\n` +
+    const shareText = `*HEALTHCARE RECEIPT*\n` +
       `Invoice No: ${selectedInvoice.invoiceNumber}\n` +
       `Patient: ${selectedInvoice.patientName} (${selectedInvoice.patientPhone})\n` +
       `Date: ${new Date(selectedInvoice.billingDate).toLocaleDateString()}\n` +
@@ -1268,8 +1268,8 @@ const ReceptionistBilling = () => {
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1">
                 <CalendarCheck size={12} className="text-indigo-600" /> Revenue Breakdown
               </span>
-              <p className="text-xs font-bold text-slate-800">🏥 Clinic: ₹{(revenueStats.clinicRevenue || 0).toLocaleString()}</p>
-              <p className="text-xs font-bold text-indigo-700">🔬 Lab: ₹{(revenueStats.labRevenue || 0).toLocaleString()}</p>
+              <p className="text-xs font-bold text-slate-800">Clinic: ₹{(revenueStats.clinicRevenue || 0).toLocaleString()}</p>
+              <p className="text-xs font-bold text-indigo-700">Lab: ₹{(revenueStats.labRevenue || 0).toLocaleString()}</p>
             </div>
           </div>
 
@@ -1284,7 +1284,7 @@ const ReceptionistBilling = () => {
                 <p className="text-xs text-teal-100/80">Enter 10-digit mobile number to auto-fill patient profile, appointment doctor, and pending balance.</p>
               </div>
               <span className="text-xs font-semibold text-teal-200/90 bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">
-                Mode: <strong className="text-white uppercase">{billingType === 'clinic' ? '🏥 Clinic Receipt' : '🔬 Lab Test Receipt'}</strong>
+                Mode: <strong className="text-white uppercase">{billingType === 'clinic' ? 'Clinic Receipt' : 'Lab Test Receipt'}</strong>
               </span>
             </div>
 
@@ -2226,7 +2226,7 @@ const ReceptionistBilling = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <div className={`w-8 h-8 rounded-lg text-white flex items-center justify-center font-black text-sm print:border ${selectedInvoice.billingType === 'lab' ? 'bg-indigo-800' : 'bg-slate-900'
                       }`}>
-                      {selectedInvoice.billingType === 'lab' ? '🔬' : '🏥'}
+                      {selectedInvoice.billingType === 'lab' ? <FlaskConical size={16} /> : <Building2 size={16} />}
                     </div>
                     <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">
                       {selectedInvoice.clinicName || selectedInvoice.clinicId?.name || localStorage.getItem('clinicName') || 'HEALTHCARE ESTABLISHMENT'}
@@ -2292,7 +2292,7 @@ const ReceptionistBilling = () => {
                   )}
                   <p className={`font-bold uppercase tracking-wider text-[11px] ${selectedInvoice.billingType === 'lab' ? 'text-indigo-700' : 'text-teal-700'
                     }`}>
-                    {selectedInvoice.billingType === 'lab' ? '🔬 Diagnostic Lab Testing' : '🏥 Clinical Consultation'}
+                    {selectedInvoice.billingType === 'lab' ? 'Diagnostic Lab Testing' : 'Clinical Consultation'}
                   </p>
                 </div>
               </div>

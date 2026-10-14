@@ -19,12 +19,12 @@ const ARTICLES = [
         excerpt: "An in-depth statutory analysis of Notification No. 12/2017-Central Tax (Rate), Entry 74, SAC 999312, and how Indian clinics must handle 0% GST itemized billing."
     },
     {
-        title: "How to Reduce Clinic Waiting Room Times by 70% with Live TV Tokens",
-        slug: "how-to-reduce-clinic-waiting-room-times",
+        title: "How to Reduce Patient Waiting Time in Clinics: 2026 Zero-Wait Guide",
+        slug: "how-to-reduce-patient-waiting-time-in-clinics",
         category: "OPD Operations",
         date: "2026-09-08",
-        readTime: "5 min read",
-        excerpt: "Why overcrowded waiting rooms drive away patients and how smart TV displays synchronized with WhatsApp alerts restore dignity to the OPD experience."
+        readTime: "7 min read",
+        excerpt: "Why overcrowded waiting rooms drive away patients and how smart TV displays synchronized with WhatsApp alerts and paperless records restore dignity to the OPD experience."
     },
     {
         title: "Digital Personal Data Protection (DPDP) Act 2023: Compliance Guide for Indian Clinics",
@@ -136,17 +136,19 @@ export default function BlogIndexPage() {
                                 <span>&bull;</span>
                                 <span>{art.readTime}</span>
                             </div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
-                                {art.title}
-                            </h2>
+                            <Link to={`/blog/${art.slug}`}>
+                                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                                    {art.title}
+                                </h2>
+                            </Link>
                             <p className="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
                                 {art.excerpt}
                             </p>
                             <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
-                                <span className="text-sm font-semibold text-teal-700 flex items-center gap-1">
+                                <Link to={`/blog/${art.slug}`} className="text-sm font-semibold text-teal-700 hover:text-teal-800 flex items-center gap-1">
                                     <span>Read Full Article</span>
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </span>
+                                </Link>
                                 <WhatsAppShareButton 
                                     text={`Interesting healthcare article: ${art.title}`}
                                     path={`${pageUrl}#${art.slug}`}

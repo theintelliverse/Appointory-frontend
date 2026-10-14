@@ -347,9 +347,9 @@ const Prescriptions = () => {
       medsText = '\nNo specific medicines listed.';
     }
 
-    const adviceText = p.notes ? `\n\n📝 *Doctor Advice / Instructions:*\n${p.notes}` : '';
+    const adviceText = p.notes ? `\n\n*Doctor Advice / Instructions:*\n${p.notes}` : '';
 
-    const message = `*🏥 ${clinicName.toUpperCase()} - PRESCRIPTION*\n━━━━━━━━━━━━━━━━━━━━\n👨‍⚕️ *Doctor:* ${formattedDoctor}\n📅 *Date:* ${dateStr}\n\n👤 *Patient:* ${p.patientName || 'Patient'}\n📱 *Phone:* ${cleanPhone}\n🩺 *Diagnosis / Condition:* ${p.diagnosis || 'Clinical Consultation'}\n\n💊 *PRESCRIBED MEDICINES:*${medsText}${adviceText}\n\n━━━━━━━━━━━━━━━━━━━━\n_Please follow the dosage as instructed. For queries or appointments, contact ${clinicName}._`;
+    const message = `*${clinicName.toUpperCase()} - PRESCRIPTION*\n━━━━━━━━━━━━━━━━━━━━\n*Doctor:* ${formattedDoctor}\n*Date:* ${dateStr}\n\n*Patient:* ${p.patientName || 'Patient'}\n*Phone:* ${cleanPhone}\n*Diagnosis / Condition:* ${p.diagnosis || 'Clinical Consultation'}\n\n*PRESCRIBED MEDICINES:*${medsText}${adviceText}\n\n━━━━━━━━━━━━━━━━━━━━\n_Please follow the dosage as instructed. For queries or appointments, contact ${clinicName}._`;
 
     const targetUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(targetUrl, '_blank');

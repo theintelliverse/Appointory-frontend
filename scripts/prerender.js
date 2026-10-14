@@ -24,16 +24,30 @@ const baseHtml = fs.readFileSync(BASE_HTML_PATH, 'utf-8');
 const ROUTES_METADATA = [
     {
         route: '',
-        title: 'Appointory – Care without the Waiting Room | Clinic OPD Queue & Billing',
-        description: 'Appointory is India’s modern clinic operating system: zero-wait OPD token display, WhatsApp live queue alerts, 0% GST billing, and synchronized lab networks.',
-        keywords: 'clinic management software India, OPD queue management system, token system for clinic, online doctor appointment booking software, clinic billing software GST',
-        h1: 'Care without the Waiting Room',
+        title: 'Appointory | #1 Clinic OPD Queue, 0% GST Billing & TV Token Software',
+        description: 'Appointory is India’s modern clinic operating system: zero-wait OPD token display, WhatsApp live queue alerts, 0% GST billing (SAC 999312), and synchronized lab networks. The modern Practo & Cliniko alternative.',
+        keywords: 'Appointory, Appointry, Apointory, Appointary, Appointori, Appoitory, Appontory, Appointery, Apointery, Apointry, Appoint-ory, Appoint ory, appointory.in, clinic management software India, Practo alternative, Cliniko alternative, HealthPlix alternative, Eka Care alternative, Docpulse alternative, Ray by Practo alternative, OPD queue management system, token system for clinic, online doctor appointment booking software, clinic billing software GST, SAC 999312, waiting room TV token display',
+        h1: 'Appointory – Care without the Waiting Room',
         directAnswer: 'Appointory is India\'s clinical operating system that eliminates waiting room congestion. It pairs live waiting room TV token displays and WhatsApp queue tracking with 0% GST medical billing (SAC 999312) and 6-digit diagnostic lab handshakes.',
         schema: [
             {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 "name": "Appointory",
+                "alternateName": [
+                    "Appointry",
+                    "Apointory",
+                    "Appointary",
+                    "Appointori",
+                    "Appoitory",
+                    "Appontory",
+                    "Appointery",
+                    "Apointery",
+                    "Apointry",
+                    "Appoint-ory",
+                    "Appoint ory",
+                    "appointory.in"
+                ],
                 "url": "https://appointory.in",
                 "potentialAction": {
                     "@type": "SearchAction",
@@ -45,6 +59,23 @@ const ROUTES_METADATA = [
                 "@context": "https://schema.org",
                 "@type": "Organization",
                 "name": "Appointory",
+                "alternateName": [
+                    "Appointry",
+                    "Apointory",
+                    "Appointary",
+                    "Appointori",
+                    "Appoitory",
+                    "Appontory",
+                    "Appointery",
+                    "Apointery",
+                    "Apointry",
+                    "Appoint-ory",
+                    "Appoint ory",
+                    "Appointory Healthcare",
+                    "Appointory Health OS",
+                    "Appointory India"
+                ],
+                "legalName": "Appointory Healthcare Systems",
                 "url": "https://appointory.in",
                 "logo": "https://appointory.in/appointory-logo-mark.png",
                 "sameAs": [
@@ -192,13 +223,40 @@ const ROUTES_METADATA = [
         schema: [{ "@context": "https://schema.org", "@type": "Blog", "name": "Appointory Blog", "url": "https://appointory.in/blog" }]
     },
     {
+        route: 'blog/how-to-reduce-patient-waiting-time-in-clinics',
+        title: 'How to Reduce Patient Waiting Time in Clinics | Zero-Wait OPD Guide',
+        description: 'Learn how to reduce patient waiting time in clinics by up to 70%. Practical strategies for real-time OPD queues, smart TV tokens, paperless records, and doctor scheduling.',
+        keywords: 'how to reduce patient waiting time in clinics, real-time opd queue management system, doctor appointment booking app, paperless clinic software, smart token display for clinics, reduce clinic wait time',
+        h1: 'How to Reduce Patient Waiting Time in Clinics: 2026 Zero-Wait Guide',
+        directAnswer: 'To reduce patient waiting time in clinics, replace rigid fixed appointment slots with a dynamic real-time OPD queue management system. Let patients check in via QR code and track live token velocity on WhatsApp so they arrive only when 2 to 3 patients remain before their turn. Pair this with a smart TV token display and paperless clinic software to cut administrative delays by up to 70%.',
+        schema: [{ "@context": "https://schema.org", "@type": "BlogPosting", "headline": "How to Reduce Patient Waiting Time in Clinics: The Complete 2026 Guide to Zero-Wait OPD", "url": "https://appointory.in/blog/how-to-reduce-patient-waiting-time-in-clinics" }]
+    },
+    {
         route: 'compare/appointory-vs-practo',
         title: 'Appointory vs Practo | Modern Clinic OS Comparison 2026',
         description: 'Compare Appointory and Practo for clinic management in India. Learn why clinics choose Appointory for zero-wait OPD queues, 0% GST billing, and independent branding.',
-        keywords: 'Appointory vs Practo, clinic management software comparison, Practo alternative India, OPD queue management software',
+        keywords: 'Appointory vs Practo, Practo alternative India, Cliniko alternative, HealthPlix alternative, Eka Care alternative, Docpulse alternative, Ray by Practo alternative, clinic management software comparison',
         h1: 'Appointory vs Practo: Which is Best for Your Clinic?',
         directAnswer: 'While Practo functions primarily as a patient aggregator marketplace where competing doctors are listed, Appointory is a dedicated clinic operating system focused on eliminating physical waiting room chaos with live TV token displays, private WhatsApp alerts, and 0% GST billing.',
         schema: [{ "@context": "https://schema.org", "@type": "WebPage", "name": "Appointory vs Practo", "url": "https://appointory.in/compare/appointory-vs-practo" }]
+    },
+    {
+        route: 'compare/practo-alternative',
+        title: 'Top Practo Alternative for Clinics in India | Appointory',
+        description: 'Discover the #1 Practo alternative for private clinics in India. Zero commissions, no rival doctor advertisements, waiting room TV tokens, and 0% GST billing.',
+        keywords: 'Practo alternative, best Practo alternative India, Practo Ray alternative, Cliniko alternative, HealthPlix alternative, clinic software without commissions',
+        h1: 'The #1 Private Practo Alternative for Indian Clinics',
+        directAnswer: 'Appointory is India\'s top Practo alternative because it is 100% white-label and private to your clinic. You never pay booking commissions, competitor doctors are never advertised to your patients, and waiting room TV displays keep OPD running on time.',
+        schema: [{ "@context": "https://schema.org", "@type": "WebPage", "name": "Practo Alternative Comparison", "url": "https://appointory.in/compare/practo-alternative" }]
+    },
+    {
+        route: 'compare',
+        title: 'Clinic Software Comparison & Alternatives | Appointory vs Others',
+        description: 'Compare Appointory with legacy clinic software and aggregator apps. Choose zero wait times, TV token displays, and automated 0% GST billing.',
+        keywords: 'clinic software comparison, Practo alternative, Cliniko alternative, HealthPlix alternative, doctor appointment software review',
+        h1: 'Compare Appointory with Legacy Clinic Management Systems',
+        directAnswer: 'Compare Appointory against aggregator platforms like Practo and legacy desktop software. Appointory gives you modern cloud queues, TV token broadcasts, WhatsApp alerts, and DPDP Act compliance at a fraction of the cost.',
+        schema: [{ "@context": "https://schema.org", "@type": "WebPage", "name": "Clinic Software Comparison", "url": "https://appointory.in/compare" }]
     },
     {
         route: 'clinic-software/ahmedabad',
@@ -313,6 +371,11 @@ function generatePrerenderedHtml(item) {
     // 2. Replace <meta name="description">
     html = html.replace(/<meta name="description"[\s\S]*?>/i, `<meta name="description" content="${item.description}">`);
 
+    // 2b. Replace <meta name="keywords">
+    if (item.keywords) {
+        html = html.replace(/<meta name="keywords"[\s\S]*?>/i, `<meta name="keywords" content="${item.keywords}">`);
+    }
+
     // 3. Replace <link rel="canonical">
     html = html.replace(/<link rel="canonical"[\s\S]*?>/i, `<link rel="canonical" href="${canonicalUrl}">`);
 
@@ -357,7 +420,66 @@ function generatePrerenderedHtml(item) {
         </header>
     `;
 
-    html = html.replace('<div id="root"></div>', `<div id="root">${semanticContent}</div>`);
+const HOME_SEMANTIC_CONTENT = `
+    <header style="max-width: 1200px; margin: 0 auto; padding: 32px 20px 20px; text-align: center; font-family: system-ui, -apple-system, sans-serif;">
+      <h1 style="font-size: 2.2rem; color: #064e3b; margin: 0 0 12px; font-weight: 800; letter-spacing: -0.02em;">
+        Appointory – Care without the Waiting Room
+      </h1>
+      <p style="font-size: 1.15rem; color: #374151; max-width: 820px; margin: 0 auto 16px; line-height: 1.5;">
+        India's #1 Clinic OPD Queue Management, Waiting Room TV Token Display, 0% GST Medical Billing &amp; Connected Pathology Lab Platform. The modern, private alternative to Practo, Cliniko, and HealthPlix.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 14px;">
+        <span style="background: #d1fae5; color: #065f46; padding: 6px 14px; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;">Zero-Wait OPD Queue</span>
+        <span style="background: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;">Smart TV Token Display</span>
+        <span style="background: #fef3c7; color: #92400e; padding: 6px 14px; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;">0% GST Medical Billing (SAC 999312)</span>
+        <span style="background: #ede9fe; color: #6d28d9; padding: 6px 14px; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;">Independent Lab Network</span>
+      </div>
+    </header>
+
+    <main style="max-width: 1100px; margin: 0 auto; padding: 20px; font-family: system-ui, -apple-system, sans-serif; color: #1f2937; line-height: 1.6;">
+      <section style="margin-bottom: 40px; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h2 style="font-size: 1.5rem; color: #0f766e; margin-top: 0;">Comprehensive Clinical Operating System</h2>
+        <p>Appointory is purpose-built for Indian single-practitioner clinics, multi-specialty polyclinics, and diagnostic centers. It replaces unorganized paper queues, manual tokens, and disjointed software with a unified clinical workflow.</p>
+        <ul style="padding-left: 20px; margin-top: 12px;">
+          <li><strong>OPD Queue Management:</strong> Dynamic wait-time recalculation based on doctor consultation pace, with live WhatsApp &amp; SMS token alerts.</li>
+          <li><strong>Waiting Room TV Token Display:</strong> Turn any smart TV or browser screen into an audible token monitor with chime alerts and multi-cabin coordination.</li>
+          <li><strong>0% GST Medical Billing:</strong> Automated healthcare exemption compliance under Notification No. 12/2017 (SAC 999312 &amp; SAC 999316) with tamper-evident anti-fraud QR invoices.</li>
+          <li><strong>Pathology Lab Handshake:</strong> Bi-directional connection with independent labs for digital test requests and automated report syncing.</li>
+          <li><strong>Digital Prescriptions &amp; Health Locker:</strong> DPDP Act 2023 &amp; AES-256 encrypted digital records accessible for life.</li>
+        </ul>
+      </section>
+
+      <section style="margin-bottom: 40px; padding: 24px; background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 12px;">
+        <h2 style="font-size: 1.5rem; color: #0f766e; margin-top: 0;">Why Appointory is the Best Alternative to Practo, Cliniko &amp; HealthPlix</h2>
+        <p>Traditional platforms act as aggregators that charge fees per booking and redirect your patients to competing clinics. Appointory is 100% private to your facility:</p>
+        <ul style="padding-left: 20px; margin-top: 12px;">
+          <li><strong>Zero Commissions:</strong> Keep 100% of your consultation and procedure revenues.</li>
+          <li><strong>No Competitor Ads:</strong> Patients never see rival doctors on your booking portal.</li>
+          <li><strong>Built-in Token TV:</strong> No separate hardware or dispenser contracts needed.</li>
+          <li><strong>Complete Data Ownership:</strong> Patient records remain fully confidential and compliant with India's DPDP Act 2023.</li>
+        </ul>
+      </section>
+
+      <section style="margin-bottom: 40px; padding: 24px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h2 style="font-size: 1.5rem; color: #0f766e; margin-top: 0;">Available Across Key Healthcare Hubs in India</h2>
+        <p>Appointory powers clinics across Ahmedabad, Surat, Vadodara, Rajkot, Mumbai, Delhi NCR, Bengaluru, Pune, and expanding nationwide.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+          <a href="/clinic-software/ahmedabad" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Ahmedabad Clinic Software</a> &middot;
+          <a href="/clinic-software/surat" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Surat Clinic Software</a> &middot;
+          <a href="/clinic-software/vadodara" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Vadodara Clinic Software</a> &middot;
+          <a href="/clinic-software/rajkot" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Rajkot Clinic Software</a> &middot;
+          <a href="/clinic-software/mumbai" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Mumbai Clinic Software</a> &middot;
+          <a href="/clinic-software/delhi" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Delhi Clinic Software</a> &middot;
+          <a href="/clinic-software/bengaluru" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Bengaluru Clinic Software</a> &middot;
+          <a href="/clinic-software/pune" style="color: #0d9488; text-decoration: underline; font-weight: 600;">Pune Clinic Software</a>
+        </div>
+      </section>
+    </main>
+`;
+
+    // 8. Inject Semantic Content inside <div id="root"></div>
+    const contentToInject = item.route === '' ? HOME_SEMANTIC_CONTENT : semanticContent;
+    html = html.replace('<div id="root"></div>', `<div id="root">${contentToInject}</div>`);
 
     return html;
 }

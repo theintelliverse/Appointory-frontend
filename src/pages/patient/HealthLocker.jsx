@@ -358,10 +358,10 @@ const HealthLocker = () => {
     });
 
     const statusBadge = schedule?.isActive
-      ? `🟢 Active Course (Day ${schedule.currentDay} of ${schedule.totalDays})`
-      : `✓ Course Concluded (${schedule.totalDays} Days)`;
+      ? `Active Course (Day ${schedule.currentDay} of ${schedule.totalDays})`
+      : `Course Concluded (${schedule.totalDays} Days)`;
 
-    const msg = `*Prescription from ${doctor}*\n🏥 *${clinic}*\n📅 Date: ${dateStr}\n📋 Diagnosis: ${record.diagnosis || 'Clinical Consultation'}\nStatus: ${statusBadge}\n\n*Prescribed Medications:*${medsText}\n\n_View digital records on Appointory Portal_`;
+    const msg = `*Prescription from ${doctor}*\n*Clinic:* ${clinic}\nDate: ${dateStr}\nDiagnosis: ${record.diagnosis || 'Clinical Consultation'}\nStatus: ${statusBadge}\n\n*Prescribed Medications:*${medsText}\n\n_View digital records on Appointory Portal_`;
     
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -1300,9 +1300,9 @@ const HealthLocker = () => {
                             className="w-full appearance-none pl-9 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-teal-500 focus:bg-white transition-all shadow-2xs cursor-pointer"
                           >
                             <option value="all">All Invoices &amp; Receipts ({allInvoices.length})</option>
-                            <option value="clinic">🩺 Clinic Consultations</option>
-                            <option value="lab">🧪 Lab Investigations</option>
-                            <option value="due">⚠️ Pending Dues ({allInvoices.filter(i => (i.remainingDue || 0) > 0).length})</option>
+                            <option value="clinic">Clinic Consultations</option>
+                            <option value="lab">Lab Investigations</option>
+                            <option value="due">Pending Dues ({allInvoices.filter(i => (i.remainingDue || 0) > 0).length})</option>
                           </select>
                           <ChevronDown size={15} className="absolute right-3.5 pointer-events-none text-slate-400" />
                         </div>
@@ -1434,9 +1434,9 @@ const HealthLocker = () => {
                                     {clinicTitle}
                                   </h4>
                                   <p className="text-xs text-slate-500 font-medium flex items-center gap-2">
-                                    <span>👨‍⚕️ Dr. {inv.doctorName || 'Consultant Specialist'}</span>
+                                    <span className="inline-flex items-center gap-1"><Stethoscope size={13} className="text-teal-600" /> Dr. {inv.doctorName || 'Consultant Specialist'}</span>
                                     <span>·</span>
-                                    <span>📅 {billDate}</span>
+                                    <span className="inline-flex items-center gap-1"><Calendar size={13} className="text-slate-400" /> {billDate}</span>
                                   </p>
                                 </div>
 

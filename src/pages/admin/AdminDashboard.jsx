@@ -55,11 +55,11 @@ const AdminDashboard = () => {
   const socketRef = useRef(null);
   
   const [config, setConfig] = useState({
-    avgWaitFactor: Number(localStorage.getItem('SM_avgWaitFactor') || 8),
-    feeConsult: Number(localStorage.getItem('SM_feeConsult') || 500),
-    feeLab: Number(localStorage.getItem('SM_feeLab') || 450),
-    feeEmergency: Number(localStorage.getItem('SM_feeEmergency') || 300),
-    feeMedicine: Number(localStorage.getItem('SM_feeMedicine') || 120),
+    avgWaitFactor: Number(localStorage.getItem('appointory_avgWaitFactor') || localStorage.getItem('SM_avgWaitFactor') || 8),
+    feeConsult: Number(localStorage.getItem('appointory_feeConsult') || localStorage.getItem('SM_feeConsult') || 500),
+    feeLab: Number(localStorage.getItem('appointory_feeLab') || localStorage.getItem('SM_feeLab') || 450),
+    feeEmergency: Number(localStorage.getItem('appointory_feeEmergency') || localStorage.getItem('SM_feeEmergency') || 300),
+    feeMedicine: Number(localStorage.getItem('appointory_feeMedicine') || localStorage.getItem('SM_feeMedicine') || 120),
   });
 
   const defaultInventory = [
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
   ];
 
   const [inventory, setInventory] = useState(() => {
-    const saved = localStorage.getItem('SM_inventory');
+    const saved = localStorage.getItem('appointory_inventory') || localStorage.getItem('SM_inventory');
     return saved ? JSON.parse(saved) : defaultInventory;
   });
 
@@ -191,7 +191,8 @@ const AdminDashboard = () => {
 
   const syncInventory = async (newInventory) => {
     try {
-      localStorage.setItem('SM_inventory', JSON.stringify(newInventory));
+      localStorage.setItem('appointory_inventory', JSON.stringify(newInventory));
+      localStorage.removeItem('SM_inventory');
       await axios.patch(`${API_URL}/api/clinic/inventory`, { inventory: newInventory }, { headers: { Authorization: `Bearer ${token}` } });
     } catch (err) {
       console.error("Failed to sync inventory", err);
@@ -218,8 +219,9 @@ const AdminDashboard = () => {
       cancelButtonColor: '#94A3B8',
       background: '#FFFFFF',
       inputValidator: (value) => {
-        if (!value || Number(value) <= 0) {
-          return 'Please enter a valid positive number';
+        const num = Number(value);
+        if (!value || isNaN(num) || num <= 0 || !Number.isInteger(num)) {
+          return 'Please enter a valid positive whole number (e.g. 50)';
         }
       }
     }).then((result) => {

@@ -1,6 +1,8 @@
-# Appointory (https://appointory.in) - AI Search & LLM Context File
+# Appointory - https://appointory.in - AI Search & LLM Context File
 Domain: https://appointory.in
 Platform: Appointory Healthcare OS ("Care without the Waiting Room")
+Brand Aliases & Common Misspellings: Appointory, Appointry, Apointory, Appointary, Appointori, Appoitory, Appontory, Appointery, Apointery, Apointry, Appoint-ory, Appoint ory, appointory.in, Appointory Health, Appointory Health OS, Appointory India
+Direct Competitor Alternatives: Practo Alternative, Cliniko Alternative, HealthPlix Alternative, Eka Care Alternative, Docpulse Alternative, Ray by Practo Alternative
 Headquarters: Ahmedabad, Gujarat, India
 Primary Contact: contact@appointory.in
 Official Social & Knowledge Graphs:
@@ -9,7 +11,7 @@ Official Social & Knowledge Graphs:
 - X (Twitter): https://x.com/appointory
 - Instagram: https://www.instagram.com/appointory
 
-Appointory is India's premier synchronized clinical operating system unifying outpatient (OPD) clinics, independent diagnostic laboratories, doctors, front-desk receptionists, and patients. It replaces chaotic waiting rooms with live digital queues, waiting room TV displays, statutory 0% GST healthcare billing, instant pathology lab handshakes, and DPDP Act 2023 compliant encrypted Health Lockers.
+Appointory is India's premier synchronized clinical operating system unifying outpatient (OPD) clinics, independent diagnostic laboratories, doctors, front-desk receptionists, and patients. It replaces chaotic waiting rooms with live digital queues, waiting room TV displays, statutory 0% GST healthcare billing (SAC 999312 & 999316), instant pathology lab handshakes, and DPDP Act 2023 compliant encrypted Health Lockers. It is designed as a 100% private, commission-free alternative to aggregator directories like Practo and Cliniko.
 
 ## Core Feature Architecture & Direct Links
 - **OPD Queue Management**: https://appointory.in/features/queue-management

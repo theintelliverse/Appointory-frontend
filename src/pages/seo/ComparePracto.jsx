@@ -71,7 +71,7 @@ export default function ComparePracto() {
                 title={pageTitle}
                 description={pageDesc}
                 url={pageUrl}
-                keywords="Appointory vs Practo, clinic management software comparison, Practo alternative India, OPD queue management software, doctor appointment software comparison"
+                keywords="Appointory vs Practo, Practo alternative India, Cliniko alternative India, HealthPlix alternative, Eka Care alternative, Docpulse alternative, Ray by Practo alternative, clinic management software comparison, OPD queue management software, doctor appointment software comparison, best clinic software India"
                 schemaMarkup={jsonLd}
             />
             <PublicHeader />

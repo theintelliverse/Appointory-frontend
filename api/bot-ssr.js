@@ -32,11 +32,9 @@ function renderHtml({ title, description, canonicalUrl, ogImage, ogType = 'websi
   ${is404 ? '<meta name="robots" content="noindex, nofollow, noarchive">' : '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">'}
   <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
   
-  <!-- Multilingual hreflang -->
-  <link rel="alternate" hreflang="en-IN" href="${escapeHtml(canonicalUrl)}">
-  <link rel="alternate" hreflang="hi-IN" href="${escapeHtml(canonicalUrl)}">
-  <link rel="alternate" hreflang="gu-IN" href="${escapeHtml(canonicalUrl)}">
+  <!-- Canonical Language Annotations -->
   <link rel="alternate" hreflang="x-default" href="${escapeHtml(canonicalUrl)}">
+  <link rel="alternate" hreflang="en-IN" href="${escapeHtml(canonicalUrl)}">
 
   <!-- Open Graph / WhatsApp / Facebook / LinkedIn / Instagram -->
   <meta property="og:type" content="${ogType}">

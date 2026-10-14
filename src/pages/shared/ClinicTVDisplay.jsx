@@ -23,7 +23,7 @@ const ClinicTVDisplay = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [clinicName, setClinicName] = useState("Swasthya-Mitra Clinic");
+  const [clinicName, setClinicName] = useState("Appointory Care Clinic");
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [clinicId, setClinicId] = useState(null);

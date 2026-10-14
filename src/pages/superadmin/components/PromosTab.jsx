@@ -19,7 +19,7 @@ const PromosTab = ({
             <input
               type="text"
               required
-              placeholder="e.g. SWASTHYA20"
+              placeholder="e.g. APPOINTORY20"
               value={newPromo.code}
               onChange={(e) => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
               className="w-full mt-1 bg-parchment/40 border border-sandstone/40 rounded-xl px-3.5 py-2 text-xs outline-none text-teak focus:border-marigold font-bold"

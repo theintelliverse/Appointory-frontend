@@ -24,6 +24,10 @@ export default function AboutPage() {
             answer: "Appointory is developed and operated by The Intelliverse, headquartered in India, serving healthcare facilities across Gujarat, Maharashtra, Delhi NCR, Karnataka, and pan-Bharat."
         },
         {
+            question: "How is Appointory spelled, and are Appointry or Apointory the same platform?",
+            answer: "Appointory (officially spelled A-P-P-O-I-N-T-O-R-Y, combining 'Appointment' + 'Directory') is frequently searched as Appointry, Apointory, Appointary, Appointori, or Appointery. All these variant search queries refer to the official Appointory healthcare operating system accessible at appointory.in."
+        },
+        {
             question: "How does Appointory comply with India's DPDP Act 2023?",
             answer: "Appointory implements strict purpose-limited data processing, AES-256 encrypted health lockers, and granular consent management ensuring patient health information is never commoditized or shared without explicit permission."
         }
@@ -34,7 +38,21 @@ export default function AboutPage() {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "Appointory",
-            "alternateName": "The Intelliverse Appointory",
+            "alternateName": [
+                "Appointry",
+                "Apointory",
+                "Appointary",
+                "Appointori",
+                "Appoitory",
+                "Appontory",
+                "Appointery",
+                "Apointery",
+                "Apointry",
+                "Appoint-ory",
+                "Appoint ory",
+                "Appointory Healthcare",
+                "The Intelliverse Appointory"
+            ],
             "url": "https://appointory.in",
             "logo": "https://appointory.in/appointory-logo-mark.png",
             "sameAs": [

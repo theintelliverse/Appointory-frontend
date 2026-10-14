@@ -24,7 +24,7 @@ const SEO = ({
     const defaultDescription = 'Appointory is India’s modern clinic operating system: zero-wait OPD token display, WhatsApp live queue alerts, 0% GST billing, and synchronized lab networks.';
     const cleanDescription = description || defaultDescription;
 
-    const defaultKeywords = 'clinic management software India, OPD queue management system, token system for clinic, online doctor appointment booking software, clinic appointment software India, patient queue management app, clinic billing software GST, digital prescription software, waiting room TV token display, WhatsApp token alert for clinic, pathology lab management software, lab referral software for clinics, free clinic software India, clinic software for small clinics, clinic software Gujarat, Ahmedabad, Surat, Vadodara, Rajkot, SAC 999312, SAC 999316';
+    const defaultKeywords = 'Appointory, Appointry, Apointory, Appointary, Appointori, Appoitory, Appontory, Appointery, Apointery, Apointry, Appoint-ory, Appoint ory, appointory.in, clinic management software India, Practo alternative, Cliniko alternative, HealthPlix alternative, Eka Care alternative, Docpulse alternative, Ray by Practo alternative, OPD queue management system, token system for clinic, online doctor appointment booking software, clinic appointment software India, patient queue management app, clinic billing software GST, digital prescription software, waiting room TV token display, WhatsApp token alert for clinic, pathology lab management software, lab referral software for clinics, free clinic software India, clinic software Gujarat, Ahmedabad, Surat, Vadodara, Rajkot, Mumbai, Delhi, Bengaluru, Pune, SAC 999312, SAC 999316';
     const cleanKeywords = keywords || defaultKeywords;
 
     // Canonical & alternate URLs
@@ -45,11 +45,9 @@ const SEO = ({
             <meta name="author" content={author} />
             <link rel="canonical" href={canonicalUrl} />
 
-            {/* hreflang for multilingual India & international default */}
-            <link rel="alternate" hrefLang="en-IN" href={canonicalUrl} />
-            <link rel="alternate" hrefLang="hi-IN" href={canonicalUrl} />
-            <link rel="alternate" hrefLang="gu-IN" href={canonicalUrl} />
+            {/* Standard Canonical Language Annotations */}
             <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
+            <link rel="alternate" hrefLang="en-IN" href={canonicalUrl} />
 
             {/* Robots Directives */}
             {noindex ? (

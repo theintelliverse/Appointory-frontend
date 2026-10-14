@@ -12,7 +12,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Top Grid Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 pb-12 border-b border-teal-800/40">
-          
+
           {/* Column 1: Branding & Philosophy */}
           <div className="space-y-5 md:col-span-1">
             <div className="flex items-center gap-3.5">
@@ -165,6 +165,9 @@ const Footer = () => {
             </p>
             <p className="text-xs font-medium text-[#D4E4DF]/70 flex items-center gap-1">
               Operated by <span className="text-[#2D9B6F] font-bold">The Intelliverse</span> • Digital Health Intermediary
+            </p>
+            <p className="text-[11px] text-[#D4E4DF]/50 mt-0.5">
+              Appointory™  • All-in-One Clinic OPD Management Platform
             </p>
           </div>
 

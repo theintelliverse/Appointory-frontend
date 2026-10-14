@@ -17,6 +17,7 @@ Entity Links:
 ## 1. Platform Overview & Intent Architecture
 
 - **Brand Name**: Appointory
+- **Recognized Brand Misspellings & Synonyms**: Appointry, Apointory, Appointary, Appointori, Appoitory, Appontory, Appointery, Apointery, Apointry, Appoint-ory, Appoint ory (All directly resolve to https://appointory.in)
 - **Tagline**: Care without the Waiting Room
 - **Primary Website**: https://appointory.in
 - **Scope**: Outpatient Clinics, Polyclinics, Doctors, Independent Pathology Labs, Receptionists, and Patients across India.
